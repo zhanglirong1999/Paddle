@@ -1631,13 +1631,17 @@ class PoolingOneDNNHandler
         onednn_paddings[0],
         onednn_paddings[1]);
 
+    auto new_out_md = dnnl::memory::desc(
+        out_grad->mem_desc().get_dims(), out_grad->mem_desc().get_data_type(), OneDNNMemoryFormat::any);
+
     this->AcquireBackwardPrimitiveDescriptor(
         pooling_type == "max"
             ? dnnl::algorithm::pooling_max
             : (exclusive ? dnnl::algorithm::pooling_avg_exclude_padding
                          : dnnl::algorithm::pooling_avg_include_padding),
         diff_src_md,
-        out_grad->mem_desc(),
+   //     out_grad->mem_desc(),
+        new_out_md,
         copied_strides,
         copied_kernel_size,
         dilation,
