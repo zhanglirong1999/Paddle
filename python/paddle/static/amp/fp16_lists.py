@@ -15,7 +15,6 @@
 import copy
 import logging
 
-import paddle
 from paddle.amp.amp_lists import (
     EXTRA_BLACK_LIST,
     FP16_BLACK_LIST,
@@ -95,10 +94,6 @@ def _get_sys_unsupported_list(dtype):
     device = None
     if core.is_compiled_with_xpu():
         device = 'XPU'
-    elif isinstance(
-        paddle.framework._current_expected_place(), paddle.CustomPlace
-    ):
-        device = 'CUSTOM_DEVICE'
     else:
         device = 'GPU'
     all_ops, _, sys_unsupported_list = core.op_supported_infos(device, var_type)

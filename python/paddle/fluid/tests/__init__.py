@@ -11,16 +11,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-from . import base
-from .base import *
-
-from . import tracer
-from .tracer import *
-
-from . import learning_rate_scheduler
-from .learning_rate_scheduler import *
-
-__all__ = []
-__all__ += base.__all__
-__all__ += learning_rate_scheduler.__all__

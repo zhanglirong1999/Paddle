@@ -19,7 +19,6 @@
 #include "paddle/phi/core/kernel_registry.h"
 #include "paddle/phi/kernels/funcs/aligned_vector.h"
 #include "paddle/phi/kernels/fusion/gpu/fused_rope_utils.h"
-
 namespace phi {
 namespace fusion {
 

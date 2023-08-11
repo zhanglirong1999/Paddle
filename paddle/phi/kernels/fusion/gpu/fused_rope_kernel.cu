@@ -19,7 +19,6 @@
 #include "paddle/phi/core/kernel_registry.h"
 #include "paddle/phi/kernels/funcs/aligned_vector.h"
 #include "paddle/phi/kernels/fusion/gpu/fused_rope_utils.h"
-
 namespace phi {
 namespace fusion {
 
@@ -36,14 +35,13 @@ void FusedRopeKernel(const Context& dev_ctx,
   int64_t numel = q.numel();
   if (numel <= 0) return;
   dev_ctx.template Alloc<T>(out_q);
-
-  // q.shape: [batch_size, seq_len, num_heads, head_dim]
+  // small size for broadcast
   auto batch_size = q.dims()[0];
-  auto seq_len = q.dims()[1];
   auto num_heads = q.dims()[2];
   auto head_dim = q.dims()[3];
-  PADDLE_ENFORCE_EQ(head_dim % 2,
-                    0,
+  auto seq_len = q.dims()[1];
+  PADDLE_ENFORCE_NE(head_dim % 2,
+                    1,
                     phi::errors::InvalidArgument(
                         "The head_dim of input must be a multiple of 2."));
 
@@ -87,37 +85,26 @@ void FusedRopeKernel(const Context& dev_ctx,
     PADDLE_ENFORCE_EQ(sin.get_ptr()->dims(),
                       cos.get_ptr()->dims(),
                       phi::errors::InvalidArgument(
-                          "The dims of sin and cos must be the same. But "
-                          "recieved sin's dims is {%s}, cos's dims is {%s}.",
-                          sin.get_ptr()->dims(),
-                          cos.get_ptr()->dims()));
-
+                          "The dims of sin and cos must be the same."));
     auto sin_dims = sin.get_ptr()->dims();
     int dims_size = sin_dims.size();
-    PADDLE_ENFORCE_EQ(
-        (dims_size == 2 || dims_size == 4),
-        true,
-        phi::errors::InvalidArgument("The dims of sin and cos is expected to "
-                                     "be 2 or 4, but recieved %d.",
-                                     dims_size));
+    PADDLE_ENFORCE_NE((dims_size == 2 || dims_size == 4),
+                      false,
+                      phi::errors::InvalidArgument(
+                          "The dims of sin and cos must be 2 or 4."));
     if (dims_size == 4) {
-      // sin.shape: [1, seq_len, 1, head_dim]
-      PADDLE_ENFORCE_EQ(
-          (sin_dims[0] == 1 && sin_dims[2] == 1),
-          true,
+      PADDLE_ENFORCE_NE(
+          (sin_dims[0] == 1 && sin_dims[1] == 1),
+          false,
           phi::errors::InvalidArgument(
               "The batch_size and num_heads of sin and cos must be 1."));
     }
-    int sin_seq_len_dim = (dims_size) == 4 ? 1 : 0;
-    PADDLE_ENFORCE_EQ((sin_dims[dims_size - 1] == head_dim &&
-                       sin_dims[sin_seq_len_dim] == seq_len),
-                      true,
-                      phi::errors::InvalidArgument(
-                          "The seq_len and head_dim of sin and cos "
-                          "must be the same as those of q. But recieved sin's "
-                          "shape is {%s}, q's shape is {%s}.",
-                          sin_dims,
-                          q.dims()));
+    PADDLE_ENFORCE_NE(
+        (sin_dims[dims_size - 1] == head_dim &&
+         sin_dims[dims_size - 2] == seq_len),
+        false,
+        phi::errors::InvalidArgument("The seq_len and head_dim of sin and cos "
+                                     "must be the same as those of q."));
 
     sin_cos_data[0] = sin->data<T>();
     sin_cos_data[1] = cos->data<T>();

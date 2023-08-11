@@ -53,6 +53,7 @@ from . import initializer
 from .initializer import set_global_initializer
 from . import layers
 from . import dygraph
+from . import optimizer
 from . import backward
 from .backward import gradients
 from . import incubate
@@ -108,6 +109,7 @@ __all__ = (
         'disable_dygraph',
         'enable_imperative',
         'disable_imperative',
+        'optimizer',
         'backward',
         'LoDTensor',
         'LoDTensorArray',
