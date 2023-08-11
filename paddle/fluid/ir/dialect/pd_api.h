@@ -22,6 +22,7 @@
 
 namespace paddle {
 namespace dialect {
+ir::OpResult add_n(std::vector<ir::OpResult> x);
 
 ir::OpResult mean(ir::OpResult x,
                   std::vector<int64_t> axis = {},
@@ -43,7 +44,7 @@ ir::OpResult tanh_grad(ir::OpResult out, ir::OpResult grad_out);
 
 ir::OpResult mean_grad(ir::OpResult x,
                        ir::OpResult out_grad,
-                       std::vector<int64_t> axis = {},
+                       const std::vector<int64_t>& axis = {},
                        bool keepdim = false,
                        bool reduce_all = false);
 }  // namespace dialect
