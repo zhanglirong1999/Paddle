@@ -111,7 +111,7 @@ class FCMKLDNNHandler
                                    dnnl::memory::format_tag::a);
     }
 
-    const auto attrs = CreateFCAttrs(ctx);
+    const auto attrs = CreateFCAttrs(ctx, dst_md);
 
     this->AcquireForwardPrimitiveDescriptor(attrs,
                                             dnnl::prop_kind::forward_inference,
@@ -122,7 +122,8 @@ class FCMKLDNNHandler
   }
 
  private:
-  dnnl::primitive_attr CreateFCAttrs(const ExecutionContext& ctx) {
+  dnnl::primitive_attr CreateFCAttrs(const ExecutionContext& ctx,
+                                     const dnnl::memory::desc& dst_md) {
     dnnl::primitive_attr attributes;
     dnnl::post_ops post_operations;
 
