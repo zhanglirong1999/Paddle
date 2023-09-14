@@ -113,12 +113,12 @@ GraphWithStats FCResidualConnectionMKLDNNFusePass::FuseFC(
       return;
     }
 
-    proto::VarType::Type data_type = fc_input->Var()->GetDataType();
-    if (data_type == proto::VarType::INT8 ||
-        data_type == proto::VarType::UINT8) {
-      VLOG(4) << "Skip fusion fc + elementwise_add with int8 data type";
-      return;
-    }
+    // proto::VarType::Type data_type = fc_input->Var()->GetDataType();
+    // if (data_type == proto::VarType::INT8 ||
+    //     data_type == proto::VarType::UINT8) {
+    //   VLOG(4) << "Skip fusion fc + elementwise_add with int8 data type";
+    //   return;
+    // }
 
     if (!IsCompat(subgraph, g)) {
       LOG(WARNING)
