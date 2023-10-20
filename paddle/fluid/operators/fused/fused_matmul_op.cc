@@ -194,6 +194,9 @@ class FusedMatmulOpMaker : public framework::OpProtoAndCheckerMaker {
     AddAttr<float>("fused_output_scale",
                    "Output scale from operator_scale_onednn_fuse_pass")
         .SetDefault(1.0f);
+    AddAttr<bool>("use_mkldnn",
+                  "(bool, default false) Only used in mkldnn kernel")
+        .SetDefault(false);
     AddAttr<std::vector<int>>("fused_reshape_X",
                               "Reshape's shape attribute from "
                               "reshape_transpose_matmul_mkldnn_fuse_pass")
