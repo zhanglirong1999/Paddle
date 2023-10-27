@@ -47,6 +47,7 @@ class ConvOneDNNHandlerT
                      const phi::DenseTensor* input,
                      const phi::DenseTensor* filter,
                      const phi::DenseTensor* bias,
+                     const phi::DenseTensor* residual_param,
                      const std::vector<int>& strides_in,
                      const std::vector<int>& paddings_in,
                      const std::string& padding_algorithm,
@@ -187,6 +188,7 @@ class ConvOneDNNHandlerT
           dst_tz, funcs::OneDNNGetDataType<T_out>(), chosen_memory_format);
       const auto fwd_prop_kind = dnnl::prop_kind::forward_inference;
       const dnnl::primitive_attr conv_attr = CreateConvAttrs(filter,
+                                                             residual_param,
                                                              groups,
                                                              force_fp32_output,
                                                              fuse_residual_conn,
@@ -390,6 +392,7 @@ class ConvOneDNNHandlerT
   }
 
   dnnl::primitive_attr CreateConvAttrs(const DenseTensor* filter,
+                                       const DenseTensor* residual_param,
                                        int groups,
                                        bool force_fp32_output,
                                        bool fuse_residual_conn,
@@ -430,7 +433,17 @@ class ConvOneDNNHandlerT
     // connection. The result of this post_op is:
     // Output = scale * Output + Conv_Out.
     if (fuse_residual_conn) {
-      post_operations.append_sum(sum_scale);
+      if (sum_scale == 1.0f) {
+        auto residual_md = residual_param->mem_desc();
+        post_operations.append_binary(dnnl::algorithm::binary_add, residual_md);
+      } else {
+        // dst = conv + sum_scale * residual
+        auto residual_md =
+            dnnl::memory::desc(residual_param->mem_desc().get_dims(),
+                               dnnl::memory::data_type::f32,
+                               dnnl::memory::format_tag::any);
+        post_operations.append_binary(dnnl::algorithm::binary_add, residual_md);
+      }
     }
 
     funcs::AppendActivation(this->dev_ctx_, post_operations);
@@ -607,13 +620,58 @@ class ConvOneDNNHandlerT
 
   std::shared_ptr<dnnl::memory> AcquireResidualMemory(
       const phi::DenseTensor* residual_param) {
-    void* residual_data =
-        residual_param->dtype() == phi::CppTypeToDataType<T_out>::Type()
-            ? funcs::to_void_cast<T_out>(residual_param->data<T_out>())
-            : funcs::to_void_cast<T>(residual_param->data<T>());
+    void* residual_data = const_cast<void*>(residual_param->data());
     auto residual_mem_p = this->AcquireMemory("@user_residual_data_mem_p");
+    float residual_scale = 1.0f;
     if (residual_mem_p) {
-      residual_mem_p->set_data_handle(residual_data);
+      auto psum_scales = ConvertToDNNLScales("Scale_in_eltwise");
+      residual_scale = psum_scales[0];
+      if (residual_scale == 1.0f) {
+        residual_mem_p->set_data_handle(residual_data);
+      } else {
+        auto residual_src_md = residual_param->mem_desc();
+        std::vector<float> src_data(phi::product(residual_param->dims()),
+                                    1.f / residual_scale);
+        auto src_scale_md = dnnl::memory::desc(residual_src_md.get_dims(),
+                                               dnnl::memory::data_type::f32,
+                                               dnnl::memory::format_tag::any);
+        auto dst_md = dnnl::memory::desc(residual_src_md.get_dims(),
+                                         dnnl::memory::data_type::f32,
+                                         dnnl::memory::format_tag::any);
+
+        dnnl::memory src_0_mem =
+            dnnl::memory(residual_src_md, this->dev_ctx_.GetEngine());
+        src_0_mem.set_data_handle(residual_data);
+
+        auto src_1_mem =
+            dnnl::memory(src_scale_md,
+                         this->dev_ctx_.GetEngine(),
+                         phi::funcs::to_void_cast<float>(src_data.data()));
+
+        auto dst_memory = dnnl::memory(dst_md, this->dev_ctx_.GetEngine());
+
+        auto binary_pd =
+            dnnl::binary::primitive_desc(this->dev_ctx_.GetEngine(),
+                                         dnnl::algorithm::binary_mul,
+                                         residual_src_md,
+                                         src_scale_md,
+                                         dst_md);
+
+        // Create the primitive.
+        auto binary_prim = dnnl::binary(binary_pd);
+
+        std::unordered_map<int, dnnl::memory> binary_args = {
+            {DNNL_ARG_SRC_0, src_0_mem},
+            {DNNL_ARG_SRC_1, src_1_mem},
+            {DNNL_ARG_DST, dst_memory}};
+
+        auto& astream = OneDNNContext::tls().get_stream();
+        binary_prim.execute(astream, binary_args);
+        astream.wait();
+
+        residual_mem_p = std::make_shared<dnnl::memory>(dst_memory);
+        // residual_mem_p->set_data_handle(residual_data);
+      }
       return residual_mem_p;
     } else {
       return this->AcquireMemoryFromPrimitive(residual_param->mem_desc(),
