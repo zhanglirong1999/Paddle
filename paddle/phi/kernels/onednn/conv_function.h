@@ -30,25 +30,25 @@ static dnnl::memory::data_type GetDstType(
     bool fuse_residual_conn,
     const phi::DenseTensor* residual_param) {
   auto dst_dt = dnnl::memory::data_type::f32;
-  // if (is_int8) {
-  //   dst_dt = (fuse_activation == "relu" || fuse_activation == "relu6")
-  //                ? dnnl::memory::data_type::u8
-  //                : dnnl::memory::data_type::s8;
-  //   if (force_fp32_output) {
-  //     dst_dt = dnnl::memory::data_type::f32;
-  //   }
-  //   if (fuse_residual_conn && residual_param) {
-  //     auto residual_dt = funcs::ToOneDNNDataType(residual_param->dtype());
-  //     if (dst_dt != residual_dt) dst_dt = residual_dt;
-  //   }
-  // } else {
-  //   if (!force_fp32_output && is_bfloat16) {
-  //     dst_dt = dnnl::memory::data_type::bf16;
-  //     if (fuse_residual_conn && residual_param) {
-  //       dst_dt = funcs::ToOneDNNDataType(residual_param->dtype());
-  //     }
-  //   }
-  // }
+  if (is_int8) {
+    dst_dt = (fuse_activation == "relu" || fuse_activation == "relu6")
+                 ? dnnl::memory::data_type::u8
+                 : dnnl::memory::data_type::s8;
+    if (force_fp32_output) {
+      dst_dt = dnnl::memory::data_type::f32;
+    }
+    //   if (fuse_residual_conn && residual_param) {
+    //     auto residual_dt = funcs::ToOneDNNDataType(residual_param->dtype());
+    //     if (dst_dt != residual_dt) dst_dt = residual_dt;
+    //   }
+  } else {
+    if (!force_fp32_output && is_bfloat16) {
+      dst_dt = dnnl::memory::data_type::bf16;
+      // if (fuse_residual_conn && residual_param) {
+      //   dst_dt = funcs::ToOneDNNDataType(residual_param->dtype());
+      // }
+    }
+  }
   return dst_dt;
 }
 
