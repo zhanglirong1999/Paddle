@@ -631,13 +631,16 @@ class ConvOneDNNHandlerT
       } else {
         auto residual_src_md = residual_param->mem_desc();
         std::vector<float> src_data(phi::product(residual_param->dims()),
-                                    1.f / residual_scale);
-        auto src_scale_md = dnnl::memory::desc(residual_src_md.get_dims(),
-                                               dnnl::memory::data_type::f32,
-                                               dnnl::memory::format_tag::any);
-        auto dst_md = dnnl::memory::desc(residual_src_md.get_dims(),
-                                         dnnl::memory::data_type::f32,
-                                         dnnl::memory::format_tag::any);
+                                    residual_scale);
+        auto x_tz = residual_src_md.get_dims();
+        auto src_scale_md =
+            dnnl::memory::desc(residual_src_md.get_dims(),
+                               dnnl::memory::data_type::f32,
+                               phi::funcs::GetPlainOneDNNFormat(x_tz.size()));
+        auto dst_md =
+            dnnl::memory::desc(residual_src_md.get_dims(),
+                               dnnl::memory::data_type::f32,
+                               phi::funcs::GetPlainOneDNNFormat(x_tz.size()));
 
         dnnl::memory src_0_mem =
             dnnl::memory(residual_src_md, this->dev_ctx_.GetEngine());
