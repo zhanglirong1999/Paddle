@@ -438,10 +438,11 @@ class ConvOneDNNHandlerT
         post_operations.append_binary(dnnl::algorithm::binary_add, residual_md);
       } else {
         // dst = conv + sum_scale * residual
+        auto x_tz = residual_param->mem_desc().get_dims();
         auto residual_md =
             dnnl::memory::desc(residual_param->mem_desc().get_dims(),
                                dnnl::memory::data_type::f32,
-                               dnnl::memory::format_tag::any);
+                               phi::funcs::GetPlainOneDNNFormat(x_tz.size()));
         post_operations.append_binary(dnnl::algorithm::binary_add, residual_md);
       }
     }
@@ -646,13 +647,9 @@ class ConvOneDNNHandlerT
             dnnl::memory(residual_src_md, this->dev_ctx_.GetEngine());
         src_0_mem.set_data_handle(residual_data);
 
-        auto src_1_mem =
-            dnnl::memory(src_scale_md,
-                         this->dev_ctx_.GetEngine(),
-                         phi::funcs::to_void_cast<float>(src_data.data()));
-
+        auto src_1_mem = dnnl::memory(src_scale_md, this->dev_ctx_.GetEngine());
+        src_1_mem.set_data_handle(src_data.data());
         auto dst_memory = dnnl::memory(dst_md, this->dev_ctx_.GetEngine());
-
         auto binary_pd =
             dnnl::binary::primitive_desc(this->dev_ctx_.GetEngine(),
                                          dnnl::algorithm::binary_mul,
@@ -671,7 +668,6 @@ class ConvOneDNNHandlerT
         auto& astream = OneDNNContext::tls().get_stream();
         binary_prim.execute(astream, binary_args);
         astream.wait();
-
         residual_mem_p = std::make_shared<dnnl::memory>(dst_memory);
         // residual_mem_p->set_data_handle(residual_data);
       }
