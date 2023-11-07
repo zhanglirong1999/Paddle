@@ -621,13 +621,15 @@ class ConvOneDNNHandlerT
 
   std::shared_ptr<dnnl::memory> AcquireResidualMemory(
       const phi::DenseTensor* residual_param) {
+    LOG(INFO) << "AcquireResidualMemory";
     void* residual_data = const_cast<void*>(residual_param->data());
-    auto residual_mem_p = this->AcquireMemory("@user_residual_data_mem_p");
+    auto residual_md = residual_param->mem_desc();
+
+    auto residual_mem_p =
+        std::make_shared<dnnl::memory>(residual_md, this->dev_ctx_.GetEngine());
     float residual_scale = 1.0f;
-    // if (residual_mem_p) {
     auto psum_scales = ConvertToDNNLScales("Scale_in_eltwise");
     residual_scale = psum_scales[0];
-    LOG(INFO) << "AcquireResidualMemory";
     if (residual_scale == 1.0f) {
       residual_mem_p->set_data_handle(residual_data);
     } else {
@@ -669,15 +671,9 @@ class ConvOneDNNHandlerT
       binary_prim.execute(astream, binary_args);
       astream.wait();
       residual_mem_p = std::make_shared<dnnl::memory>(dst_memory);
-      // residual_mem_p->set_data_handle(residual_data);
     }
     LOG(INFO) << "After AcquireResidualMemory";
     return residual_mem_p;
-    // } else {
-    //   return this->AcquireMemoryFromPrimitive(residual_param->mem_desc(),
-    //                                           residual_data,
-    //                                           "@user_residual_data_mem_p");
-    // }
   }
 
   std::shared_ptr<dnnl::memory> AcquireDstMemoryWithResidual(
