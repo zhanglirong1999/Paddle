@@ -129,23 +129,26 @@ class FusedMatmulOneDNNHandler
                                                 scale_y,
                                                 scale_in_eltwise,
                                                 scale_out,
-                                                force_fp32_output);
+                                                force_fp32_output,
+                                                out_ddims);
 
     this->AcquireForwardPrimitiveDescriptor(matmul_attrs, x_md, y_md, out_md);
   }
 
-  dnnl::primitive_attr CreateMatmulAttrs(const OneDNNContext &dev_ctx,
-                                         const DenseTensor *residual_data,
-                                         const float matmul_alpha,
-                                         const std::string &fuse_activation,
-                                         const float fuse_alpha,
-                                         const float fuse_beta,
-                                         const float fused_output_scale,
-                                         const float scale_x,
-                                         const float scale_y,
-                                         const float scale_in_eltwise,
-                                         const float scale_out,
-                                         const bool force_fp32_output) {
+  dnnl::primitive_attr CreateMatmulAttrs(
+      const OneDNNContext &dev_ctx,
+      const DenseTensor *residual_data,
+      const float matmul_alpha,
+      const std::string &fuse_activation,
+      const float fuse_alpha,
+      const float fuse_beta,
+      const float fused_output_scale,
+      const float scale_x,
+      const float scale_y,
+      const float scale_in_eltwise,
+      const float scale_out,
+      const bool force_fp32_output,
+      const std::vector<int64_t> &out_ddims) {
     dnnl::primitive_attr matmul_attrs;
     dnnl::post_ops post_operations;
 
@@ -163,8 +166,7 @@ class FusedMatmulOneDNNHandler
     }
 
     if (residual_data) {
-      auto residual_data_tz = vectorize(residual_data->dims());
-      auto residual_data_md = memory::desc(residual_data_tz,
+      auto residual_data_md = memory::desc(out_ddims,
                                            funcs::OneDNNGetDataType<OT>(),
                                            dnnl::memory::format_tag::any);
       post_operations.append_binary(dnnl::algorithm::binary_add,
@@ -185,6 +187,13 @@ class FusedMatmulOneDNNHandler
 
     matmul_attrs.set_post_ops(post_operations);
     return matmul_attrs;
+  }
+
+  std::shared_ptr<dnnl::memory> AcquireSrcMemoryResidual(
+      const DenseTensor *input) {
+    const XT *input_data = input->data<XT>();
+    return this->AcquireMemoryFromPrimitive(
+        this->fwd_pd_->dst_desc(), phi::funcs::to_void_cast<XT>(input_data));
   }
 
   std::shared_ptr<memory> AcquireWeightsMemory(const DenseTensor *input) {
@@ -263,7 +272,8 @@ void ExecuteFusedMatmul(const OneDNNContext &dev_ctx,
       {DNNL_ARG_DST, *dst_memory_p}};
 
   if (residual_data) {
-    const auto residual_data_memory_p = handler.AcquireSrcMemory(residual_data);
+    const auto residual_data_memory_p =
+        handler.AcquireSrcMemoryResidual(residual_data);
     matmul_args.insert({DNNL_ARG_ATTR_MULTIPLE_POST_OP(0) | DNNL_ARG_SRC_1,
                         *residual_data_memory_p});
   }
