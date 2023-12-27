@@ -373,6 +373,7 @@ void CpuPassStrategy::EnableMKLDNN() {
              // Disabled due to topology-dependent speed-up
              "fc_mkldnn_pass",
              "fc_act_mkldnn_fuse_pass",
+             "fc_elementwise_add_mkldnn_fuse_pass",
              "self_attention_fuse_pass",              //
              "batch_norm_act_fuse_pass",              //
              "softplus_activation_onednn_fuse_pass",  //
@@ -407,7 +408,6 @@ void CpuPassStrategy::EnableMkldnnBfloat16() {
   if (!use_mkldnn_bfloat16_) {
     passes_.emplace_back("fc_mkldnn_pass");
     passes_.emplace_back("fc_act_mkldnn_fuse_pass");
-
     passes_.emplace_back("cpu_bfloat16_placement_pass");
     passes_.emplace_back("cpu_bfloat16_pass");
     passes_.emplace_back("cpu_quantize_squash_pass");
@@ -462,6 +462,7 @@ void CpuPassStrategy::EnableMkldnnInt8() {
     passes_.emplace_back("repeated_fc_relu_fuse_pass");
     passes_.emplace_back("fc_mkldnn_pass");
     passes_.emplace_back("fc_act_mkldnn_fuse_pass");
+    passes_.emplace_back("fc_elementwise_add_mkldnn_fuse_pass");
     passes_.emplace_back("matmul_transpose_reshape_mkldnn_fuse_pass");
     passes_.emplace_back("batch_norm_act_fuse_pass");
     passes_.emplace_back("softplus_activation_onednn_fuse_pass");
@@ -496,7 +497,9 @@ void CpuPassStrategy::DisableMkldnnFcPasses() {
 
 void CpuPassStrategy::EraseFcMkldnnPasses() {
   std::vector<std::string> fc_passes_to_erase(
-      {"fc_mkldnn_pass", "fc_act_mkldnn_fuse_pass"});
+      {"fc_mkldnn_pass",
+       "fc_act_mkldnn_fuse_pass",
+       "fc_elementwise_add_mkldnn_fuse_pass"});
   for (const auto &pass : fc_passes_to_erase) {
     int idx = static_cast<int>(GetPassIndex(pass));
     if (idx != -1) {
@@ -507,6 +510,8 @@ void CpuPassStrategy::EraseFcMkldnnPasses() {
 
 XpuPassStrategy::XpuPassStrategy() : PassStrategy({}) {
   passes_.assign({
+      "delete_quant_dequant_linear_op_pass",
+      "delete_weight_dequant_linear_op_pass",
       "delete_assign_op_pass",
       "delete_dropout_op_pass",
       "delete_concat_op_pass",
@@ -559,9 +564,11 @@ XpuPassStrategy::XpuPassStrategy() : PassStrategy({}) {
       "fast_where_xpu_fuse_pass",
       "elementwise_mul_add_fuse_pass",
       "link_xpu_op_max_pass",
-      "delete_isolated_node_pass",
       // "auto_mixed_precision_pass",
       "cast_mixed_precision_op_fuse_pass",
+      "xpu_quantize_op_pass",
+      "xpu_quantize_squash_pass",
+      "delete_isolated_node_pass",
       "inplace_op_var_pass",
   });
   use_xpu_ = true;
