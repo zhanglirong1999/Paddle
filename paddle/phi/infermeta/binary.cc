@@ -4004,6 +4004,12 @@ void WeightDequantizeInferMeta(const MetaTensor& x,
   out->set_dtype(out_dtype);
 }
 
+void AffineChannelInferMeta(const MetaTensor& x,
+                            const MetaTensor& scale,
+                            const MetaTensor& bias,
+                            const std::string& data_layout,
+                            MetaTensor* out) {}
+
 }  // namespace phi
 
 PD_REGISTER_INFER_META_FN(add_raw, phi::ElementwiseRawInferMeta);
