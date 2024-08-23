@@ -62,7 +62,7 @@ TypeTranslator::TypeTranslator() {
 
   const auto& HandleSelectedRows = [&](pir::IrContext* ctx,
                                        const VarDesc& var_desc) -> pir::Type {
-    VLOG(10) << "[vartype translating]"
+    VLOG(10) << "[11vartype translating]"
              << "[" << var_desc.Name() << "] from SELECTED_ROWS";
     const pir::Type dtype =
         this->operator[](var_desc.GetDataType())(ctx, var_desc);
