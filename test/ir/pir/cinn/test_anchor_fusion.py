@@ -115,20 +115,14 @@ class TestAnchorFusion(unittest.TestCase):
         self.check_accuracy_and_kernel_num(init, func)
 
     def test_append_iters_fusion(self):
-        #       T
+        #       R
         #     /   \
         #    S     B
-        #   / \   / \
-        #  S   B S   T
         def func(x):
-            x = x * 2
-            a = x[0, :]  # shape=[64, 128]
-            b = paddle.expand(x, [16, 32, 64, 128])
-            c = a[:, 0]  # shape=[64]
-            d = paddle.expand(a, [8, 16, 32, 64, 128])
-            e = b[0, :, 0, :]  # shape=[32,128]
-            f = paddle.exp(b)
-            return c, d, e, f
+            x = paddle.sum(x, axis=0)
+            a = x[0, :]  # shape=[128]
+            b = paddle.expand(x, [32, 64, 128])
+            return a, b
 
         def init():
             x = paddle.rand((32, 64, 128))
@@ -256,6 +250,18 @@ class TestAnchorFusion(unittest.TestCase):
             return (x,)
 
         self.check_accuracy_and_kernel_num(init, func, kernel_num=1)
+
+    def test_split_fusion(self):
+        def func(x):
+            x = x * 2
+            a, b = paddle.split(x, num_or_sections=[2, 1], axis=1)
+            return a, b
+
+        def init():
+            x = paddle.rand((1, 3, 192, 288))
+            return (x,)
+
+        self.check_accuracy_and_kernel_num(init, func)
 
 
 if __name__ == "__main__":

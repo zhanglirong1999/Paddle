@@ -51,14 +51,19 @@ std::vector<PatternNodePtr> PatternGraph::ClusterOps() {
           << GraphInfo();
 
   // ItersPermutationPattern x ItersPermutationPattern Fusion
-  VLOG(4) << "[Group Cluster] Start ItersPermutationFusion";
-  ItersPermutationFusion();
-  VLOG(4) << "[Group Cluster] After ItersPermutationFusion: " << GraphInfo();
+  VLOG(4) << "[Group Cluster] Start IdentityAnchorFusion";
+  LimitedAnchorFusion();
+  VLOG(4) << "[Group Cluster] After IdentityAnchorFusion: " << GraphInfo();
 
   // Sink single trivial op pattern
   VLOG(4) << "[Group Cluster] Start SplitRecomputePattern";
   SplitRecomputePattern();
   VLOG(4) << "[Group Cluster] After SplitRecomputePattern: " << GraphInfo();
+
+  // ItersPermutationPattern x ItersPermutationPattern Fusion
+  VLOG(4) << "[Group Cluster] Start ItersPermutationFusion";
+  ItersPermutationFusion();
+  VLOG(4) << "[Group Cluster] After ItersPermutationFusion: " << GraphInfo();
 
   // Horizontal fusion.
   VLOG(4) << "[Group Cluster] Start HorizontalFusion";
@@ -189,7 +194,19 @@ void PatternGraph::LiftToItersPermutationPattern() {
                    LiftToItersPermutationPatternOperation>(this);
 }
 
+void PatternGraph::LimitedAnchorFusion() {
+  iters_fusion_policy()
+      ->DisableStrategy(ItersTransformType::ReuseIters)
+      ->DisableStrategy(ItersTransformType::AppendIters);
+
+  GraphTransformer<ReverseTopoNodePairPattern,
+                   CanFuseItersPermutationMatcher,
+                   FuseItersPermutatioOperation>(this);
+}
+
 void PatternGraph::ItersPermutationFusion() {
+  iters_fusion_policy()->EnableAllStrategies();
+
   GraphTransformer<ReverseTopoNodePairPattern,
                    CanFuseItersPermutationMatcher,
                    FuseItersPermutatioOperation>(this);
@@ -198,6 +215,9 @@ void PatternGraph::ItersPermutationFusion() {
 void PatternGraph::SplitRecomputePattern() {
   GraphTransformer<NodePattern, RecomputeNodeMatcher, SplitRecomputeOperation>(
       this);
+  GraphTransformer<NodePattern,
+                   StmtPatternGraphMatcher<TrivialPattern>,
+                   LiftToItersPermutationPatternOperation>(this);
 }
 
 PatternGraph::PatternGraph(const std::vector<PatternContent>& contents,

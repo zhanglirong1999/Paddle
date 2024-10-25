@@ -153,4 +153,6 @@ using ItersTransform = std::variant<IdentityItersTransform,
                                     ReuseItersTransform>;
 using ItersTransformRoute = std::vector<ItersTransform>;
 
+enum ItersTransformType { Identity, TransposeIters, AppendIters, ReuseIters };
+
 }  // namespace cinn::fusion
