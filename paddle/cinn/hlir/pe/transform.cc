@@ -1337,7 +1337,7 @@ ir::Tensor SliceSymbolic(const ir::Tensor& A,
   }
 
   std::vector<Expr> new_starts = starts;
-  std::vector<int> axes;
+  std::vector<int64_t> axes;
   std::transform(const_axes.begin(),
                  const_axes.end(),
                  std::back_inserter(axes),
