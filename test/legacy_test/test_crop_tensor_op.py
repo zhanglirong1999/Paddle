@@ -289,6 +289,23 @@ class TestCropTensorException(unittest.TestCase):
         self.assertRaises(TypeError, input_dtype)
 
 
+class TestCropWithUnknownShape(unittest.TestCase):
+    def test_crop_with_unknown_shape(self):
+        main_program = paddle.static.Program()
+        with paddle.static.program_guard(main_program):
+            x = paddle.static.data(name='x', shape=[-1, 4, 4], dtype='float32')
+            shape = paddle.static.data(name='shape', shape=[3], dtype='int32')
+            out = paddle.crop(x, shape=shape, offsets=[1, 1, 1])
+            exe = paddle.static.Executor(paddle.CPUPlace())
+            x_np = np.random.random((4, 4, 4)).astype('float32')
+            shape_np = np.array([2, 2, 2]).astype('int32')
+            (out_np,) = exe.run(
+                feed={'x': x_np, 'shape': shape_np}, fetch_list=[out]
+            )
+            self.assertEqual(out.shape, [-1, -1, -1])
+            self.assertEqual(out_np.shape, (2, 2, 2))
+
+
 if __name__ == '__main__':
     paddle.enable_static()
     unittest.main()
