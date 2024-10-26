@@ -82,6 +82,134 @@ DEFINE_GENERAL_PATTERN(AssignOut, paddle::dialect::AssignOut_Op)
 
 #undef DEFINE_GENERAL_PATTERN
 
+// Add ReduceCommonOpPattern base class to simplify code
+template <typename OpType>
+class ReduceCommonOpPattern : public pir::OpRewritePattern<OpType> {
+ public:
+  using pir::OpRewritePattern<OpType>::OpRewritePattern;
+  bool MatchAndRewrite(OpType op,
+                       pir::PatternRewriter &rewriter) const override {
+    if (op->HasAttribute(kCanRunTrtAttr) &&
+        op->template attribute<pir::BoolAttribute>(kCanRunTrtAttr).data()) {
+      return false;
+    }
+
+    if (!op->HasAttribute("keepdim")) {
+      VLOG(3) << "the max does not have attr keep_dim ";
+      return false;
+    }
+
+    if constexpr (std::is_same_v<OpType, paddle::dialect::MeanOp> ||
+                  std::is_same_v<OpType, paddle::dialect::AnyOp> ||
+                  std::is_same_v<OpType, paddle::dialect::MeanOp>) {
+      if (!op->HasAttribute("axis")) {
+        VLOG(3) << "The axis attribute does not exist";
+        return false;
+      }
+    }
+
+    pir::Value x = op.operand_source(0);
+    auto x_dtype = pir::GetDataTypeFromValue(x);
+    if constexpr (std::is_same_v<OpType, paddle::dialect::AnyOp>) {
+      if (!x_dtype.isa<pir::BoolType>()) {
+        VLOG(3) << "any op input data type must be bool";
+        return false;
+      }
+    } else if constexpr (std::is_same_v<OpType, paddle::dialect::AllOp>) {
+      if (!x_dtype.isa<pir::BoolType>()) {
+        VLOG(3) << "all op input data type must be bool";
+        return false;
+      }
+    } else {
+      if (!(x_dtype.isa<pir::Float32Type>() ||
+            x_dtype.isa<pir::Float64Type>() || x_dtype.isa<pir::Int32Type>() ||
+            x_dtype.isa<pir::Int64Type>())) {
+        if constexpr (std::is_same_v<OpType, paddle::dialect::MinOp>) {
+          VLOG(3) << "min input data type must be int32 or int64 or "
+                     "float32 or "
+                     "float64";
+        } else if constexpr (std::is_same_v<OpType, paddle::dialect::MaxOp>) {
+          VLOG(3) << "max input data type must be int32 or int64 or "
+                     "float32 or "
+                     "float64";
+        } else if constexpr (std::is_same_v<OpType, paddle::dialect::MeanOp>) {
+          VLOG(3) << "mean input data type must be int32 or int64 or "
+                     "float32 or "
+                     "float64";
+        }
+        return false;
+      }
+    }
+    op->set_attribute(kCanRunTrtAttr, rewriter.bool_attr(true));
+    return true;
+  }
+};
+
+// use type aliases to simplify usage
+using MinOpPattern = ReduceCommonOpPattern<paddle::dialect::MinOp>;
+using MaxOpPattern = ReduceCommonOpPattern<paddle::dialect::MaxOp>;
+using MeanOpPattern = ReduceCommonOpPattern<paddle::dialect::MeanOp>;
+using AnyOpPattern = ReduceCommonOpPattern<paddle::dialect::AnyOp>;
+using AllOpPattern = ReduceCommonOpPattern<paddle::dialect::AllOp>;
+using SumOpPattern = ReduceCommonOpPattern<paddle::dialect::SumOp>;
+
+// Add ElementwiseCommonOpPattern base class to simplify code
+template <typename OpType>
+class ElementwiseCommonOpPattern : public pir::OpRewritePattern<OpType> {
+ public:
+  using pir::OpRewritePattern<OpType>::OpRewritePattern;
+  bool MatchAndRewrite(OpType op,
+                       pir::PatternRewriter &rewriter) const override {
+    if (op->HasAttribute(kCanRunTrtAttr) &&
+        op->template attribute<pir::BoolAttribute>(kCanRunTrtAttr).data()) {
+      return false;
+    }
+
+    pir::Value x = op.operand_source(0);
+    pir::Value y = op.operand_source(1);
+    auto x_dtype = pir::GetDataTypeFromValue(x);
+    auto y_dtype = pir::GetDataTypeFromValue(y);
+    if (x_dtype.isa<pir::BoolType>() || y_dtype.isa<pir::BoolType>()) {
+      if constexpr (std::is_same_v<OpType, paddle::dialect::MultiplyOp>) {
+        VLOG(3) << "elementwise_mul do not support boolean datatype.";
+      } else if constexpr (std::is_same_v<OpType,  // NOLINT
+                                          paddle::dialect::SubtractOp>) {
+        VLOG(3) << "elementwise_sub do not support boolean datatype.";
+      } else if constexpr (std::is_same_v<OpType, paddle::dialect::DivideOp>) {
+        VLOG(3) << "elementwise_div do not support boolean datatype.";
+      } else if constexpr (std::is_same_v<OpType, paddle::dialect::MinimumOp>) {
+        VLOG(3) << "elementwise_min do not support boolean datatype.";
+      } else if constexpr (std::is_same_v<OpType, paddle::dialect::MaximumOp>) {
+        VLOG(3) << "elementwise_max do not support boolean datatype.";
+      } else if constexpr (std::is_same_v<OpType,  // NOLINT
+                                          paddle::dialect::FloorDivideOp>) {
+        VLOG(3) << "elementwise_floordiv do not support boolean datatype.";
+      } else if constexpr (std::is_same_v<OpType,  // NOLINT
+                                          paddle::dialect::RemainderOp>) {
+        VLOG(3) << "elementwise_mod do not support boolean datatype.";
+      } else {
+        VLOG(3) << "elementwise other do not support boolean datatype.";
+      }
+      return false;
+    }
+
+    op->set_attribute(kCanRunTrtAttr, rewriter.bool_attr(true));
+    return true;
+  }
+};
+
+using MultiplyOpPattern =
+    ElementwiseCommonOpPattern<paddle::dialect::MultiplyOp>;
+using SubtractOpPattern =
+    ElementwiseCommonOpPattern<paddle::dialect::SubtractOp>;
+using DivideOpPattern = ElementwiseCommonOpPattern<paddle::dialect::DivideOp>;
+using MinimumOpPattern = ElementwiseCommonOpPattern<paddle::dialect::MinimumOp>;
+using MaximumOpPattern = ElementwiseCommonOpPattern<paddle::dialect::MaximumOp>;
+using FloorDivideOpPattern =
+    ElementwiseCommonOpPattern<paddle::dialect::FloorDivideOp>;
+using RemainderOpPattern =
+    ElementwiseCommonOpPattern<paddle::dialect::RemainderOp>;
+
 class Pool2dOpPattern
     : public pir::OpRewritePattern<paddle::dialect::Pool2dOp> {
  public:
@@ -995,63 +1123,6 @@ class LessThanOpPattern
   }
 };
 
-// Add ElementwiseCommonOpPattern base class to simplify code
-template <typename OpType>
-class ElementwiseCommonOpPattern : public pir::OpRewritePattern<OpType> {
- public:
-  using pir::OpRewritePattern<OpType>::OpRewritePattern;
-  bool MatchAndRewrite(OpType op,
-                       pir::PatternRewriter &rewriter) const override {
-    if (op->HasAttribute(kCanRunTrtAttr) &&
-        op->template attribute<pir::BoolAttribute>(kCanRunTrtAttr).data()) {
-      return false;
-    }
-
-    pir::Value x = op.operand_source(0);
-    pir::Value y = op.operand_source(1);
-    auto x_dtype = pir::GetDataTypeFromValue(x);
-    auto y_dtype = pir::GetDataTypeFromValue(y);
-    if (x_dtype.isa<pir::BoolType>() || y_dtype.isa<pir::BoolType>()) {
-      if constexpr (std::is_same_v<OpType, paddle::dialect::MultiplyOp>) {
-        VLOG(3) << "elementwise_mul do not support boolean datatype.";
-      } else if constexpr (std::is_same_v<OpType,  // NOLINT
-                                          paddle::dialect::SubtractOp>) {
-        VLOG(3) << "elementwise_sub do not support boolean datatype.";
-      } else if constexpr (std::is_same_v<OpType, paddle::dialect::DivideOp>) {
-        VLOG(3) << "elementwise_div do not support boolean datatype.";
-      } else if constexpr (std::is_same_v<OpType, paddle::dialect::MinimumOp>) {
-        VLOG(3) << "elementwise_min do not support boolean datatype.";
-      } else if constexpr (std::is_same_v<OpType, paddle::dialect::MaximumOp>) {
-        VLOG(3) << "elementwise_max do not support boolean datatype.";
-      } else if constexpr (std::is_same_v<OpType,  // NOLINT
-                                          paddle::dialect::FloorDivideOp>) {
-        VLOG(3) << "elementwise_floordiv do not support boolean datatype.";
-      } else if constexpr (std::is_same_v<OpType,  // NOLINT
-                                          paddle::dialect::RemainderOp>) {
-        VLOG(3) << "elementwise_mod do not support boolean datatype.";
-      } else {
-        VLOG(3) << "elementwise other do not support boolean datatype.";
-      }
-      return false;
-    }
-
-    op->set_attribute(kCanRunTrtAttr, rewriter.bool_attr(true));
-    return true;
-  }
-};
-
-using MultiplyOpPattern =
-    ElementwiseCommonOpPattern<paddle::dialect::MultiplyOp>;
-using SubtractOpPattern =
-    ElementwiseCommonOpPattern<paddle::dialect::SubtractOp>;
-using DivideOpPattern = ElementwiseCommonOpPattern<paddle::dialect::DivideOp>;
-using MinimumOpPattern = ElementwiseCommonOpPattern<paddle::dialect::MinimumOp>;
-using MaximumOpPattern = ElementwiseCommonOpPattern<paddle::dialect::MaximumOp>;
-using FloorDivideOpPattern =
-    ElementwiseCommonOpPattern<paddle::dialect::FloorDivideOp>;
-using RemainderOpPattern =
-    ElementwiseCommonOpPattern<paddle::dialect::RemainderOp>;
-
 class ElementwisePowOpPattern
     : public pir::OpRewritePattern<paddle::dialect::ElementwisePowOp> {
  public:
@@ -1385,73 +1456,6 @@ class StackOpPattern : public pir::OpRewritePattern<paddle::dialect::StackOp> {
     return true;
   }
 };
-
-// Add ReduceCommonOpPattern base class to simplify code
-template <typename OpType>
-class ReduceCommonOpPattern : public pir::OpRewritePattern<OpType> {
- public:
-  using pir::OpRewritePattern<OpType>::OpRewritePattern;
-  bool MatchAndRewrite(OpType op,
-                       pir::PatternRewriter &rewriter) const override {
-    if (op->HasAttribute(kCanRunTrtAttr) &&
-        op->template attribute<pir::BoolAttribute>(kCanRunTrtAttr).data()) {
-      return false;
-    }
-
-    if (!op->HasAttribute("keepdim")) {
-      VLOG(3) << "the max does not have attr keep_dim ";
-      return false;
-    }
-
-    if (!op->HasAttribute("axis")) {
-      VLOG(3) << "The axis attribute does not exist";
-      return false;
-    }
-
-    pir::Value x = op.operand_source(0);
-    auto x_dtype = pir::GetDataTypeFromValue(x);
-    if constexpr (std::is_same_v<OpType, paddle::dialect::AnyOp>) {
-      if (!x_dtype.isa<pir::BoolType>()) {
-        VLOG(3) << "any op input data type must be bool";
-        return false;
-      }
-    } else if constexpr (std::is_same_v<OpType, paddle::dialect::AllOp>) {
-      if (!x_dtype.isa<pir::BoolType>()) {
-        VLOG(3) << "all op input data type must be bool";
-        return false;
-      }
-    } else {
-      if (!(x_dtype.isa<pir::Float32Type>() ||
-            x_dtype.isa<pir::Float64Type>() || x_dtype.isa<pir::Int32Type>() ||
-            x_dtype.isa<pir::Int64Type>())) {
-        if constexpr (std::is_same_v<OpType, paddle::dialect::MinOp>) {
-          VLOG(3) << "min input data type must be int32 or int64 or "
-                     "float32 or "
-                     "float64";
-        } else if constexpr (std::is_same_v<OpType, paddle::dialect::MaxOp>) {
-          VLOG(3) << "max input data type must be int32 or int64 or "
-                     "float32 or "
-                     "float64";
-        } else if constexpr (std::is_same_v<OpType, paddle::dialect::MeanOp>) {
-          VLOG(3) << "mean input data type must be int32 or int64 or "
-                     "float32 or "
-                     "float64";
-        }
-        return false;
-      }
-    }
-    op->set_attribute(kCanRunTrtAttr, rewriter.bool_attr(true));
-    return true;
-  }
-};
-
-// use type aliases to simplify usage
-using MinOpPattern = ReduceCommonOpPattern<paddle::dialect::MinOp>;
-using MaxOpPattern = ReduceCommonOpPattern<paddle::dialect::MaxOp>;
-using MeanOpPattern = ReduceCommonOpPattern<paddle::dialect::MeanOp>;
-using AnyOpPattern = ReduceCommonOpPattern<paddle::dialect::AnyOp>;
-using AllOpPattern = ReduceCommonOpPattern<paddle::dialect::AllOp>;
-using SumOpPattern = ReduceCommonOpPattern<paddle::dialect::SumOp>;
 
 class TanhOpPattern : public pir::OpRewritePattern<paddle::dialect::TanhOp> {
  public:
