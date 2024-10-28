@@ -2170,7 +2170,6 @@ class OpcodeExecutor(OpcodeExecutorBase):
         )
 
         for name in loop_body_inputs[:-1]:
-            # var_loader.load(self.get_var(name))
             self._graph.pycode_gen.gen_load(name)
 
         # this is the _break_flag

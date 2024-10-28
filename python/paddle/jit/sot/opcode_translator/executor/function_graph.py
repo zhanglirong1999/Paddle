@@ -68,7 +68,6 @@ from .side_effects import (
 )
 from .tracker import BuiltinTracker, DummyTracker, SymbolicOperationTracker
 from .variables import (
-    ConstantVariable,
     DictVariable,
     GlobalVariable,
     ListVariable,
@@ -741,36 +740,34 @@ class FunctionGraph:
                 FunctionGraph.get_opcode_executor_stack()
             ),
         )
-        if outputs is not None:
-            if is_inplace_api(func):
-                # if we want to use a non-inplace api (static api) to replace an inplace behavior (in simulation)
-                # just set it back in SIR, and return outputs to replace tensor meta (it might changes?)
-                # in this case, the output will not exactly be used
-                compute_fn(
-                    func,
-                    inputs_symbols,
-                    convert_to_symbol(args[0]),
-                    stmt_stacks,
-                )
-            else:
-                compute_fn(
-                    func,
-                    inputs_symbols,
-                    convert_to_symbol(outputs),
-                    stmt_stacks,
-                )  # symbolic only contain symbols.
-                self._put_inner(outputs)
-            if is_symbolic_var:
-                # compute_fn should be call_method
-                tracker = SymbolicOperationTracker(
-                    list(args) + list(kwargs.values()), func
-                )
-            else:
-                tracker = DummyTracker(list(args) + list(kwargs.values()))
 
-            return VariableFactory.from_value(outputs, self, tracker)
+        if is_inplace_api(func):
+            # if we want to use a non-inplace api (static api) to replace an inplace behavior (in simulation)
+            # just set it back in SIR, and return outputs to replace tensor meta (it might changes?)
+            # in this case, the output will not exactly be used
+            compute_fn(
+                func,
+                inputs_symbols,
+                convert_to_symbol(args[0]),
+                stmt_stacks,
+            )
         else:
-            return ConstantVariable.wrap_literal(None, self)
+            compute_fn(
+                func,
+                inputs_symbols,
+                convert_to_symbol(outputs),
+                stmt_stacks,
+            )  # symbolic only contain symbols.
+            self._put_inner(outputs)
+        if is_symbolic_var:
+            # compute_fn should be call_method
+            tracker = SymbolicOperationTracker(
+                list(args) + list(kwargs.values()), func
+            )
+        else:
+            tracker = DummyTracker(list(args) + list(kwargs.values()))
+
+        return VariableFactory.from_value(outputs, self, tracker)
 
     @staticmethod
     def get_opcode_executor_stack():
