@@ -48,7 +48,6 @@ test_parallel_dygraph_sparse_embedding_over_height,,ROCM,350,DIST,../../legacy_t
 test_distributed_strategy,LINUX;APPLE,,,,test_runner.py,2,,http_proxy=;https_proxy=;PYTHONPATH=../..,
 test_new_group,,GPU;XPU,,DIST,test_new_group.sh,2,,http_proxy=;https_proxy=,
 test_c_comm_init_op,LINUX,GPU;XPU,120,DIST,test_c_comm_init_op.sh,2,,http_proxy=;https_proxy=;FLAGS_enable_pir_api=0,
-test_ir_pass_pipeline,,,240,DIST,../../legacy_test/dist_test.sh,2,,http_proxy=;https_proxy=;PYTHONPATH=../..,
 test_parallel_dygraph_mnist,,GPU;ROCM,200,DIST,../../legacy_test/dist_test.sh,2,,NVIDIA_TF32_OVERRIDE=0;http_proxy=;https_proxy=;PYTHONPATH=../..,
 test_parallel_dygraph_se_resnext,,GPU;ROCM,200,DIST,../../legacy_test/dist_test.sh,2,,http_proxy=;https_proxy=;PYTHONPATH=../..,
 test_parallel_dygraph_sync_batch_norm,,GPU;ROCM,120,DIST,test_runner.py,2,,http_proxy=;https_proxy=;PYTHONPATH=../..,
@@ -68,4 +67,3 @@ test_hdfs3,LINUX,,200,EXCLUSIVE:NIGHTLY,../../legacy_test/dist_test.sh,2,,http_p
 test_fleet_checkpoint,LINUX,GPU;ROCM,200,EXCLUSIVE:NIGHTLY,test_runner.py,,,http_proxy=;https_proxy=;PYTHONPATH=../..,
 test_fleet_log,,,200,DIST,test_runner.py,,,http_proxy=;https_proxy=;PYTHONPATH=../..,
 test_dygraph_dist_save_load,LINUX,GPU,300,DIST,test_runner.py,,,http_proxy=;https_proxy=;PYTHONPATH=../..,
-test_dygraph_save_for_auto_infer,LINUX,GPU,300,DIST,test_runner.py,,,NVIDIA_TF32_OVERRIDE=0;FLAGS_new_executor_micro_batching=False;http_proxy=;https_proxy=;PYTHONPATH=../..,

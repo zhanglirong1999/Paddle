@@ -89,7 +89,6 @@ class TestPrim(unittest.TestCase):
         self.batch_num = 5
         self.clip_norm = 0.2
         self.dataset = FakeDataset(self.batch_size * self.batch_num)
-        os.environ['FLAGS_new_executor_micro_batching'] = 'True'
         paddle.set_flags({'FLAGS_embedding_deterministic': 1})
         paddle.set_flags({'FLAGS_cudnn_deterministic': 1})
 

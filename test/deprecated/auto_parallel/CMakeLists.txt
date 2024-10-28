@@ -109,19 +109,6 @@ if(WITH_DISTRIBUTE AND WITH_GPU)
                   test_amp_o2_pass_deprecated)
   set_tests_properties(test_amp_o2_pass_deprecated
                        PROPERTIES LABELS "RUN_TYPE=EXCLUSIVE" TIMEOUT 50)
-  py_test_modules(test_pass_generation_pipeline_deprecated MODULES
-                  test_pass_generation_pipeline_deprecated)
-  set_tests_properties(test_pass_generation_pipeline_deprecated
-                       PROPERTIES LABELS "RUN_TYPE=EXCLUSIVE" TIMEOUT 50)
-  set_tests_properties(
-    test_pass_generation_pipeline_deprecated
-    PROPERTIES ENVIRONMENT "FLAGS_new_executor_micro_batching=False")
-  py_test_modules(test_pass_1F1B_deprecated MODULES test_pass_1F1B_deprecated)
-  set_tests_properties(test_pass_1F1B_deprecated
-                       PROPERTIES LABELS "RUN_TYPE=EXCLUSIVE" TIMEOUT 50)
-  set_tests_properties(
-    test_pass_1F1B_deprecated
-    PROPERTIES ENVIRONMENT "FLAGS_new_executor_micro_batching=False")
   py_test_modules(test_pass_quantization_deprecated MODULES
                   test_pass_quantization_deprecated)
   set_tests_properties(test_pass_quantization_deprecated

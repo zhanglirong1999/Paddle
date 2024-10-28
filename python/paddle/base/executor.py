@@ -1938,35 +1938,6 @@ class Executor:
 
         fetch_list = self._check_fetch_list(fetch_list)
 
-        from paddle.distributed.auto_parallel.static.utils import (
-            use_new_executor,
-        )
-
-        if (
-            isinstance(program, Program)
-            and program._pipeline_opt
-            and not use_new_executor()
-        ):
-            if "fleet_opt" in program._pipeline_opt:
-                # Move prepare here for port conflict with nccl in startup program
-                if self._fleet_executor is None:
-                    self._fleet_executor = _prepare_fleet_executor()
-                return self._run_using_fleet_executor(
-                    program=program,
-                    feed=feed,
-                    fetch_list=fetch_list,
-                    with_standalone_executor=self._fleet_executor_with_standalone,
-                    return_numpy=return_numpy,
-                )
-            if "startup_program" in program._pipeline_opt:
-                program = program._pipeline_opt["startup_program"]
-            else:
-                return self._run_pipeline(
-                    program,
-                    fetch_list=fetch_list,
-                    use_program_cache=use_program_cache,
-                )
-
         if isinstance(program, Program) and program._heter_pipeline_opt:
             # print("program._heter_pipeline_opt: {}".format(
             #    program._heter_pipeline_opt))

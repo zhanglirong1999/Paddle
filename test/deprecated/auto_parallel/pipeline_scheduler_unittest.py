@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import random
 import unittest
 
@@ -86,44 +85,28 @@ class Test1F1BPass(unittest.TestCase):
         )
 
     def test_pp_pass(self):
-        # pp2 1f1b training with fleet executor
-        os.environ['FLAGS_new_executor_micro_batching'] = 'False'
-        engine_fleet_1f1b = self.get_engine(schedule_mode="1F1B")
-        history_fleet_1f1b = engine_fleet_1f1b.fit(
-            self.dataset, 3, batch_size=self.batch_size, log_freq=1
-        )
-        assert engine_fleet_1f1b._strategy.pipeline.schedule_mode == "1F1B"
-        assert os.environ.get('FLAGS_new_executor_micro_batching') == "False"
-
         # pp2 fthenb training with standalone executor
-        os.environ['FLAGS_new_executor_micro_batching'] = 'True'
         engine_fthenb = self.get_engine(schedule_mode="FThenB")
         history_fthenb = engine_fthenb.fit(
             self.dataset, 3, batch_size=self.batch_size, log_freq=1
         )
         assert engine_fthenb._strategy.pipeline.schedule_mode == "FThenB"
-        assert os.environ.get('FLAGS_new_executor_micro_batching') == "True"
 
         # pp2 1f1b training with standalone executor
-        os.environ['FLAGS_new_executor_micro_batching'] = 'True'
         engine_1f1b = self.get_engine(schedule_mode="1F1B")
         history_1f1b = engine_1f1b.fit(
             self.dataset, 3, batch_size=self.batch_size, log_freq=1
         )
         assert engine_1f1b._strategy.pipeline.schedule_mode == "1F1B"
-        assert os.environ.get('FLAGS_new_executor_micro_batching') == "True"
 
         # pp2 eager1f1b training with standalone executor
-        os.environ['FLAGS_new_executor_micro_batching'] = 'True'
         engine_eager1f1b = self.get_engine(schedule_mode="Eager1F1B")
         history_eager1f1b = engine_eager1f1b.fit(
             self.dataset, 3, batch_size=self.batch_size, log_freq=1
         )
         assert engine_eager1f1b._strategy.pipeline.schedule_mode == "Eager1F1B"
-        assert os.environ.get('FLAGS_new_executor_micro_batching') == "True"
 
         # pp2 1f1b training with standalone executor
-        os.environ['FLAGS_new_executor_micro_batching'] = 'True'
         engine_1f1b_overlap = self.get_engine(
             schedule_mode="1F1B", enable_send_recv_overlap=True
         )
@@ -135,11 +118,9 @@ class Test1F1BPass(unittest.TestCase):
             engine_1f1b_overlap._strategy.pipeline.enable_send_recv_overlap
             is True
         )
-        assert os.environ.get('FLAGS_new_executor_micro_batching') == "True"
 
         # NOTE: every sample data from dataset is all the same
         if paddle.distributed.get_rank() == 1:
-            losses_fleet_1f1b = np.array(history_fleet_1f1b.history["loss"])
             losses_fthenb = np.array(history_fthenb.history["loss"])
             losses_1f1b = np.array(history_1f1b.history["loss"])
             losses_eager1f1b = np.array(history_eager1f1b.history["loss"])
@@ -149,14 +130,6 @@ class Test1F1BPass(unittest.TestCase):
             assert losses_1f1b[0].shape[0] == 4
             assert losses_eager1f1b[0].shape[0] == 4
             assert losses_1f1b_overlap[0].shape[0] == 4
-            # losses_fleet_1f1b is the last loss of accumulate_steps
-            # losses_fthenb is all the losses of accumulate_steps
-            # losses_1f1b is all the losses of accumulate_steps
-            self.check_results(losses_fleet_1f1b[0], losses_fthenb[0][-1])
-            self.check_results(losses_fleet_1f1b[0], losses_1f1b[0][-1])
-            self.check_results(losses_fleet_1f1b[0], losses_eager1f1b[0][-1])
-            # self.check_results(losses_fleet_1f1b[0], losses_1f1b_overlap[0][-1])
-            self.check_results(losses_fleet_1f1b[0], losses_1f1b_overlap[0][-1])
 
 
 if __name__ == "__main__":

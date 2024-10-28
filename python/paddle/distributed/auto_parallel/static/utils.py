@@ -2287,20 +2287,6 @@ def _dygraph_guard_(func):
 dygraph_guard = wrap_decorator(_dygraph_guard_)
 
 
-def use_new_executor():
-    new_executor_micro_batching = os.environ.get(
-        'FLAGS_new_executor_micro_batching', None
-    )
-    return new_executor_micro_batching in [
-        None,
-        1,
-        '1',
-        True,
-        'True',
-        'true',
-    ]
-
-
 def is_sequential_run():
     return bool(
         paddle.get_flags("FLAGS_new_executor_sequential_run")[
