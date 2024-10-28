@@ -64,7 +64,13 @@ class ProxyLayer(Layer):
 
         # Consider ProxyLayer as not Paddle inner function because it contains
         # user-defined layer.
-        for fn_name in ["_train", "_eval", "_predict"]:
+        for fn_name in [
+            "_train",
+            "_eval",
+            "_predict",
+            "call_loss",
+            "call_metrics",
+        ]:
             as_not_paddle_func(
                 f"{inspect.getmodule(ProxyLayer).__name__}.ProxyLayer.{fn_name}"
             )
