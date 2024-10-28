@@ -32,7 +32,7 @@ install_paddle(){
 install_external_ops(){
     echo -e "\033[31m ---- Install extern_ops  \033"
     export PYTHONPATH=/workspace/PaddleNLP:$PYTHONPATH
-    cd /workspace/PaddleNLP/legacy/model_zoo/gpt-3/external_ops
+    cd /workspace/PaddleNLP/slm/model_zoo/gpt-3/external_ops
     python setup.py install
     python -c "import fused_ln;";
 }
