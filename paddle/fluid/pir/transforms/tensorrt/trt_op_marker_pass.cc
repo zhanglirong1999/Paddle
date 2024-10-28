@@ -1482,6 +1482,56 @@ class TanhOpPattern : public pir::OpRewritePattern<paddle::dialect::TanhOp> {
   }
 };
 
+class FullWithTensorPattern
+    : public pir::OpRewritePattern<paddle::dialect::FullWithTensorOp> {
+ public:
+  using pir::OpRewritePattern<
+      paddle::dialect::FullWithTensorOp>::OpRewritePattern;
+  bool MatchAndRewrite(paddle::dialect::FullWithTensorOp op,
+                       pir::PatternRewriter &rewriter) const override {
+    if (op->HasAttribute(kCanRunTrtAttr) &&
+        op.attribute<pir::BoolAttribute>(kCanRunTrtAttr).data()) {
+      return false;
+    }
+    pir::Value value = op.operand_source(0);
+    if (value == nullptr) {
+      VLOG(3) << "pd_op.full_with_tensor value is null";
+      return false;
+    }
+#if IS_TRT_VERSION_LT(8500)
+    if (pir::GetDefiningOpForInput(op, 1)
+            ->isa<paddle::dialect::FullIntArrayOp>()) {
+      paddle::dialect::FullIntArrayOp full_int_array =
+          pir::GetDefiningOpForInput(op, 1)
+              ->dyn_cast<paddle::dialect::FullIntArrayOp>();
+      auto shape_attr = full_int_array->attribute<pir::ArrayAttribute>("value");
+      if (shape_attr.size() == 1) {
+        VLOG(3) << "pd_op.full_with_tensor shape is not support when TensorRT "
+                   "< 8.5.0";
+        return false;
+      }
+    } else {
+      pir::Value shape = op.operand_source(1);
+      if (shape != nullptr) {
+        VLOG(3) << "pd_op.full_with_tensor shape is not support when TensorRT "
+                   "< 8.5.0";
+        return false;
+      }
+    }
+#endif
+    auto dtype =
+        op->attribute<paddle::dialect::DataTypeAttribute>("dtype").data();
+    if (dtype != phi::DataType::INT32 && dtype != phi::DataType::INT64 &&
+        dtype != phi::DataType::FLOAT32) {
+      VLOG(3) << "pd_op.full_with_tensor only support int32, int64, float32";
+      return false;
+    }
+
+    op->set_attribute(kCanRunTrtAttr, rewriter.bool_attr(true));
+    return true;
+  }
+};
+
 class TrtOpMarkerPass : public pir::PatternRewritePass {
  public:
   TrtOpMarkerPass() : pir::PatternRewritePass("trt_op_marker_pass", 2) {}
@@ -1568,6 +1618,7 @@ class TrtOpMarkerPass : public pir::PatternRewritePass {
     ps.Add(std::make_unique<NearestInterV2Pattern>(context));
     ps.Add(std::make_unique<StackOpPattern>(context));
     ps.Add(std::make_unique<TanhOpPattern>(context));
+    ps.Add(std::make_unique<FullWithTensorPattern>(context));
     return ps;
   }
 };

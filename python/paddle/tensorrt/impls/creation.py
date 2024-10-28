@@ -96,3 +96,91 @@ def arange_converter(network, paddle_op, inputs):
     fill_layer.set_input(2, step)
 
     return fill_layer.get_output(0)
+
+
+@converter_registry.register("pd_op.full_with_tensor", trt_version="8.x")
+def full_with_tensor_converter(network, paddle_op, inputs):
+    value_input = inputs[0]
+
+    shape_tensor = None
+    dtype = paddle_op.attrs()["dtype"]
+
+    operands = paddle_op.operands()
+    num_operands = len(operands)
+
+    if num_operands >= 2:
+        shape_tensor = inputs[1]
+        if isinstance(shape_tensor, list):
+            shape_tensor_list = shape_tensor
+        else:
+            shape_tensor_list = [shape_tensor]
+
+    shape_op = paddle_op.operands()[1].source().get_defining_op()
+    if shape_op.name() == "pd_op.full_int_array":
+        shape_tensor = shape_op.attrs()["value"]
+        is_static_shape = True
+    else:
+        shape_tensor = inputs[1]
+        is_static_shape = False
+
+    shape_nbDims = 0
+    tensor_rank = 0
+    if isinstance(shape_tensor, trt.ITensor):
+        shape_x = shape_tensor.shape
+        shape_nbDims = len(shape_x)
+        shapes_tensor = shape_tensor
+    elif isinstance(shape_tensor, (list, tuple)):
+        shape_nbDims = len(shape_tensor)
+        shapes_tensor = shape_tensor
+    else:
+        raise TypeError(f"Unsupported shape_tensor type: {type(shape_tensor)}")
+
+    if shape_tensor is not None and len(shape_tensor_list) == 1:
+        is_dynamic_shape = True
+    elif len(shape_tensor_list) >= 1:
+        is_dynamic_shape = True
+    else:
+        is_dynamic_shape = False
+
+    if is_dynamic_shape:
+        if len(shape_tensor_list) == 1:
+            shape_tensor = shape_tensor_list[0]
+            if not isinstance(shape_tensor, trt.ITensor):
+                raise TypeError("shape_tensor must be an ITensor")
+            if len(shape_tensor.shape) != 1:
+                raise ValueError("The rank of shape_tensor must be 1")
+            tensor_rank = shape_tensor.shape[0]
+            shapes_tensor = shape_tensor
+        else:
+            shape_tensors = []
+            for tensor in shape_tensor_list:
+                if len(tensor.shape) == 0:
+                    tensor = trt_reshape(network, tensor, (1,))
+                shape_tensors.append(tensor)
+
+            concat_layer = network.add_concatenation(shape_tensors)
+            shapes_tensor = concat_layer.get_output(0)
+            tensor_rank = len(shape_tensors)
+
+        fill_layer = network.add_fill(shape=(), op=trt.FillOperation.LINSPACE)
+        fill_layer.set_input(0, shapes_tensor)
+
+    if dtype == paddle.int32 or dtype == paddle.int64:
+        beta_vec = [0] * tensor_rank
+        value_input = trt_reduce_to_scalar(network, value_input)
+        fill_layer.set_input(1, value_input)
+        fill_layer.set_input(
+            2, add_1D_constant_layer(network, beta_vec, np.int32)
+        )
+    elif dtype == paddle.float32:
+        beta_vec = [0.0] * tensor_rank
+        value_input = trt_reduce_to_scalar(network, value_input)
+        fill_layer.set_input(1, value_input)
+        fill_layer.set_input(
+            2, add_1D_constant_layer(network, beta_vec, np.float32)
+        )
+    else:
+        raise ValueError(f"Unsupported dtype for full_with_tensor: {dtype}")
+
+    output_tensor = fill_layer.get_output(0)
+    return output_tensor

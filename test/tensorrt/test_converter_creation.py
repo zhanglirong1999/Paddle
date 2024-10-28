@@ -91,5 +91,37 @@ class TestAssignOutTRTPattern(TensorRTBaseTest):
         self.check_trt_result()
 
 
+class TestFullWithTensorTRTPattern(TensorRTBaseTest):
+    def setUp(self):
+        self.python_api = paddle.tensor.fill_constant
+        self.api_args = {
+            "shape": np.array([1]).astype("int32"),
+            "dtype": "float32",
+            "value": np.array([0.0]).astype("float32"),
+        }
+        self.program_config = {"feed_list": ["value", "shape"]}
+        self.min_shape = {}
+        self.max_shape = {}
+
+    def test_trt_result(self):
+        self.check_trt_result()
+
+
+class TestFullWithTensorCase1TRTPattern(TensorRTBaseTest):
+    def setUp(self):
+        self.python_api = paddle.tensor.fill_constant
+        self.api_args = {
+            "shape": [1, 1],
+            "dtype": np.float32,
+            "value": np.array([1.0]).astype("float32"),
+        }
+        self.program_config = {"feed_list": ["value"]}
+        self.min_shape = {}
+        self.max_shape = {}
+
+    def test_trt_result(self):
+        self.check_trt_result()
+
+
 if __name__ == "__main__":
     unittest.main()
