@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import copy
+import itertools
 import unittest
 
 import numpy as np
@@ -1590,13 +1591,13 @@ class TestEagerTensorTo(unittest.TestCase):
         self.np_x = np.random.random((3, 8, 8))
         self.x = paddle.to_tensor(self.np_x, dtype="float32")
 
-    def func_test_to_api(self):
+    def func_test_private_to_api(self):
         x_double = self.x._to(dtype="double")
         self.assertEqual(x_double.dtype, paddle.float64)
         np.testing.assert_allclose(self.np_x, x_double, rtol=1e-05)
 
         x_ = self.x._to()
-        self.assertEqual(self.x.dtype, paddle.float64)
+        self.assertEqual(self.x.dtype, paddle.float32)
         np.testing.assert_allclose(self.np_x, x_, rtol=1e-05)
 
         if paddle.base.is_compiled_with_cuda():
@@ -1635,9 +1636,62 @@ class TestEagerTensorTo(unittest.TestCase):
         self.assertRaises(ValueError, self.x._to, device=1)
         self.assertRaises(AssertionError, self.x._to, blocking=1)
 
+    def func_test_public_to_api(self):
+        # test for Tensor.to
+        dtypes = [
+            paddle.int32,
+            paddle.int64,
+            paddle.float32,
+            paddle.float64,
+            paddle.complex64,
+        ]
+        places = [paddle.CPUPlace()]
+        if paddle.base.is_compiled_with_cuda():
+            places.append(paddle.CUDAPlace(0))
+
+        for src_place, src_dtype in itertools.product(places, dtypes):
+            src = paddle.to_tensor(
+                [1.0, 2.0, 3.0], dtype=src_dtype, place=src_place
+            )
+            self.assertEqual(src.dtype, src_dtype)
+            self.assertEqual(str(src.place), str(src_place))
+            src_data_ptr = src.data_ptr()
+
+            for dst_place, dst_dtype in itertools.product(places, dtypes):
+                dst = src.to(dtype=dst_dtype, device=dst_place)
+                # test for non-inplace operation
+                self.assertEqual(src_data_ptr, src.data_ptr())
+
+                # test for correctness of Tensor.to
+                self.assertEqual(dst.dtype, dst_dtype)
+                self.assertEqual(str(dst.place), str(dst_place))
+                dst_data_ptr = dst.data_ptr()
+
+                if src_place == dst_place and src_dtype == dst_dtype:
+                    # just return self
+                    self.assertEqual(src_data_ptr, dst_data_ptr)
+                    self.assertEqual(src.dtype, dst.dtype)
+                    self.assertEqual(str(src.place), str(dst.place))
+                elif src_place != dst_place and src_dtype == dst_dtype:
+                    # creating new tensor from src
+                    self.assertNotEqual(src_data_ptr, dst_data_ptr)
+                    self.assertEqual(src.dtype, dst.dtype)
+                    self.assertNotEqual(str(src.place), str(dst.place))
+                elif src_place == dst_place and src_dtype != dst_dtype:
+                    # creating new tensor from src
+                    self.assertNotEqual(src_data_ptr, dst_data_ptr)
+                    self.assertNotEqual(src.dtype, dst.dtype)
+                    self.assertEqual(str(src.place), str(dst.place))
+                else:
+                    # creating new tensor from src
+                    self.assertNotEqual(src_data_ptr, dst_data_ptr)
+                    self.assertNotEqual(src.dtype, dst.dtype)
+                    self.assertNotEqual(str(src.place), str(dst.place))
+
     def test_to_api(self):
         self.func_setUp()
-        self.func_test_to_api()
+        self.func_test_private_to_api()
+        self.func_test_public_to_api()
 
 
 class TestEagerTensorInitEagerTensorFromTensorWithDevice(unittest.TestCase):

@@ -627,7 +627,7 @@ def monkey_patch_tensor():
                 )
                 gpu_memory_available = core.gpu_memory_available()
                 if gpu_memory_available < waiting_alloc_memory:
-                    # Copy Tensor to cpu
+                    # Copy Tensor to cpu if needed
                     t_used = t._copy_to(paddle.CPUPlace(), blocking)
                     # Release memory of t
                     t._clear()
@@ -637,7 +637,7 @@ def monkey_patch_tensor():
             else:
                 t_used = t
 
-            # 2. cast Tensor to dtype
+            # 2. cast Tensor to dtype if needed
             if dtype is not None and dtype != t_used.dtype:
                 with paddle.base.framework._dygraph_place_guard(
                     place=t_used.place
@@ -646,18 +646,13 @@ def monkey_patch_tensor():
             else:
                 t_casted = t_used
 
-            # 3. Copy casted Tensor(in CPU or GPU) to device
+            # 3. Copy casted Tensor(in CPU or GPU) to device if needed
             if device is not None and not t_casted.place._equals(device):
                 new_t = t_casted._copy_to(device, blocking)
             else:
                 new_t = t_casted
 
-            # 4. Share Tensor to origin Tensor
-            dst_tensor = t.value().get_tensor()
-            src_tensor = new_t.value().get_tensor()
-            dst_tensor._share_data_with(src_tensor)
-
-            return t
+            return new_t
 
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=UserWarning)
@@ -691,6 +686,11 @@ def monkey_patch_tensor():
             1. to(dtype, blocking=True)
             2. to(device, dtype=None, blocking=True)
             3. to(other, blocking=True)
+
+        **Notes**:
+            **If the self Tensor already has the correct dtype and device,
+            then self is returned. Otherwise, the returned tensor is a copy of self with
+            the desired dtype and device.**
 
         Returns:
             Tensor: self
