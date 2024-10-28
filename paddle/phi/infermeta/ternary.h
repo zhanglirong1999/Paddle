@@ -166,15 +166,11 @@ void FasterTokenizerInferMeta(const MetaTensor& vocab,
 void GlobalGatherInferMeta(const MetaTensor& x,
                            const MetaTensor& local_count,
                            const MetaTensor& global_count,
-                           int ring_id,
-                           bool use_calc_stream,
                            MetaTensor* out);
 
 void GlobalScatterInferMeta(const MetaTensor& x,
                             const MetaTensor& local_count,
                             const MetaTensor& global_count,
-                            int ring_id,
-                            bool use_calc_stream,
                             MetaTensor* out);
 
 void AddGroupNormSiluInferMeta(const MetaTensor& x,

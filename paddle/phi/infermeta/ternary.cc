@@ -761,15 +761,7 @@ void FasterTokenizerInferMeta(const MetaTensor& vocab,
 void GlobalGatherInferMeta(const MetaTensor& x,
                            const MetaTensor& local_count,
                            const MetaTensor& global_count,
-                           int ring_id,
-                           bool use_calc_stream,
                            MetaTensor* out) {
-  PADDLE_ENFORCE_GE(
-      ring_id,
-      0,
-      common::errors::InvalidArgument(
-          "The ring_id (%d) for global gather op must be non-negative.",
-          ring_id));
   auto input_dims = x.dims();
   auto ndim_input = input_dims.size();
   // dim check
@@ -787,15 +779,7 @@ void GlobalGatherInferMeta(const MetaTensor& x,
 void GlobalScatterInferMeta(const MetaTensor& x,
                             const MetaTensor& local_count,
                             const MetaTensor& global_count,
-                            int ring_id,
-                            bool use_calc_stream,
                             MetaTensor* out) {
-  PADDLE_ENFORCE_GE(
-      ring_id,
-      0,
-      common::errors::InvalidArgument(
-          "The ring_id (%d) for global scatter op must be non-negative.",
-          ring_id));
   auto input_dims = x.dims();
   auto ndim_input = input_dims.size();
   // dim check

@@ -311,6 +311,22 @@
           comment : If true, im_shape pixel offset is 1.
           default : "true"
 
+- op : global_gather
+  version :
+    - checkpoint : Upgrade global_gather delete 1 attribute[use_calc_stream].
+      action :
+        - delete_attr : use_calc_stream
+          comment : eject CUDA operations to calculation stream.
+          default : false
+
+- op : global_scatter
+  version :
+    - checkpoint : Upgrade global_scatter delete 1 attribute[use_calc_stream].
+      action :
+        - delete_attr : use_calc_stream
+          comment : eject CUDA operations to calculation stream.
+          default : false
+
 - op : greater_equal
   version :
     - checkpoint : Upgrade compare ops, add a new attribute [force_cpu]

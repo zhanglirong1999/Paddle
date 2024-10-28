@@ -2380,6 +2380,30 @@
   interfaces : paddle::dialect::InferSymbolicShapeInterface
   traits : paddle::dialect::ForwardOnlyTrait
 
+- op : global_gather
+  args : (Tensor x, Tensor local_count, Tensor global_count, int ring_id = 0)
+  output : Tensor(out)
+  infer_meta:
+    func : GlobalGatherInferMeta
+    param: [x, local_count, global_count]
+  kernel :
+    func : global_gather
+    data_type: x
+    param: [x, local_count, global_count]
+  backward : global_gather_grad
+
+- op : global_scatter
+  args : (Tensor x, Tensor local_count, Tensor global_count, int ring_id = 0)
+  output : Tensor(out)
+  infer_meta :
+    func : GlobalScatterInferMeta
+    param: [x, local_count, global_count]
+  kernel :
+    func : global_scatter
+    data_type : x
+    param: [x, local_count, global_count]
+  backward : global_scatter_grad
+
 - op : graph_khop_sampler
   args : (Tensor row, Tensor colptr, Tensor x, Tensor eids, int[] sample_sizes, bool return_eids)
   output : Tensor(out_src), Tensor(out_dst), Tensor(sample_index), Tensor(reindex_x), Tensor(out_eids)
