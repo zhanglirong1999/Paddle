@@ -160,5 +160,55 @@ Expr FoldExpr(FuncOp func_op, const std::vector<Expr> &values) {
   return init_value;
 }
 
+inline bool IsIterExpr(const Expr &a, const Expr &b) {
+  return a.As<ir::IterSplit>() || a.As<ir::IterSum>() ||
+         b.As<ir::IterSplit>() || b.As<ir::IterSum>();
+}
+
+inline bool IsOne(const Expr &expr) {
+  if (expr.is_constant() && expr.get_constant() == 1) {
+    return true;
+  }
+  return false;
+}
+inline bool IsZero(const Expr &expr) {
+  if (expr.is_constant() && expr.get_constant() == 0) {
+    return true;
+  }
+  return false;
+}
+
+template <typename TNode, typename FLeaf>
+inline void UnpackReduction(const ir::IndexExpr &value, FLeaf fleaf) {
+  if (const TNode *node = value.As<TNode>()) {
+    UnpackReduction<TNode, FLeaf>(node->a(), fleaf);
+    UnpackReduction<TNode, FLeaf>(node->b(), fleaf);
+  } else {
+    fleaf(value);
+  }
+}
+
+// TODO(liuruyan): canby simplify into IndexExpr multiply.
+ir::IndexExpr MulAndNormalize(const ir::IndexExpr &lhs,
+                              const ir::IndexExpr &rhs);
+
+int32_t CalculateExprComplexity(const Expr &expr, int count = 0);
+
+// True means don't change sequence
+bool IsCorrectPriority(const Expr &lhs, const Expr &rhs);
+
+bool IsSumPartialBySymbol(const ir::IndexExpr &expr,
+                          const ir::IndexExpr &symbol);
+
+// If true is returned, the operation will be attempted on each subpart in
+// outter `simplify` function. Note: this func dont deal the corner case, e.g.
+// `IsDivisiblieBySymbol(f % S0  - f, S0)` is `false`. please use
+// `ProveDivisible` for exact result.
+bool IsDivisiblieBySymbol(const ir::IndexExpr &expr,
+                          const ir::IndexExpr &symbol,
+                          const ir::IrNodeTy &ty);
+
+bool ProveDivisible(const ir::IndexExpr &lhs, const ir::IndexExpr &rhs);
+
 }  // namespace common
 }  // namespace cinn

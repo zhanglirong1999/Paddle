@@ -157,7 +157,7 @@ TEST_F(TestIterSimplify, sub) {
   ir::Expr e2 = i + j - k + 5;
   ir::Expr e3 = i - i;
   ir::Expr e4 = Expr(7) - Expr(5);
-  TEST_EXPR(e1, gt1, i + (j * -1));
+  TEST_EXPR(e1, gt1, (j * -1) + i);
   TEST_EXPR(e2, gt2, i + j + (k * -1) + 5);
   TEST_EXPR(e3, gt3, Expr(0));
   TEST_EXPR(e4, gt4, Expr(2));

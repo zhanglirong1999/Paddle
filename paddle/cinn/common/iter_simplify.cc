@@ -14,15 +14,15 @@
 
 #include "paddle/cinn/common/iter_simplify.h"
 #include "paddle/cinn/common/const_fold.h"
-#include "paddle/cinn/common/integer_set.h"
+#include "paddle/cinn/common/ir_util.h"
 #include "paddle/cinn/ir/ir_mutator.h"
-#include "paddle/cinn/ir/ir_utils.h"
 #include "paddle/cinn/ir/ir_visitor.h"
 #include "paddle/cinn/ir/op/ir_operators.h"
 #include "paddle/cinn/ir/utils/ir_compare.h"
 #include "paddle/cinn/ir/utils/ir_copy.h"
 #include "paddle/common/enforce.h"
 #include "paddle/common/errors.h"
+
 namespace cinn {
 namespace common {
 
@@ -62,11 +62,11 @@ ir::IndexExpr IterMapToExprNormalizer::ConvertIterSplit(ir::IterSplit* expr) {
     Visit(&(mark->source), &(mark->source));
     source = mark->source;
   }
-  if (ProveEQ(expr->extent, mark->extent, analyzer_) &&
+  if (analyzer_.ProveEQ(expr->extent, mark->extent).value_or(false) &&
       IsOne(expr->lower_factor)) {
     return source * expr->scale;
-  } else if (ProveLE(
-                 mark->extent, expr->lower_factor * expr->extent, analyzer_)) {
+  } else if (analyzer_.ProveLE(mark->extent, expr->lower_factor * expr->extent)
+                 .value_or(false)) {
     if (IsOne(expr->extent)) {
       return ir::Zero(expr->extent.type());
     }
@@ -267,18 +267,17 @@ ir::IndexExpr IterMapRewriter::SplitDivConst(ir::IndexExpr lhs_expr,
 
   auto lhs = lhs_expr.As<ir::IterSplit>();
   if (!IsOne(lhs->scale)) {
-    if (ProveDivisible(lhs->scale, rhs, analyzer_) && IsZero(base)) {
+    if (ProveDivisible(lhs->scale, rhs) && IsZero(base)) {
       lhs->scale = lhs->scale / rhs;
       return lhs;
-    } else if (ProveDivisible(lhs->scale, rhs, analyzer_) &&
-               ProveDivisible(base, rhs, analyzer_)) {
+    } else if (ProveDivisible(lhs->scale, rhs) && ProveDivisible(base, rhs)) {
       lhs->scale = lhs->scale / rhs;
       return ir::IterSum::Make({lhs}, base / rhs);
-    } else if (ProveDivisible(rhs, lhs->scale, analyzer_) && IsZero(base)) {
+    } else if (ProveDivisible(rhs, lhs->scale) && IsZero(base)) {
       rhs = rhs / lhs->scale;
       lhs->scale = ir::One(rhs.type());
-    } else if (ProveDivisible(rhs, lhs->scale, analyzer_) &&
-               ProveDivisible(base, lhs->scale, analyzer_)) {
+    } else if (ProveDivisible(rhs, lhs->scale) &&
+               ProveDivisible(base, lhs->scale)) {
       base = base / lhs->scale;
       rhs = rhs / lhs->scale;
       lhs->scale = ir::One(rhs.type());
@@ -293,7 +292,7 @@ ir::IndexExpr IterMapRewriter::SplitDivConst(ir::IndexExpr lhs_expr,
   // divided by divisor now.
 
   ir::IndexExpr new_split;
-  if (!ProveDivisible(base, rhs, analyzer_)) {
+  if (!ProveDivisible(base, rhs)) {
     // padding base to divisor later. Treat the whole expr as IterMark now.
     return ir::IterSum::Make(
         {ir::IterSplit::Make(
@@ -305,13 +304,13 @@ ir::IndexExpr IterMapRewriter::SplitDivConst(ir::IndexExpr lhs_expr,
         ir::Zero(rhs.type()));
   }
 
-  if (ProveDivisible(lhs->extent, rhs, analyzer_)) {
+  if (ProveDivisible(lhs->extent, rhs)) {
     new_split = ir::IterSplit::Make(
         lhs->source, lhs->lower_factor * rhs, lhs->extent / rhs, lhs->scale);
   } else if (IsOne(lhs->lower_factor) &&
-             ProveEQ(lhs->extent,
-                     lhs->source.As<ir::IterMark>()->extent,
-                     analyzer_)) {
+             analyzer_
+                 .ProveEQ(lhs->extent, lhs->source.As<ir::IterMark>()->extent)
+                 .value_or(false)) {
     new_split = ir::IterSplit::Make(
         lhs->source, rhs, (lhs->extent + rhs - 1) / rhs, lhs->scale);
   } else {
@@ -334,15 +333,14 @@ ir::IndexExpr IterMapRewriter::SplitModConst(ir::IndexExpr lhs_expr,
 
   auto lhs = lhs_expr.As<ir::IterSplit>();
   if (!IsOne(lhs->scale)) {
-    if (ProveDivisible(lhs->scale, rhs, analyzer_) && IsZero(base)) {
+    if (ProveDivisible(lhs->scale, rhs) && IsZero(base)) {
       return ir::Zero(lhs_expr.type());
-    } else if (ProveDivisible(lhs->scale, rhs, analyzer_) &&
-               ProveDivisible(base, rhs, analyzer_)) {
+    } else if (ProveDivisible(lhs->scale, rhs) && ProveDivisible(base, rhs)) {
       return ir::Zero(lhs_expr.type());
-    } else if (ProveDivisible(rhs, lhs->scale, analyzer_) && IsZero(base)) {
+    } else if (ProveDivisible(rhs, lhs->scale) && IsZero(base)) {
       rhs = rhs / lhs->scale;
-    } else if (ProveDivisible(rhs, lhs->scale, analyzer_) &&
-               ProveDivisible(base, lhs->scale, analyzer_)) {
+    } else if (ProveDivisible(rhs, lhs->scale) &&
+               ProveDivisible(base, lhs->scale)) {
       base = base / lhs->scale;
       rhs = rhs / lhs->scale;
     } else {
@@ -352,7 +350,7 @@ ir::IndexExpr IterMapRewriter::SplitModConst(ir::IndexExpr lhs_expr,
     }
   }
 
-  if (!ProveDivisible(base, rhs, analyzer_)) {
+  if (!ProveDivisible(base, rhs)) {
     auto lhs_s1 = ir::IterSplit::Make(
         lhs->source, lhs->lower_factor, lhs->extent, ir::One(lhs_expr.type()));
     // padding base to divisor later. Treat the whole expr as IterMark now.
@@ -394,7 +392,7 @@ int32_t IterMapRewriter::FindSplitWithExactScale(
     auto split = expr.args[j].As<ir::IterSplit>();
     if (match_source.defined() && match_source != split->source) continue;
     const ir::IndexExpr& cur_scale = split->scale;
-    if (ProveEQ(cur_scale, expected_scale, analyzer_)) {
+    if (analyzer_.ProveEQ(cur_scale, expected_scale).value_or(false)) {
       if (IsOne(split->extent)) return j;
       // We prefer the unit extent Iter. just search when extent != 1.
       if (matched_pos == -1) {
@@ -599,7 +597,9 @@ std::optional<ir::IndexExpr> IterMapRewriter::TryFuseSameSource(
       auto lhs_iter = iter_sum->args[matched_index].As<ir::IterSplit>();
       ir::IndexExpr lhs_lower_factor =
           MulAndNormalize(rhs_iter->lower_factor, rhs_iter->extent);
-      if (!ProveEQ(lhs_iter->lower_factor, lhs_lower_factor, analyzer_)) break;
+      if (!analyzer_.ProveEQ(lhs_iter->lower_factor, lhs_lower_factor)
+               .value_or(false))
+        break;
       visited[matched_index] = true;
 
       rhs_iter->extent = MulAndNormalize(lhs_iter->extent, rhs_iter->extent);

@@ -1023,12 +1023,18 @@ struct IndexExpr : public Expr {
   explicit IndexExpr(int32_t x) : Expr(x) {}
   explicit IndexExpr(int64_t x) : Expr(x) {}
 
+  int64_t GetLargestMutiplyPart() const;
+
   IndexExpr& operator=(const IndexExpr& other);
+
+  IndexExpr Normalize() const;
+
+  IndexExpr operator-() const;
 
 #define DEFINE_OPERATOR(op)               \
   IndexExpr operator op(int64_t v) const; \
   IndexExpr operator op(int32_t v) const; \
-  IndexExpr operator op(IndexExpr other) const;
+  IndexExpr operator op(const IndexExpr& other) const;
 
   DEFINE_OPERATOR(+)
   DEFINE_OPERATOR(-)

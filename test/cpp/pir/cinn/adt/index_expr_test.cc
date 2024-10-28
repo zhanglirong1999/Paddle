@@ -14,6 +14,7 @@
 
 #include <glog/logging.h>
 #include <gtest/gtest.h>
+#include "paddle/cinn/common/integer_set.h"
 #include "paddle/cinn/ir/ir.h"
 #include "paddle/cinn/ir/ir_base.h"
 #include "paddle/cinn/ir/ir_mutator.h"
@@ -41,6 +42,41 @@ TEST(IndexExpr, IndexExpr_0) {
   EXPECT_EQ(c4, Expr(0));
   EXPECT_EQ(c5, Expr(2));
   EXPECT_EQ(c6, Expr(2));
+}
+
+TEST(IndexExpr, IndexExpr_1) {
+  auto S4 = ir::Var(ir::IndexExpr(1), ir::IndexExpr(INT32_MAX), "S4");
+  auto S5 = ir::Var(ir::IndexExpr(1), ir::IndexExpr(INT32_MAX), "S5");
+  auto S6 = ir::Var(ir::IndexExpr(1), ir::IndexExpr(INT32_MAX), "S6");
+  auto S7 = ir::Var(ir::IndexExpr(1), ir::IndexExpr(INT32_MAX), "S7");
+
+  cas_intervals_t divisible_var_intervals = {
+      {"S4", CasInterval(S4->lower_bound, S4->upper_bound)},
+      {"S5", CasInterval(S5->lower_bound, S5->upper_bound)},
+      {"S6", CasInterval(S6->lower_bound, S6->upper_bound)},
+      {"S7", CasInterval(S7->lower_bound, S7->upper_bound)}};
+  SymbolicExprAnalyzer divisible_analyzer{divisible_var_intervals};
+
+  ir::IndexExpr e1 = (S5 * ((S4 * (S5 * (S6 * S7))) / S5));
+  ir::IndexExpr e2 = (S4 * (S5 * (S6 * S7))) / S5;
+
+  ir::IndexExpr e3 = (S4 * S5) / S5;
+
+  ir::IndexExpr e4 = (S4 * (S5 * (S6 * S7)) + S5) / S5;
+  ir::IndexExpr e5 = (S4 * (S5 * (S6 * S7)) + 2 * S5) / S5;
+
+  ir::IndexExpr e6 = (S4 * (S5 * (S6 * S7)) + S5 / S6) / S5;
+  ir::IndexExpr e7 = (S4 * (S5 * (S6 * S7)) + 2 * S5 / S6) / S5;
+
+  EXPECT_EQ(e1.as_index().Normalize(), ir::IndexExpr((S6 * S7) * S4 * S5));
+  EXPECT_EQ(e2.as_index().Normalize(), ir::IndexExpr((S6 * S7) * S4));
+  EXPECT_EQ(e3.as_index().Normalize(), ir::IndexExpr(S4));
+  EXPECT_EQ(e4.as_index().Normalize(), ir::IndexExpr(((S6 * S7) * S4) + 1));
+  EXPECT_EQ(e5.as_index().Normalize(), ir::IndexExpr(((S6 * S7) * S4) + 2));
+  EXPECT_EQ(e6.as_index().Normalize(),
+            ir::IndexExpr(((S6 * S7) * S4) + (1 / S6)));
+  EXPECT_EQ(e7.as_index().Normalize(),
+            ir::IndexExpr(((S6 * S7) * S4) + (2 / S6)));
 }
 }  // namespace common
 }  // namespace cinn

@@ -21,6 +21,7 @@
 #include "paddle/cinn/ir/ir_mutator.h"
 #include "paddle/cinn/ir/ir_printer.h"
 #include "paddle/cinn/ir/op/ir_operators.h"
+#include "paddle/cinn/ir/utils/ir_compare.h"
 #include "paddle/common/enforce.h"
 namespace cinn {
 namespace common {
@@ -501,5 +502,140 @@ Expr min(Expr a, Expr b) {
   return ir::Min::Make(a, b);
 }
 
+int32_t CalculateExprComplexity(const Expr &expr, int count) {
+  switch (expr.node_type()) {
+    case ir::IrNodeTy::_Var_:
+    case ir::IrNodeTy::IntImm:
+      return count + 1;
+    case ir::IrNodeTy::Add:
+    case ir::IrNodeTy::Mul:
+    case ir::IrNodeTy::Div:
+    case ir::IrNodeTy::Mod: {
+      int lhs_count = CalculateExprComplexity(expr->operand(0), count);
+      int rhs_count = CalculateExprComplexity(expr->operand(1), count);
+      return lhs_count + rhs_count + 1;
+    }
+  }
+}
+
+bool IsCorrectPriority(const Expr &lhs, const Expr &rhs) {
+  if (lhs.node_type() == ir::IrNodeTy::IntImm &&
+      rhs.node_type() != ir::IrNodeTy::IntImm)
+    return false;
+  if (rhs.node_type() == ir::IrNodeTy::IntImm &&
+      lhs.node_type() != ir::IrNodeTy::IntImm)
+    return true;
+  if (auto lhsVar = lhs.As<ir::_Var_>())
+    if (auto rhsVar = rhs.As<ir::_Var_>())
+      return std::make_tuple(lhsVar->name.length(), lhsVar->name) <=
+             std::make_tuple(rhsVar->name.length(), rhsVar->name);
+  auto lhsComplexity = CalculateExprComplexity(lhs);
+  auto rhsComplexity = CalculateExprComplexity(rhs);
+  if (lhsComplexity < rhsComplexity) return false;
+  // Mul < Div < Mod.
+  else if (lhsComplexity == rhsComplexity)
+    return lhs.node_type() <= rhs.node_type();
+  else
+    return true;
+}
+
+ir::IndexExpr MulAndNormalize(const ir::IndexExpr &lhs,
+                              const ir::IndexExpr &rhs) {
+  int64_t cscale = 1;
+  ir::IndexExpr res = ir::One(lhs.type());
+  auto fcollect = [&](ir::IndexExpr val) {
+    if (const auto *intimm = val.As<ir::IntImm>()) {
+      cscale *= intimm->value;
+    } else {
+      res = res * val;
+    }
+  };
+  UnpackReduction<ir::Mul>(lhs, fcollect);
+  UnpackReduction<ir::Mul>(rhs, fcollect);
+  if (cscale != 1) {
+    res = res * ir::IndexExpr(make_shared<ir::IntImm>(res.type(), cscale));
+  }
+  return res;
+}
+
+bool IsSumPartialBySymbol(const ir::IndexExpr &expr,
+                          const ir::IndexExpr &symbol) {
+  // TODO(liujinnan): Check Ty
+  switch (expr.node_type()) {
+    case ir::IrNodeTy::IntImm: {
+      return false;
+    }
+    case ir::IrNodeTy::_Var_:
+      return expr == symbol;
+    case ir::IrNodeTy::Add:
+      [[fallthrough]];
+    case ir::IrNodeTy::Sub:
+      return IsSumPartialBySymbol(expr->operand(0).as_index(), symbol) ||
+             IsSumPartialBySymbol(expr->operand(1).as_index(), symbol);
+    case ir::IrNodeTy::Mul:
+      return expr->operand(0).as_index() == symbol ||
+             expr->operand(0).as_index() == symbol;
+    case ir::IrNodeTy::Div: {
+      return IsSumPartialBySymbol(expr->operand(0).as_index(), symbol);
+    }
+    case ir::IrNodeTy::Mod:
+      return false;
+  }
+}
+
+bool IsDivisiblieBySymbol(const ir::IndexExpr &expr,
+                          const ir::IndexExpr &symbol,
+                          const ir::IrNodeTy &ty) {
+  // TODO(liujinnan): Check Ty
+  switch (expr.node_type()) {
+    case ir::IrNodeTy::IntImm: {
+      auto imm = expr.As<ir::IntImm>();
+      return imm->value == 0;
+    }
+    case ir::IrNodeTy::_Var_:
+      return expr == symbol;
+    case ir::IrNodeTy::Add:
+      return IsDivisiblieBySymbol(expr->operand(0).as_index(), symbol, ty) &&
+             IsDivisiblieBySymbol(expr->operand(1).as_index(), symbol, ty);
+    case ir::IrNodeTy::Mul:
+      return IsDivisiblieBySymbol(expr->operand(0).as_index(), symbol, ty) ||
+             IsDivisiblieBySymbol(expr->operand(1).as_index(), symbol, ty);
+    case ir::IrNodeTy::Mod:
+      return IsDivisiblieBySymbol(
+                 expr->operand(0).as_index(), symbol, expr.node_type()) &&
+             IsDivisiblieBySymbol(
+                 expr->operand(1).as_index(), symbol, expr.node_type());
+    case ir::IrNodeTy::Div: {
+      if (ty != expr.node_type()) return false;
+      return IsDivisiblieBySymbol(
+          expr->operand(0).as_index(), symbol, expr.node_type());
+    }
+  }
+}
+
+bool ProveDivisible(const ir::IndexExpr &lhs, const ir::IndexExpr &rhs) {
+  // TODO(liujinnan): corner case, it will upgrade to a more general solution
+  // `expr.Match(xxxx)` later
+  if (auto lhs_sub = lhs.As<ir::Sub>()) {
+    auto llhs = lhs_sub->a();
+    auto lrhs = lhs_sub->b();
+    if (auto llhs_mod = llhs.As<ir::Mod>()) {
+      return (ProveDivisible(llhs_mod->b(), rhs) && llhs_mod->a() == lrhs);
+    }
+    if (auto lrhs_mod = lrhs.As<ir::Mod>()) {
+      return (ProveDivisible(lrhs_mod->b(), rhs) && lrhs_mod->a() == llhs);
+    }
+  }
+
+  if (auto rhs_imm = rhs.As<ir::IntImm>()) {
+    if (lhs.as_index().GetLargestMutiplyPart() % rhs_imm->value == 0)
+      return true;
+    return IsZero(AutoSimplify(lhs % rhs));
+  } else if (rhs.is_var()) {
+    return IsDivisiblieBySymbol(lhs, rhs, ir::IrNodeTy::Div);
+  } else {
+    return false;
+  }
+}
 }  // namespace common
 }  // namespace cinn
