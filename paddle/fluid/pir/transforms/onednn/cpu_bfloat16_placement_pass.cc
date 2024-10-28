@@ -33,6 +33,20 @@
 #include "paddle/pir/include/core/operation.h"
 
 namespace {
+
+bool CheckIfknownShape(pir::Operation* op, size_t index) {
+  bool is_from_tensor = false;
+  std::vector<int64_t> shape = paddle::dialect::ParseValueShape(
+      op->operand_source(index), &is_from_tensor);
+  size_t num_minus = 0;
+  for (auto i : shape) {
+    if (i == -1) num_minus++;
+  }
+  // If all dims are -1, then the shape is actually unknown.
+  if (num_minus == shape.size()) return false;
+  return true;
+}
+
 class OneDNNBf16PlacementPattern : public pir::RewritePattern {
  public:
   explicit OneDNNBf16PlacementPattern(pir::IrContext* context)
@@ -141,17 +155,16 @@ class OneDNNBf16PlacementPattern : public pir::RewritePattern {
       }
     }
 
-    // Workaround for reshape when shape is unknown
+    // Workaround for reshape & slice when shape is unknown
+    // TODO(Xinyi): Since we can't distinguish when IntArray is produced by
+    // Combine, currently we fix it in a specific way. In future, we may think
+    // out a more generalized method
     if (op_name == "onednn_op.reshape_" || op_name == "onednn_op.reshape") {
-      bool is_from_tensor = false;
-      std::vector<int64_t> shape = paddle::dialect::ParseValueShape(
-          op->operand_source(1), &is_from_tensor);
-      int num_minus = 0;
-      for (auto i : shape) {
-        if (i == -1) num_minus++;
-      }
-      if (num_minus > 1 || (num_minus == 1 && shape.size() == 1)) return false;
+      return CheckIfknownShape(op, 1);
+    } else if (op_name == "onednn_op.slice") {
+      return CheckIfknownShape(op, 1) && CheckIfknownShape(op, 2);
     }
+
     return true;
   }
 
