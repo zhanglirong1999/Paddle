@@ -739,10 +739,11 @@
   output : Tensor (out)
   infer_meta :
     func : ElementwiseRawInferMeta
+    param: [x, y]
   kernel :
     func : remainder
   inplace : (x -> out)
-  traits : paddle::dialect::ForwardOnlyTrait
+  backward: remainder_grad
 
 - op : rnn
   args: (Tensor x, Tensor[] pre_state, Tensor[] weight_list, Tensor sequence_length, float dropout_prob=0.0, bool is_bidirec=false, int input_size=10, int hidden_size=100, int num_layers=1, str mode="RNN_TANH", int seed=0, bool is_test=false)

@@ -3514,7 +3514,6 @@
     data_type : x
   traits : paddle::dialect::ForwardOnlyTrait
   interfaces : paddle::dialect::InferSymbolicShapeInterface
-  traits : paddle::dialect::ForwardOnlyTrait
 
 - op : multiplex
   args : (Tensor[] inputs, Tensor index)

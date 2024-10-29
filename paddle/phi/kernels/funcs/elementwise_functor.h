@@ -591,6 +591,96 @@ struct RemainderFunctor<dtype::bfloat16> {
   }
 };
 
+// RemainderGradXFunctor
+template <typename T>
+struct RemainderGradXFunctor {
+  inline HOSTDEVICE T operator()(const T x, const T y, const T dout) const {
+    // dx = dout
+    return dout;
+  }
+};
+
+// RemainderGradYFunctor
+template <typename T, typename Enable = void>
+struct RemainderGradYFunctor {
+  inline HOSTDEVICE T operator()(const T x, const T y, const T dout) const {
+    // dy = -dout * (floor_div(x, y))
+    return -dout * static_cast<T>((std::floor(x / y)));
+  }
+};
+template <typename T>
+struct RemainderGradYFunctor<
+    T,
+    typename std::enable_if<std::is_floating_point<T>::value>::type> {
+  inline HOSTDEVICE T operator()(const T x, const T y, const T dout) const {
+    using MPType = typename phi::dtype::MPTypeTrait<T>::Type;
+    // dy = -dout * (floor_div(x, y))
+    auto x_ = static_cast<MPType>(x);
+    auto y_ = static_cast<MPType>(y);
+    return static_cast<T>(-static_cast<MPType>(dout) * (std::floor((x_ / y_))));
+  }
+};
+template <typename T>
+struct RemainderGradYFunctor<
+    T,
+    typename std::enable_if<std::is_integral<T>::value>::type> {
+  inline HOSTDEVICE T operator()(const T x, const T y, const T dout) const {
+    // dy = -dout * (floor_div(x, y))
+    return -dout * (x / y);
+  }
+};
+
+// RemainderGradXYFunctor
+template <typename InT, typename OutT, typename Enable = void>
+struct RemainderGradXYFunctor {
+  inline HOSTDEVICE phi::Array<OutT, 2> operator()(const InT x,
+                                                   const InT y,
+                                                   const InT dout) {
+    phi::Array<OutT, 2> outs;
+    // dx = dout
+    outs[0] = static_cast<OutT>(dout);
+    // dy = -dout * (floor_div(x, y))
+    outs[1] = static_cast<OutT>(dout * static_cast<InT>(std::floor(x / y)));
+    return outs;
+  }
+};
+template <typename InT, typename OutT>
+struct RemainderGradXYFunctor<
+    InT,
+    OutT,
+    typename std::enable_if<std::is_floating_point<InT>::value>::type> {
+  inline HOSTDEVICE Array<OutT, 2> operator()(const InT x,
+                                              const InT y,
+                                              const InT dout) {
+    Array<OutT, 2> outs;
+    // dx = dout
+    outs[0] = static_cast<OutT>(dout);
+    // dy = -dout * (x / y)
+    using MPType = typename phi::dtype::MPTypeTrait<InT>::Type;
+    auto x_ = static_cast<MPType>(x);
+    auto y_ = static_cast<MPType>(y);
+    outs[1] =
+        static_cast<OutT>(static_cast<MPType>(-dout) * std::floor(x_ / y_));
+    return outs;
+  }
+};
+template <typename InT, typename OutT>
+struct RemainderGradXYFunctor<
+    InT,
+    OutT,
+    typename std::enable_if<std::is_integral<InT>::value>::type> {
+  inline HOSTDEVICE Array<OutT, 2> operator()(const InT x,
+                                              const InT y,
+                                              const InT dout) {
+    Array<OutT, 2> outs;
+    // dx = dout
+    outs[0] = static_cast<OutT>(dout);
+    // dy = -dout * (x / y)
+    outs[1] = static_cast<OutT>(-dout * (x / y));
+    return outs;
+  }
+};
+
 template <typename T, typename Enable = void>
 struct InverseRemainderFunctor {
   inline HOSTDEVICE T operator()(const T a, const T b) const {

@@ -779,13 +779,14 @@
   output : Tensor (out)
   infer_meta :
     func : ElementwiseInferMeta
+    param: [x, y]
   kernel :
     func : remainder
   data_transform :
     support_trans_dtype : x, y
   inplace : (x -> out)
   interfaces : paddle::dialect::InferSymbolicShapeInterface
-  traits : paddle::dialect::ForwardOnlyTrait
+  backward: remainder_grad
 
 - op : row_conv
   args : (Tensor x, Tensor filter)

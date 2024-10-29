@@ -295,10 +295,11 @@
   output : Tensor (out)
   infer_meta :
     func : ElementwiseInferMeta
+    param: [x, y]
   kernel :
     func : remainder
   inplace : (x -> out)
-  traits : paddle::dialect::ForwardOnlyTrait
+  backward: remainder_grad
 
 - op : set_value
   args : (Tensor x, IntArray starts, IntArray ends, IntArray steps, int64_t[] axes, int64_t[] decrease_axes, int64_t[] none_axes, int64_t[] shape, Scalar[] values)
