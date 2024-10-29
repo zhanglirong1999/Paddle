@@ -499,10 +499,16 @@ def allclose(
         return _C_ops.allclose(x, y, rtol, atol, equal_nan)
     elif in_pir_mode():
         check_variable_and_dtype(
-            x, "input", ['float16', 'float32', 'float64'], 'allclose'
+            x,
+            "input",
+            ['bool', 'int32', 'int64', 'float16', 'float32', 'float64'],
+            'allclose',
         )
         check_variable_and_dtype(
-            y, "input", ['float16', 'float32', 'float64'], 'allclose'
+            y,
+            "input",
+            ['bool', 'int32', 'int64', 'float16', 'float32', 'float64'],
+            'allclose',
         )
         if not isinstance(rtol, (float, paddle.pir.Value)):
             raise TypeError(
@@ -516,10 +522,16 @@ def allclose(
         return _C_ops.allclose(x, y, rtol, atol, equal_nan)
     else:
         check_variable_and_dtype(
-            x, "input", ['float16', 'float32', 'float64'], 'allclose'
+            x,
+            "input",
+            ['bool', 'int32', 'int64', 'float16', 'float32', 'float64'],
+            'allclose',
         )
         check_variable_and_dtype(
-            y, "input", ['float16', 'float32', 'float64'], 'allclose'
+            y,
+            "input",
+            ['bool', 'int32', 'int64', 'float16', 'float32', 'float64'],
+            'allclose',
         )
         check_type(rtol, 'rtol', float, 'allclose')
         check_type(atol, 'atol', float, 'allclose')
