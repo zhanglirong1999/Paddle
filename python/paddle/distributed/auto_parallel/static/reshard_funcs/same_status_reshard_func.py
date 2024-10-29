@@ -55,8 +55,46 @@ class SameStatusReshardFunction(ReshardFunction):
         for src, dst in zip(src_mesh.process_ids, dst_mesh.process_ids):
             if src == cur_global_rank:
                 chunk_id = -1
-                if src_value.get_defining_op().dist_attr:
-                    chunk_id = src_value.get_defining_op().dist_attr.chunk_id
+                if (
+                    src_value.get_defining_op().name() == "pd_op.add_n"
+                    and src_value.get_defining_op()
+                    .operand_source(0)
+                    .get_defining_op()
+                    .name()
+                    == "builtin.combine"
+                ):
+                    add_n_op = src_value.get_defining_op()
+                    combine_op = add_n_op.operand_source(0).get_defining_op()
+                    combine_op_chunk_id_list = []
+                    for input in combine_op.operands():
+                        if input.source().get_defining_op().dist_attr:
+                            combine_op_chunk_id_list.append(
+                                input.source()
+                                .get_defining_op()
+                                .dist_attr.chunk_id
+                            )
+                        else:
+                            combine_op_chunk_id_list.append(-1)
+                    # check combine_op operands chunk_id equal
+                    assert all(
+                        x == combine_op_chunk_id_list[0]
+                        for x in combine_op_chunk_id_list
+                    ), "combine_op's operands has different chunk_id."
+                    chunk_id = combine_op_chunk_id_list[0]
+                    # reset add_n chunk_id
+                    add_n_op.dist_attr = (
+                        paddle.base.libpaddle.pir.create_op_dist_attribute(
+                            add_n_op.dist_attr.process_mesh,
+                            add_n_op.dist_attr.operands(),
+                            add_n_op.dist_attr.results(),
+                            chunk_id,
+                        )
+                    )
+                else:
+                    if src_value.get_defining_op().dist_attr:
+                        chunk_id = (
+                            src_value.get_defining_op().dist_attr.chunk_id
+                        )
 
                 comm_group = new_process_group([src, dst], group_type="p2p")
                 paddle._C_ops.send_v2(
