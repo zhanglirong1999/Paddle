@@ -21,7 +21,7 @@ if(WITH_XPU)
          phi
          common
          var_helper)
-elseif((WITH_GPU OR WITH_ROCM) AND NOT WIN32)
+elseif(WITH_NCCL OR WITH_RCCL)
   cc_library(
     prepared_operator
     SRCS prepared_operator.cc
