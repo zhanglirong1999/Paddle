@@ -21,6 +21,7 @@ from paddle.tensorrt.converter_utils import (
     build_size_tensor,
     build_start_tensor,
     cast_tensor,
+    fix_negative_indices,
     get_axes_for_reduce_op,
     get_positive_dim,
     get_shape_tensor_element,
@@ -701,3 +702,91 @@ def stack_converter(network, paddle_op, inputs):
     output_tensor = concat_layer.get_output(0)
 
     return output_tensor
+
+
+@converter_registry.register("pd_op.strided_slice", trt_version="8.x")
+def strided_slice_converter(network, paddle_op, inputs):
+    input_tensor = inputs[0]
+    axes = paddle_op.attrs()["axes"]
+
+    starts_op = paddle_op.operands()[1].source().get_defining_op()
+    ends_op = paddle_op.operands()[2].source().get_defining_op()
+    strides_op = paddle_op.operands()[3].source().get_defining_op()
+
+    starts = (
+        starts_op.attrs()["value"]
+        if starts_op.name() == "pd_op.full_int_array"
+        else inputs[1]
+    )
+    ends = (
+        ends_op.attrs()["value"]
+        if ends_op.name() == "pd_op.full_int_array"
+        else inputs[2]
+    )
+    strides = (
+        strides_op.attrs()["value"]
+        if strides_op.name() == "pd_op.full_int_array"
+        else inputs[3]
+    )
+
+    input_shape = paddle_op.operands()[0].source().shape
+    nchw_input_dims = len(input_shape)
+
+    trt_start_dims = [0] * nchw_input_dims
+    trt_size_dims = [input_shape[i] for i in range(nchw_input_dims)]
+    trt_end_dims = [0] * nchw_input_dims
+    trt_step_dims = [1] * nchw_input_dims
+
+    has_neg_indices = False
+    for i, axis in enumerate(axes):
+        trt_start_dims[axis] = starts[i]
+        trt_end_dims[axis] = ends[i]
+        trt_step_dims[axis] = strides[i]
+        trt_size_dims[axis] = max(
+            0, (ends[i] - starts[i] + strides[i] - 1) // strides[i]
+        )
+        if starts[i] < 0 or ends[i] < 0:
+            has_neg_indices = True
+
+    shape_tensor = network.add_shape(input_tensor).get_output(0)
+    start_tensor = add_1D_constant_layer(network, trt_start_dims)
+
+    if has_neg_indices:
+        start_tensor = fix_negative_indices(network, shape_tensor, start_tensor)
+
+    end_vec_tensor = []
+    for i in range(len(trt_end_dims)):
+        end_vec_tensor.append(
+            get_shape_tensor_element(network, shape_tensor, i)
+        )
+
+    for i, axis in enumerate(axes):
+        if ends[i] >= 0:
+            end_vec_tensor[axis] = network.add_constant(
+                (1,), np.array([ends[i]], dtype=np.int32)
+            ).get_output(0)
+        else:
+            adjusted_end = network.add_constant(
+                (1,), np.array([ends[i]], dtype=np.int32)
+            ).get_output(0)
+            end_vec_tensor[axis] = trt_sum(
+                network, end_vec_tensor[axis], adjusted_end
+            )
+
+    concat_end_tensor = network.add_concatenation(end_vec_tensor).get_output(0)
+    min_tensor = trt_min(network, concat_end_tensor, shape_tensor)
+    size_tensor = trt_sub(network, start_tensor, min_tensor)
+
+    zero_t = add_1D_constant_layer(network, [0] * nchw_input_dims)
+    step_tensor = add_1D_constant_layer(network, trt_step_dims)
+    floor_div_tensor = trt_floor_div(network, size_tensor, step_tensor)
+    size_tensor = trt_sub(network, zero_t, floor_div_tensor)
+
+    layer = network.add_slice(
+        input_tensor, trt_start_dims, trt_size_dims, trt_step_dims
+    )
+    layer.set_input(1, start_tensor)
+    layer.set_input(2, size_tensor)
+    layer.set_input(3, step_tensor)
+
+    return layer.get_output(0)

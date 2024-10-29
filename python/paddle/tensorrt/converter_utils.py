@@ -502,3 +502,15 @@ def add_cast_reduce_layer(network, paddle_op, inputs, op_type):
     layer.set_output_type(0, trt.bool)
     layer.get_output(0).dtype = cast_layer.get_output(0).dtype
     return layer.get_output(0)
+
+
+def fix_negative_indices(network, input_shape, indices):
+    rank = len(input_shape.shape)
+    zero_tensor = add_1D_constant_layer(network, [0] * rank)
+    minus_one_tensor = add_1D_constant_layer(network, [-1] * rank)
+
+    min_indices_zero = trt_min(network, indices, zero_tensor)
+    sign = trt_max(network, min_indices_zero, minus_one_tensor)
+    sub = trt_mul(network, sign, input_shape)
+    fixed_indices = trt_sub(network, indices, sub)
+    return fixed_indices
