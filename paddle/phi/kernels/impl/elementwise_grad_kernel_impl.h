@@ -1438,8 +1438,16 @@ struct RemainderGradDy<
     typename std::enable_if<std::is_integral<T>::value>::type> {
   HOSTDEVICE T operator()(T x, T y, T out UNUSED, T dout) const {
     // dy = -dout * (x / y)
-    return -dout * static_cast<T>(std::floor(static_cast<double>(x) /
-                                             static_cast<double>(y)));
+    if (phi::is_negative(x) != phi::is_negative(y)) {
+      // Subtracts one from the results of truncation division if the
+      // divisor and dividend have different sign(bit)s and the remainder of
+      // the division is nonzero
+      const auto quot = x / y;
+      const auto rem = x % y;
+      auto ret = rem ? quot - 1 : quot;
+      return -dout * ret;
+    }
+    return -dout * (x / y);
   }
 };
 /*

@@ -626,7 +626,16 @@ struct RemainderGradYFunctor<
     typename std::enable_if<std::is_integral<T>::value>::type> {
   inline HOSTDEVICE T operator()(const T x, const T y, const T dout) const {
     // dy = -dout * (floor_div(x, y))
-    return -dout * (x / y);
+    if (phi::is_negative(x) != phi::is_negative(y)) {
+      // Subtracts one from the results of truncation division if the
+      // divisor and dividend have different sign(bit)s and the remainder of
+      // the division is nonzero
+      const auto quot = x / y;
+      const auto rem = x % y;
+      auto ret = rem ? quot - 1 : quot;
+      return -dout * static_cast<T>(ret);
+    }
+    return -dout * static_cast<T>(x / y);
   }
 };
 
@@ -676,7 +685,16 @@ struct RemainderGradXYFunctor<
     // dx = dout
     outs[0] = static_cast<OutT>(dout);
     // dy = -dout * (x / y)
-    outs[1] = static_cast<OutT>(-dout * (x / y));
+    if (phi::is_negative(x) != phi::is_negative(y)) {
+      // Subtracts one from the results of truncation division if the
+      // divisor and dividend have different sign(bit)s and the remainder of
+      // the division is nonzero
+      const auto quot = x / y;
+      const auto rem = x % y;
+      auto ret = rem ? quot - 1 : quot;
+      outs[1] = -static_cast<OutT>(dout) * static_cast<OutT>(ret);
+    }
+    outs[1] = -static_cast<OutT>(dout) * static_cast<OutT>(x / y);
     return outs;
   }
 };

@@ -298,10 +298,10 @@ class TestElementwiseDygraph(unittest.TestCase):
                     x_shape = [2, 1, 4, 1]
                     y_shape = [1, 3, 1, 5]
                     # x_shape = y_shape
-                    x_np = np.random.uniform(0, 1000, x_shape).astype(dtype)
+                    x_np = np.random.uniform(-1000, 1000, x_shape).astype(dtype)
                     # make sure all element in y is non-zero
                     x_np[x_np == 0] = -1
-                    y_np = np.random.uniform(0, 1000, y_shape).astype(dtype)
+                    y_np = np.random.uniform(-1000, 1000, y_shape).astype(dtype)
                     # make sure all element in y is non-zero
                     y_np[np.isclose(y_np, 0)] = -1
                     z_np = np.remainder(x_np, y_np)
