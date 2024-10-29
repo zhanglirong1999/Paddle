@@ -502,23 +502,7 @@ Expr min(Expr a, Expr b) {
   return ir::Min::Make(a, b);
 }
 
-int32_t CalculateExprComplexity(const Expr &expr, int count) {
-  switch (expr.node_type()) {
-    case ir::IrNodeTy::_Var_:
-    case ir::IrNodeTy::IntImm:
-      return count + 1;
-    case ir::IrNodeTy::Add:
-    case ir::IrNodeTy::Mul:
-    case ir::IrNodeTy::Div:
-    case ir::IrNodeTy::Mod: {
-      int lhs_count = CalculateExprComplexity(expr->operand(0), count);
-      int rhs_count = CalculateExprComplexity(expr->operand(1), count);
-      return lhs_count + rhs_count + 1;
-    }
-  }
-}
-
-bool IsCorrectPriority(const Expr &lhs, const Expr &rhs) {
+bool ComparePriority(const ir::IndexExpr &lhs, const ir::IndexExpr &rhs) {
   if (lhs.node_type() == ir::IrNodeTy::IntImm &&
       rhs.node_type() != ir::IrNodeTy::IntImm)
     return false;
@@ -529,33 +513,14 @@ bool IsCorrectPriority(const Expr &lhs, const Expr &rhs) {
     if (auto rhsVar = rhs.As<ir::_Var_>())
       return std::make_tuple(lhsVar->name.length(), lhsVar->name) <=
              std::make_tuple(rhsVar->name.length(), rhsVar->name);
-  auto lhsComplexity = CalculateExprComplexity(lhs);
-  auto rhsComplexity = CalculateExprComplexity(rhs);
-  if (lhsComplexity < rhsComplexity) return false;
-  // Mul < Div < Mod.
-  else if (lhsComplexity == rhsComplexity)
+  auto lhsLen = lhs.length();
+  auto rhsLen = rhs.length();
+  if (lhsLen < rhsLen) return false;
+  // Add < Mul < Div < Mod.
+  else if (lhsLen == rhsLen)
     return lhs.node_type() <= rhs.node_type();
   else
     return true;
-}
-
-ir::IndexExpr MulAndNormalize(const ir::IndexExpr &lhs,
-                              const ir::IndexExpr &rhs) {
-  int64_t cscale = 1;
-  ir::IndexExpr res = ir::One(lhs.type());
-  auto fcollect = [&](ir::IndexExpr val) {
-    if (const auto *intimm = val.As<ir::IntImm>()) {
-      cscale *= intimm->value;
-    } else {
-      res = res * val;
-    }
-  };
-  UnpackReduction<ir::Mul>(lhs, fcollect);
-  UnpackReduction<ir::Mul>(rhs, fcollect);
-  if (cscale != 1) {
-    res = res * ir::IndexExpr(make_shared<ir::IntImm>(res.type(), cscale));
-  }
-  return res;
 }
 
 bool IsSumPartialBySymbol(const ir::IndexExpr &expr,
@@ -568,8 +533,6 @@ bool IsSumPartialBySymbol(const ir::IndexExpr &expr,
     case ir::IrNodeTy::_Var_:
       return expr == symbol;
     case ir::IrNodeTy::Add:
-      [[fallthrough]];
-    case ir::IrNodeTy::Sub:
       return IsSumPartialBySymbol(expr->operand(0).as_index(), symbol) ||
              IsSumPartialBySymbol(expr->operand(1).as_index(), symbol);
     case ir::IrNodeTy::Mul:
@@ -601,6 +564,8 @@ bool IsDivisiblieBySymbol(const ir::IndexExpr &expr,
       return IsDivisiblieBySymbol(expr->operand(0).as_index(), symbol, ty) ||
              IsDivisiblieBySymbol(expr->operand(1).as_index(), symbol, ty);
     case ir::IrNodeTy::Mod:
+      // Because S0 % 3 + S0 % 5 is not divisiblie by S0, so we push
+      // `expr.node_type()` into third parameter.
       return IsDivisiblieBySymbol(
                  expr->operand(0).as_index(), symbol, expr.node_type()) &&
              IsDivisiblieBySymbol(

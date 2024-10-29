@@ -1025,9 +1025,15 @@ struct IndexExpr : public Expr {
 
   int64_t GetLargestMutiplyPart() const;
 
-  IndexExpr& operator=(const IndexExpr& other);
-
   IndexExpr Normalize() const;
+
+  // count the `IndeExpr` length, each node has weight 1, e.g.
+  // S0,          length = 1
+  // S0 + S1,     length = 3
+  // S0 + S1 * 2, length = 5
+  int32_t length(int32_t count = 0) const;
+
+  IndexExpr& operator=(const IndexExpr& other);
 
   IndexExpr operator-() const;
 

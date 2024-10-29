@@ -511,8 +511,8 @@ std::optional<ir::IndexExpr> IterMapRewriter::TryFuse(
     grouped_iters.push_back(arg_copy);
 
     // Update expected_scale = matched_split->scale * matched_split->extent
-    expected_scale = MulAndNormalize(
-        iter_sum->args[matched_pos].As<ir::IterSplit>()->extent, matched_scale);
+    expected_scale =
+        iter_sum->args[matched_pos].As<ir::IterSplit>()->extent * matched_scale;
   }
   std::reverse(grouped_iters.begin(), grouped_iters.end());
   ir::IndexExpr grouped_sum =
@@ -585,8 +585,7 @@ std::optional<ir::IndexExpr> IterMapRewriter::TryFuseSameSource(
     // 2. lhs->scale == rhs->extent * rhs->scale.
     // 3. lhs->lower_factor == rhs->lower_factor * rhs->extent.
     while (true) {
-      ir::IndexExpr lhs_scale =
-          MulAndNormalize(rhs_iter->extent, rhs_iter->scale);
+      ir::IndexExpr lhs_scale = rhs_iter->extent * rhs_iter->scale;
       matched_index = FindSplitWithExactScale(*iter_sum,
                                               visited,
                                               lhs_scale,
@@ -596,13 +595,13 @@ std::optional<ir::IndexExpr> IterMapRewriter::TryFuseSameSource(
       if (matched_index == -1) break;
       auto lhs_iter = iter_sum->args[matched_index].As<ir::IterSplit>();
       ir::IndexExpr lhs_lower_factor =
-          MulAndNormalize(rhs_iter->lower_factor, rhs_iter->extent);
+          rhs_iter->lower_factor * rhs_iter->extent;
       if (!analyzer_.ProveEQ(lhs_iter->lower_factor, lhs_lower_factor)
                .value_or(false))
         break;
       visited[matched_index] = true;
 
-      rhs_iter->extent = MulAndNormalize(lhs_iter->extent, rhs_iter->extent);
+      rhs_iter->extent = lhs_iter->extent * rhs_iter->extent;
     }
     reverse_flattened_iters.push_back(split_copy);
   }

@@ -1561,6 +1561,26 @@ int64_t IndexExpr::GetLargestMutiplyPart() const {
       ::common::errors::Unimplemented("Unsupported type of expr: %s", type()));
 }
 
+int32_t IndexExpr::length(int32_t count) const {
+  switch (node_type()) {
+    case ir::IrNodeTy::_Var_:
+      [[fallthrough]];
+    case ir::IrNodeTy::IntImm:
+      return count + 1;
+    case ir::IrNodeTy::Add:
+      [[fallthrough]];
+    case ir::IrNodeTy::Mul:
+      [[fallthrough]];
+    case ir::IrNodeTy::Div:
+      [[fallthrough]];
+    case ir::IrNodeTy::Mod: {
+      int lhs_count = ptr()->operand(0).as_index().length(count);
+      int rhs_count = ptr()->operand(1).as_index().length(count);
+      return lhs_count + rhs_count + 1;
+    }
+  }
+}
+
 IndexExpr ConstructIndexExprByNodeType(const IrNodeTy &ty,
                                        const IndexExpr &lhs,
                                        const IndexExpr &rhs) {
@@ -1682,10 +1702,9 @@ IndexExpr Simplify(const IndexExpr &expr) {
     case ir::IrNodeTy::Div:
       [[fallthrough]];
     case ir::IrNodeTy::Mod: {
-      auto a1 = Simplify(expr->operand(0).as_index());
-      auto a2 = Simplify(expr->operand(1).as_index());
-
-      return ConstructIndexExprByNodeType(expr.node_type(), a1, a2);
+      auto lhs = Simplify(expr->operand(0).as_index());
+      auto rhs = Simplify(expr->operand(1).as_index());
+      return ConstructIndexExprByNodeType(expr.node_type(), lhs, rhs);
     }
   }
 }
@@ -1698,13 +1717,13 @@ static IndexExpr SimplifyAdd(const IndexExpr &lhs, const IndexExpr &rhs) {
     return constRes.value().as_index();
   // 3 + d0 ===> d0 + 3.
   // d0 + (d1 + d2) ===> (d1 + d2) + d0.
-  if (!IsCorrectPriority(lhs, rhs)) {
+  if (!ComparePriority(lhs, rhs)) {
     return rhs + lhs;
   }
 
   // (d0 + d1) + (d2 + d3) ===> ((d0 + d1) + d2) + d3.
   if (auto rhsAdd = rhs.As<Add>()) {
-    return lhs * rhsAdd->a().as_index() * rhsAdd->b().as_index();
+    return lhs + rhsAdd->a().as_index() + rhsAdd->b().as_index();
   }
 
   // (d0 + 2) + 3 ===> d0 + 5.
@@ -1769,7 +1788,7 @@ static IndexExpr SimplifyMul(const IndexExpr &lhs, const IndexExpr &rhs) {
 
   // 3 * d0 ===> d0 * 3.
   // d0 * (d1 + d2) ===> (d1 + d2) * d0.
-  if (!IsCorrectPriority(lhs, rhs)) {
+  if (!ComparePriority(lhs, rhs)) {
     return rhs * lhs;
   }
 
