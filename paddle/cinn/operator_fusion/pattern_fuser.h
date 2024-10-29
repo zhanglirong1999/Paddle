@@ -371,9 +371,6 @@ static bool IsLoopFrameworkEqual(const StmtPattern& lhs,
   const auto& rhs_loops = GetLoopFramework(rhs);
   VLOG(4) << "lhs " << lhs_loops.DebugStr();
   VLOG(4) << "rhs " << rhs_loops.DebugStr();
-  const auto& squeezed_lhs_loops = SqueezeLoopFramework(lhs_loops);
-  const auto& squeezed_rhs_loops = SqueezeLoopFramework(rhs_loops);
-  bool loop_equal = squeezed_lhs_loops.loop == squeezed_rhs_loops.loop;
 
   // TODO(huangjiyi): support horizontal fusion without reduce dims euqal.
   auto has_reduce_dim = [](const MaybeLoopFramework& loops) -> bool {
@@ -381,10 +378,14 @@ static bool IsLoopFrameworkEqual(const StmtPattern& lhs,
                        loops.is_reduce.end(),
                        [](bool b) { return b; });
   };
-  bool reduce_euqal =
-      has_reduce_dim(lhs_loops) && has_reduce_dim(rhs_loops)
-          ? squeezed_lhs_loops.is_reduce == squeezed_rhs_loops.is_reduce
-          : true;
+  bool reduce_euqal = has_reduce_dim(lhs_loops) && has_reduce_dim(rhs_loops)
+                          ? lhs_loops.is_reduce == rhs_loops.is_reduce
+                          : true;
+
+  const auto& squeezed_lhs_loops = SqueezeLoopFramework(lhs_loops);
+  const auto& squeezed_rhs_loops = SqueezeLoopFramework(rhs_loops);
+  bool loop_equal = squeezed_lhs_loops.loop == squeezed_rhs_loops.loop;
+
   return loop_equal && reduce_euqal;
 }
 
