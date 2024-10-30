@@ -4071,7 +4071,7 @@
     data_type : x
   optional : hashtable_value, hashtable_index
   traits : paddle::dialect::ForwardOnlyTrait
-  # interfaces : paddle::dialect::InferSymbolicShapeInterface
+  interfaces : paddle::dialect::InferSymbolicShapeInterface
 
 - op : relu
   args : (Tensor x)
