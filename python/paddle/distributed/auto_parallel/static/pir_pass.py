@@ -211,6 +211,52 @@ def apply_partition_pass(program):
 
 
 class ReshardPasses:
+
+    @staticmethod
+    def decompose_reshard_pass(dist_program):
+        # split composed reshard op into atomic reshard ops, which would increase the oppotunity of reshard Re-Use in following fold_reshard_pass.
+        del_ops = []
+        for op in dist_program.global_block().ops:
+            if op.name() != 'dist_op.reshard':
+                continue
+            input = op.operand_source(0)
+            result = op.result(0)
+
+            # split the reshard compose p2p and collective into one p2p reshard and one collective reshard.
+            # avoid global to sub mesh case
+            if (
+                input.dist_attr().process_mesh
+                != result.dist_attr().process_mesh
+            ) and input.dist_attr().process_mesh.ndim == result.dist_attr().process_mesh.ndim:
+                if (
+                    input.dist_attr().placements
+                    != result.dist_attr().placements
+                ):
+                    ref_op_role = op.op_role
+                    with pir_op_role_guard(ref_op_role):
+                        intermediate_dist_attr = copy_dist_attr_with_new_member(
+                            input.dist_attr(),
+                            new_process_mesh=result.dist_attr().process_mesh,
+                        )
+                        intermediate_dist_type = (
+                            paddle.base.libpaddle.pir.cvt_to_dist_type(
+                                input.type(), intermediate_dist_attr
+                            )
+                        )
+                        paddle.pir.set_insertion_point(op)
+                        intermediate_var = paddle._C_ops.reshard_v2(
+                            input, intermediate_dist_attr
+                        )
+                        new_reshard_result = paddle._C_ops.reshard_v2(
+                            intermediate_var, result.dist_attr()
+                        )
+                        result.replace_all_uses_with(new_reshard_result)
+                        del_ops.append(op)
+
+        for op in del_ops:
+            _logger.info(f"[Reshard Pass] atomic composed reshard op: {op!s}")
+            op.erase()
+
     @staticmethod
     def fold_reshard_pass(dist_program):
         del_ops = []
@@ -282,6 +328,7 @@ class ReshardPasses:
 
     @staticmethod
     def apply_reshard_pass(dist_program, params_grads=[]):
+        ReshardPasses.decompose_reshard_pass(dist_program)
         ReshardPasses.fold_reshard_pass(dist_program)
         ReshardPasses.reshard_op_pass(dist_program, params_grads)
 
