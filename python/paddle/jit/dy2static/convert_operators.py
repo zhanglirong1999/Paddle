@@ -90,13 +90,14 @@ def convert_load(x):
 
         # get the new output of the var
         if isinstance(x, Value):
-            cur_block = default_main_program().current_block()
 
             from paddle.jit.pir_dy2static.parameter_recorder import (
                 _global_inplace_map,
             )
 
-            new_var = _global_inplace_map.get(cur_block.program, x)
+            new_var = _global_inplace_map.get(
+                paddle.static.default_main_program(), x
+            )
             if new_var is not None:
                 return new_var
 
