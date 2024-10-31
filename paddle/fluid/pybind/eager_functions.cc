@@ -75,6 +75,9 @@ typedef SSIZE_T ssize_t;
 
 COMMON_DECLARE_string(tensor_operants_mode);
 
+using egr::ConvertAllInputsToDistTensor;
+using egr::InputsContainDistTensor;
+
 namespace paddle::pybind {
 
 namespace py = ::pybind11;

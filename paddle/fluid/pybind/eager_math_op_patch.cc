@@ -54,6 +54,9 @@ typedef SSIZE_T ssize_t;
 #include "paddle/phi/core/memory/allocation/mmap_allocator.h"
 #include "paddle/phi/kernels/funcs/math_function.h"
 
+using egr::ConvertAllInputsToDistTensor;
+using egr::InputsContainDistTensor;
+
 namespace paddle::pybind {
 
 static bool PyCheckInteger(PyObject* obj) {

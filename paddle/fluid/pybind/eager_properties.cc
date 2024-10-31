@@ -33,6 +33,9 @@ limitations under the License. */
 #include "paddle/phi/core/memory/allocation/allocator.h"
 #include "paddle/phi/core/memory/memcpy.h"
 
+using egr::ConvertAllInputsToDistTensor;
+using egr::InputsContainDistTensor;
+
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 
 COMMON_DECLARE_bool(enable_pir_api);

@@ -26,6 +26,7 @@ limitations under the License. */
 #include "paddle/fluid/eager/api/all.h"
 #include "paddle/fluid/eager/autograd_meta.h"
 #include "paddle/fluid/eager/hooks.h"
+#include "paddle/fluid/eager/utils.h"
 #include "paddle/fluid/framework/convert_utils.h"
 #include "paddle/fluid/framework/scope.h"
 #include "paddle/fluid/framework/scope_guard.h"
@@ -39,7 +40,6 @@ limitations under the License. */
 #include "paddle/fluid/pybind/pir.h"
 #include "paddle/fluid/pybind/tensor_py.h"
 #include "paddle/phi/api/ext/op_meta_info.h"
-#include "paddle/phi/api/lib/data_transform.h"
 #include "paddle/phi/common/data_type.h"
 #include "paddle/phi/core/compat/convert_utils.h"
 #include "paddle/phi/core/dense_tensor.h"
@@ -51,6 +51,9 @@ limitations under the License. */
 
 COMMON_DECLARE_bool(check_nan_inf);
 COMMON_DECLARE_int32(check_nan_inf_level);
+
+using egr::ConvertToDistTensor;
+
 namespace paddle::pybind {
 
 extern PyTypeObject* p_tensor_type;
@@ -112,57 +115,6 @@ int TensorDtype2NumpyDtype(phi::DataType dtype) {
           "Unknow phi::DataType, the int value = %d.",
           static_cast<int>(dtype)));
       return 0;
-  }
-}
-
-void ConvertToDistTensor(Tensor* x, const phi::distributed::ProcessMesh* mesh) {
-  if (!x->defined()) {
-    return;
-  }
-  if (x->is_dist_tensor()) {
-    auto dist_ptr =
-        std::dynamic_pointer_cast<phi::distributed::DistTensor>(x->impl());
-    if (!dist_ptr->skip_check_mesh() && x->dims().size() > 0) {
-      // NOTE(pkuzyc): In MoE expert parallelism, the mesh of the
-      // inputs and outputs of different experts are different, so
-      // skip checking mesh in the following two casees:
-      // 1. The ``skip_check_mesh_`` flag is true. The MoE-related apis
-      // sets this flag to indicate that the difference between tensor's
-      // mesh is allowed.
-      // 2. The tensor is a 0-D tensor. Specifically, in MoE expert
-      // parallelism, the learning rate's mesh is global, but expert
-      // weights' mesh is the subset of the global mesh, this is also
-      // allowed so skip checking the mesh of 0-D tensor.
-      PADDLE_ENFORCE_EQ(
-          std::dynamic_pointer_cast<phi::distributed::DistTensor>(x->impl())
-              ->process_mesh(),
-          *mesh,
-          common::errors::InvalidArgument(
-              "Input %s has different mesh. However all inputs should "
-              "have the same mesh.",
-              x->name()));
-    }
-    return;
-  } else {
-    PADDLE_ENFORCE_EQ(
-        phi::DenseTensor::classof(x->impl().get()),
-        true,
-        common::errors::InvalidArgument(
-            "Failed to convert input %s impl to phi::distributed::DistTensor "
-            "as it's not phi::DenseTensor.",
-            x->name()));
-    phi::distributed::Placements placements;
-    for (int64_t i = 0; i < mesh->ndim(); ++i) {
-      placements.emplace_back(std::make_shared<phi::distributed::Replicate>());
-    }
-
-    auto dense_t = std::static_pointer_cast<phi::DenseTensor>(x->impl());
-    // auto parallel in dygraph doesn't support strided kernel.
-    if (!dense_t->meta().is_contiguous()) {
-      *dense_t = paddle::experimental::Trans2Contiguous(*dense_t);
-    }
-    x->set_impl(std::make_shared<phi::distributed::DistTensor>(
-        dense_t, *mesh, placements));
   }
 }
 
@@ -2780,88 +2732,6 @@ PyMODINIT_FUNC PyInit__static_op_arg_pre_cast_hook() {
 }
 
 /* ------------------ for auto parallel ----------------------- */
-
-void DistTensorTypeParser::operator()(const Tensor& x) {
-  if (x.defined() && x.is_dist_tensor()) {
-    *mesh = &(std::dynamic_pointer_cast<phi::distributed::DistTensor>(x.impl())
-                  ->process_mesh());
-    result = true;
-  }
-}
-
-void DistTensorTypeParser::operator()(const paddle::optional<Tensor>& x) {
-  if (x) {
-    if (x.get_ptr()->defined() && x.get_ptr()->is_dist_tensor()) {
-      *mesh = &(std::dynamic_pointer_cast<phi::distributed::DistTensor>(
-                    x.get_ptr()->impl())
-                    ->process_mesh());
-      result = true;
-    }
-  }
-}
-
-void DistTensorTypeParser::operator()(const std::vector<Tensor>& x) {
-  if (!x.empty()) {
-    for (auto& t : x) {
-      if (t.defined() && t.is_dist_tensor()) {
-        *mesh =
-            &(std::dynamic_pointer_cast<phi::distributed::DistTensor>(t.impl())
-                  ->process_mesh());
-        result = true;
-        break;
-      }
-    }
-  }
-}
-
-void DistTensorTypeParser::operator()(
-    const paddle::optional<std::vector<Tensor>>& x) {
-  if (x) {
-    if (!(x.get_ptr()->empty())) {
-      for (auto& t : *(x.get_ptr())) {
-        if (t.defined() && t.is_dist_tensor()) {
-          *mesh = &(
-              std::dynamic_pointer_cast<phi::distributed::DistTensor>(t.impl())
-                  ->process_mesh());
-          result = true;
-          break;
-        }
-      }
-    }
-  }
-}
-
-void DistTensorConverter::convert(Tensor* x) { ConvertToDistTensor(x, mesh); }
-
-void DistTensorConverter::operator()(Tensor* x) {
-  DistTensorConverter::convert(x);
-}
-
-void DistTensorConverter::operator()(paddle::optional<Tensor>* x) {
-  if (*x) {
-    DistTensorConverter::convert(x->get_ptr());
-  }
-}
-
-void DistTensorConverter::operator()(std::vector<Tensor>* x) {
-  if (!x->empty()) {
-    for (auto& t : *x) {
-      DistTensorConverter::convert(&t);
-    }
-  }
-}
-
-void DistTensorConverter::operator()(paddle::optional<std::vector<Tensor>>* x) {
-  if (*x) {
-    if (!(x->get_ptr()->empty())) {
-      for (auto& t : *(x->get_ptr())) {
-        if (!t.is_dist_tensor()) {
-          DistTensorConverter::convert(&t);
-        }
-      }
-    }
-  }
-}
 
 static PyMethodDef EagerUtilMethods[] = {  // NOLINT
     {"create_empty_tensors_with_var_descs",
