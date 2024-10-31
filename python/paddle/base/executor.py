@@ -2210,7 +2210,9 @@ class Executor:
             else:
                 tensor._copy_from(cpu_tensor, self.place)
 
-        ret = new_exe.run(list(feed.keys()), return_numpy)
+        ret = new_exe.run(
+            list(feed.keys()), return_numpy, self.enable_job_schedule_profiler
+        )
         return ret
 
     def _run_inference(self, exe, feed):
