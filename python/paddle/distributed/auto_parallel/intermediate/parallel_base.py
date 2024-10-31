@@ -13,6 +13,16 @@
 # limitations under the License.
 
 from paddle.nn import Layer
+from paddle.optimizer import Optimizer
+
+
+class ParallelOptimizer(Optimizer):
+    def __init__(self, optimizer):
+        self.optimizer = optimizer
+        self.is_initialized = False
+
+    def __getattr__(self, item):
+        return getattr(self.optimizer, item)
 
 
 class ParallelBase(Layer):
@@ -26,16 +36,19 @@ class ParallelBase(Layer):
             self.pp_parallelizer = model.pp_parallelizer
             self.tp_parallelizer = model.tp_parallelizer
             self.sharding_parallelizer = model.sharding_parallelizer
-
-        if isinstance(model, ParallelBase):
             self.model = model.model
+            self.optimizer = model.optimizer
         else:
             self.model = model
+            assert isinstance(optimizer, Optimizer)
+            self.optimizer = ParallelOptimizer(optimizer)
 
-        self.optimizer = optimizer
         self.is_parallelized = False
 
-    def parallelize_model(self):
+    def __getattr__(self, item):
+        return getattr(self.model, item)
+
+    def parallelize_model_and_optimizer(self):
         if self.pp_parallelizer is not None:
             assert callable(self.pp_parallelizer)
             self.model = self.pp_parallelizer(self.model)
@@ -48,8 +61,15 @@ class ParallelBase(Layer):
             assert callable(self.sharding_parallelizer)
             self.model = self.sharding_parallelizer(self.model)
 
+        assert isinstance(self.optimizer, ParallelOptimizer)
+        assert not self.optimizer.is_initialized
+
+        # call shard optimizer here
+        # self.optimizer.optimizer = ShardOptimizer()
+        self.optimizer.is_initialized = True
+
     def forward(self, *args):
         if not self.is_parallelized:
-            self.parallelize_model()
+            self.parallelize_model_and_optimizer()
             self.is_parallelized = True
         self.model(*args)

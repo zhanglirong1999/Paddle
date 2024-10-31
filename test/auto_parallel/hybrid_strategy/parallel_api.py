@@ -139,7 +139,7 @@ class TestParallelAPI:
         global_mesh = dist.ProcessMesh(mesh_arr, dim_names)
         dist.auto_parallel.set_mesh(global_mesh)
 
-    def parallel_model(self, layer):
+    def parallel_model(self, layer, optimizer=None, only_build=False):
         # call parallel api here
         return layer
 
@@ -149,17 +149,6 @@ class TestParallelAPI:
                 model = LlamaForCausalLM(self.config)
         else:
             model = LlamaForCausalLM(self.config)
-        criterion = LlamaPretrainingCriterion(self.config)
-
-        model = self.parallel_model(model)
-        criterion = self.parallel_model(criterion)
-        if self.config.use_lazy_init:
-            for param in model.parameters():
-                assert not param._is_initialized()
-                param.initialize()
-
-        if only_build:
-            return
 
         lr_scheduler = paddle.optimizer.lr.LinearWarmup(
             learning_rate=0.0001, warmup_steps=2, start_lr=0, end_lr=0.0001
@@ -174,6 +163,19 @@ class TestParallelAPI:
                 master_grad=self.amp_master_grad,
             )
         optimizer = dist.shard_optimizer(optimizer)
+        model = self.parallel_model(
+            model, optimizer=optimizer, only_build=only_build
+        )
+
+        criterion = LlamaPretrainingCriterion(self.config)
+        criterion = self.parallel_model(criterion)
+        if self.config.use_lazy_init:
+            for param in model.parameters():
+                assert not param._is_initialized()
+                param.initialize()
+
+        if only_build:
+            return
 
         train_dataset = RandomDataset(self.config.seq_length)
         train_sampler = BatchSampler(
