@@ -1137,10 +1137,12 @@ class _ShardOptimizer(Optimizer):
                 param.get_tensor()._share_data_with(out_param.get_tensor())
 
     def _create_accumulators(self, block, parameters):
-        self._inner_opt._create_accumulators(block, parameters)
         if isinstance(parameters, dict):
             parameters = parameters.get('params')
+        # NOTE(zhiqiu): we need to create and shard accumulators for parameters one by one,
+        # to avoid OOM caused by replcated accumulators.
         for p in parameters:
+            self._inner_opt._create_accumulators(block, [p])
             self._shard_accumulator(p)
 
     def _finish_update(self, block, parameters_and_grads):
