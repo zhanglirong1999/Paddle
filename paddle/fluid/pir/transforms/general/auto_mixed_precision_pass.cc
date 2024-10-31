@@ -76,7 +76,7 @@ class AutoMixedPrecisionPass : public pir::Pass {
             "When using AutoMixedPrecisionPass, place attribute is required!"
             "Use Set method to set the place attribute."));
     PADDLE_ENFORCE_EQ(
-        Has("__mixed_precision_mode__"),
+        Has("mixed_precision_mode"),
         true,
         common::errors::InvalidArgument(
             "Pass initialize failed."
@@ -84,7 +84,7 @@ class AutoMixedPrecisionPass : public pir::Pass {
             "required!"
             "Use Set method to set the scope attribute."));
 
-    PADDLE_ENFORCE_EQ(Has("__enable_low_precision_io__"),
+    PADDLE_ENFORCE_EQ(Has("enable_low_precision_io"),
                       true,
                       common::errors::InvalidArgument(
                           "Pass initialize failed."
@@ -94,7 +94,7 @@ class AutoMixedPrecisionPass : public pir::Pass {
                           "Use Set method to set the scope attribute."));
 
     PADDLE_ENFORCE_EQ(
-        Has("__mixed_black_list__"),
+        Has("mixed_black_list"),
         true,
         common::errors::InvalidArgument(
             "Pass initialize failed."
@@ -103,7 +103,7 @@ class AutoMixedPrecisionPass : public pir::Pass {
             "Use Set method to set the scope attribute."));
 
     PADDLE_ENFORCE_EQ(
-        Has("__mixed_white_list__"),
+        Has("mixed_white_list"),
         true,
         common::errors::InvalidArgument(
             "Pass initialize failed."
@@ -112,11 +112,11 @@ class AutoMixedPrecisionPass : public pir::Pass {
             "Use Set method to set the scope attribute."));
 
     place_ = Get<phi::Place>(pir::Pass::kPlaceAttr);
-    precision_mode_ = Get<phi::DataType>("__mixed_precision_mode__");
+    precision_mode_ = Get<phi::DataType>("mixed_precision_mode");
     context_ = context;
-    enable_low_precision_io_ = Get<bool>("__enable_low_precision_io__");
-    black_list_ = Get<std::unordered_set<std::string>>("__mixed_black_list__");
-    white_list_ = Get<std::unordered_set<std::string>>("__mixed_white_list__");
+    enable_low_precision_io_ = Get<bool>("enable_low_precision_io");
+    black_list_ = Get<std::unordered_set<std::string>>("mixed_black_list");
+    white_list_ = Get<std::unordered_set<std::string>>("mixed_white_list");
     SetDefaultBlacklist();
     return true;
   }
