@@ -27,8 +27,6 @@ void PartialAllGatherOpCUDAKernel(const Context& dev_ctx,
                                   const DenseTensor& x_in,
                                   int nranks,
                                   int rank,
-                                  int ring_id UNUSED,
-                                  bool use_calc_stream UNUSED,
                                   DenseTensor* out) {
 #if defined(PADDLE_WITH_NCCL) || defined(PADDLE_WITH_RCCL)
   auto in = &x_in;

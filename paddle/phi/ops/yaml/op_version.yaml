@@ -499,6 +499,14 @@
           comment : Compute as vector when axis is None and input is matrix.
           default : "false"
 
+- op : partial_allgather
+  version :
+    - checkpoint : Upgrade partial_allgather delete 1 attribute[use_calc_stream].
+      action :
+        - delete_attr : use_calc_stream
+          comment : eject CUDA operations to calculation stream.
+          default : false
+
 - op : pixel_shuffle
   version :
     - checkpoint : Compatible upgrade of pixel_shuffle, add a new attribute [data_format]
