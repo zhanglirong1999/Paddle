@@ -1031,7 +1031,7 @@ struct IndexExpr : public Expr {
   // S0,          length = 1
   // S0 + S1,     length = 3
   // S0 + S1 * 2, length = 5
-  int32_t length(int32_t count = 0) const;
+  int32_t length() const;
 
   IndexExpr& operator=(const IndexExpr& other);
 

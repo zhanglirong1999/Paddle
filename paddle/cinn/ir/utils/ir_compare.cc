@@ -395,15 +395,14 @@ bool IrEqualVisitor::Visit(const _Dim_* lhs, const Expr* other) {
 bool IrEqualVisitor::Visit(const IterMark* lhs, const Expr* other) {
   auto* rhs = other->As<IterMark>();
   if (!Compare(lhs->source, rhs->source)) return false;
-  return Compare(lhs->extent, rhs->extent);
+  return lhs->extent == rhs->extent;
 }
 
 bool IrEqualVisitor::Visit(const IterSplit* lhs, const Expr* other) {
   auto* rhs = other->As<IterSplit>();
   if (!Compare(lhs->source, rhs->source)) return false;
-  return Compare(lhs->extent, rhs->extent) &&
-         Compare(lhs->lower_factor, rhs->lower_factor) &&
-         Compare(lhs->scale, rhs->scale);
+  return lhs->extent == rhs->extent && lhs->lower_factor == rhs->lower_factor &&
+         lhs->scale == rhs->scale;
 }
 
 bool IrEqualVisitor::Visit(const IterSum* lhs, const Expr* other) {
@@ -411,7 +410,7 @@ bool IrEqualVisitor::Visit(const IterSum* lhs, const Expr* other) {
   for (size_t i = 0; i < lhs->args.size(); ++i) {
     if (!Compare(lhs->args.at(i), rhs->args.at(i))) return false;
   }
-  return Compare(lhs->base, rhs->base);
+  return lhs->base == rhs->base;
 }
 
 bool IRCompare(const Expr& lhs, const Expr& rhs, bool allow_name_suffix_diff) {

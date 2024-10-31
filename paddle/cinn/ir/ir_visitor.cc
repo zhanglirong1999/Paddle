@@ -30,8 +30,8 @@ bool operator==(Expr a, Expr b) {
 
 template <typename T>
 static bool CompareExpressions(const ir::IndexExpr& a, const ir::IndexExpr& b) {
-  auto aPart = common::GetFlatternExprs<T>(a);
-  auto bPart = common::GetFlatternExprs<T>(b);
+  auto aPart = common::GetFlattenExprs<T>(a);
+  auto bPart = common::GetFlattenExprs<T>(b);
 
   std::sort(aPart.begin(), aPart.end(), common::ComparePriority);
   std::sort(bPart.begin(), bPart.end(), common::ComparePriority);

@@ -209,7 +209,7 @@ inline void UnpackReduction(const ir::IndexExpr &expr, FLeaf fleaf) {
  * than `rhs`.
  */
 template <typename T>
-inline std::vector<ir::IndexExpr> GetFlatternExprs(const ir::IndexExpr &expr) {
+inline std::vector<ir::IndexExpr> GetFlattenExprs(const ir::IndexExpr &expr) {
   std::vector<ir::IndexExpr> result;
   auto fcollect = [&](ir::IndexExpr val) { result.push_back(val); };
   UnpackReduction<T>(expr, fcollect);
@@ -298,6 +298,15 @@ bool IsDivisiblieBySymbol(const ir::IndexExpr &expr,
  * \return A boolean value indicating whether the `lhs` is divisible by `rhs`
  */
 bool ProveDivisible(const ir::IndexExpr &lhs, const ir::IndexExpr &rhs);
+
+/*!
+ * \brief Judge whether `candidate` is a negated index expression.
+ * \param lhs The expression to be checked.
+ * \param rhs The positive part
+ * \return A boolean value indicating whether `candidate` is negative.
+ */
+bool IsNegatedIndexExpr(const ir::IndexExpr &candidate,
+                        ir::IndexExpr &expr);  // NOLINT
 
 }  // namespace common
 }  // namespace cinn

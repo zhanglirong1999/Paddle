@@ -184,8 +184,8 @@ TEST_F(TestIterSimplify, mul) {
   ir::Expr e4 = Expr(7) * Expr(5);
 
   TEST_EXPR(e1, gt1, i * 2 + j);
-  TEST_EXPR(e2, gt2, i * 2 + j * 2 + k);
-  TEST_EXPR(e3, gt3, i * 2 + j * 2 + k + 10);
+  TEST_EXPR(e2, gt2, (i + j) * 2 + k);
+  TEST_EXPR(e3, gt3, (i + j) * 2 + k + 10);
   TEST_EXPR(e4, gt4, Expr(35));
 }
 

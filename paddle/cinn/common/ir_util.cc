@@ -18,6 +18,7 @@
 #include <unordered_set>
 
 #include "paddle/cinn/common/cas.h"
+#include "paddle/cinn/common/simplify_corner_case.h"
 #include "paddle/cinn/ir/ir_mutator.h"
 #include "paddle/cinn/ir/ir_printer.h"
 #include "paddle/cinn/ir/op/ir_operators.h"
@@ -535,9 +536,15 @@ bool IsSumPartialBySymbol(const ir::IndexExpr &expr,
     case ir::IrNodeTy::Add:
       return IsSumPartialBySymbol(expr->operand(0).as_index(), symbol) ||
              IsSumPartialBySymbol(expr->operand(1).as_index(), symbol);
-    case ir::IrNodeTy::Mul:
-      return expr->operand(0).as_index() == symbol ||
-             expr->operand(0).as_index() == symbol;
+    case ir::IrNodeTy::Mul: {
+      if (expr->operand(1).is_constant() &&
+          expr->operand(1).get_constant() == -1)
+        return IsSumPartialBySymbol(expr->operand(0).as_index(), symbol);
+      else
+        return expr->operand(0).as_index() == symbol ||
+               expr->operand(1).as_index() == symbol;
+    }
+
     case ir::IrNodeTy::Div: {
       return IsSumPartialBySymbol(expr->operand(0).as_index(), symbol);
     }
@@ -579,28 +586,21 @@ bool IsDivisiblieBySymbol(const ir::IndexExpr &expr,
 }
 
 bool ProveDivisible(const ir::IndexExpr &lhs, const ir::IndexExpr &rhs) {
-  // TODO(liujinnan): corner case, it will upgrade to a more general solution
-  // `expr.Match(xxxx)` later
-  if (auto lhs_sub = lhs.As<ir::Sub>()) {
-    auto llhs = lhs_sub->a();
-    auto lrhs = lhs_sub->b();
-    if (auto llhs_mod = llhs.As<ir::Mod>()) {
-      return (ProveDivisible(llhs_mod->b(), rhs) && llhs_mod->a() == lrhs);
-    }
-    if (auto lrhs_mod = lrhs.As<ir::Mod>()) {
-      return (ProveDivisible(lrhs_mod->b(), rhs) && lrhs_mod->a() == llhs);
-    }
-  }
+  if (IsZero(lhs % rhs)) return true;
+  // remove AutoSimplify later.
+  if (IsZero(AutoSimplify(lhs % rhs))) return true;
+  return false;
+}
 
-  if (auto rhs_imm = rhs.As<ir::IntImm>()) {
-    if (lhs.as_index().GetLargestMutiplyPart() % rhs_imm->value == 0)
+bool IsNegatedIndexExpr(const ir::IndexExpr &candidate,
+                        ir::IndexExpr &expr) {  // NOLINT
+  if (auto mul = candidate.As<ir::Mul>()) {
+    if (mul->b().is_constant() && mul->b().get_constant() == -1) {
+      expr = mul->a();
       return true;
-    return IsZero(AutoSimplify(lhs % rhs));
-  } else if (rhs.is_var()) {
-    return IsDivisiblieBySymbol(lhs, rhs, ir::IrNodeTy::Div);
-  } else {
-    return false;
+    }
   }
+  return false;
 }
 }  // namespace common
 }  // namespace cinn
