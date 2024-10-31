@@ -85,8 +85,7 @@ void RandpermInferMeta(int n, DataType dtype, MetaTensor* out);
 void RandintInferMeta(
     int low, int high, const IntArray& shape, DataType dtype, MetaTensor* out);
 
-void PartialRecvInferMeta(int ring_id,
-                          int peer,
+void PartialRecvInferMeta(int peer,
                           DataType dtype,
                           const std::vector<int>& out_shape,
                           int num,
