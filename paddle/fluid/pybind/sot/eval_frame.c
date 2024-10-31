@@ -22,19 +22,19 @@ limitations under the License. */
 #include <Python.h>
 #include <frameobject.h>
 
-#if PY_VERSION_HEX >= 0x03080000 && PY_VERSION_HEX < 0x3090000
+#if PY_3_8_PLUS && PY_VERSION_HEX < PY_3_9_0_HEX
 #define Py_BUILD_CORE  // internal/pycore_pymem.h need this macro
 #include <internal/pycore_pystate.h>
 #undef Py_BUILD_CORE
 #endif
-#if PY_VERSION_HEX < 0x030b0000
+#if PY_VERSION_HEX < PY_3_11_0_HEX
 #include <code.h>
 #endif
 
 #include <object.h>
 #include <pystate.h>
 
-#if PY_VERSION_HEX >= 0x030b0000
+#if PY_3_11_PLUS
 // To avoid the error: undefined symbol: _PyFrame_GetFrameObject, all we need is
 // to redefine this function based source code in python3.11. The advantage is
 // that we don't need any modification in eval_frame functions.
@@ -146,7 +146,7 @@ inline static void eval_frame_callback_set(PyObject *obj) {
 inline static PyObject *eval_frame_default(PyThreadState *tstate,
                                            FrameObject *frame,
                                            int throw_flag) {
-#if PY_VERSION_HEX >= 0x03090000
+#if PY_3_9_PLUS
   if (tstate == NULL) {
     tstate = PyThreadState_GET();
   }
@@ -156,7 +156,7 @@ inline static PyObject *eval_frame_default(PyThreadState *tstate,
 #endif
 }
 
-#if PY_VERSION_HEX >= 0x030b0000
+#if PY_3_11_PLUS
 
 inline static PyObject *eval_custom_code_py311_plus(PyThreadState *tstate,
                                                     FrameObject *frame,
@@ -164,7 +164,7 @@ inline static PyObject *eval_custom_code_py311_plus(PyThreadState *tstate,
                                                     int throw_flag) {
   Py_ssize_t nlocalsplus_new = code->co_nlocalsplus;
   Py_ssize_t nlocalsplus_old = frame->f_code->co_nlocalsplus;
-#if PY_VERSION_HEX >= 0x030c0000
+#if PY_3_12_PLUS
   int size = code->co_framesize;
 #else
   // Create a new PyInterpreterFrame. Refer to CALL.
@@ -173,7 +173,7 @@ inline static PyObject *eval_custom_code_py311_plus(PyThreadState *tstate,
   int size = nlocalsplus_new + code->co_stacksize + FRAME_SPECIALS_SIZE;
 #endif
   CALL_STAT_INC(frames_pushed);
-#if PY_VERSION_HEX >= 0x030c0000
+#if PY_3_12_PLUS
   _PyInterpreterFrame *shadow = Internal_PyThreadState_PushFrame(tstate, size);
 #else
   _PyInterpreterFrame *shadow =
@@ -187,7 +187,7 @@ inline static PyObject *eval_custom_code_py311_plus(PyThreadState *tstate,
   PyFunctionObject *func =
       (PyFunctionObject *)PyFunction_New((PyObject *)code, frame->f_globals);
   Py_INCREF(func);
-#if PY_VERSION_HEX >= 0x030c0000
+#if PY_3_12_PLUS
   Py_XINCREF(((PyFunctionObject *)frame->f_funcobj)->func_closure);
   func->func_closure = ((PyFunctionObject *)frame->f_funcobj)->func_closure;
   _PyFrame_Initialize(shadow, func, NULL, code, 0);
@@ -228,7 +228,7 @@ inline static PyObject *eval_custom_code_py311_plus(PyThreadState *tstate,
   }
 
   PyObject *result = eval_frame_default(tstate, shadow, throw_flag);
-#if PY_VERSION_HEX >= 0x030c0000
+#if PY_3_12_PLUS
   // In Python 3.12+ believes that eval will be cleaned up, but we did not pass
   // in the frame to _PyEval_EvalFrameDefault, so we need to clean it up.
   // elaborate on see:
@@ -290,7 +290,7 @@ inline static PyObject *eval_custom_code(PyThreadState *tstate,
                                          FrameObject *frame,
                                          PyCodeObject *code,
                                          int throw_flag) {
-#if PY_VERSION_HEX >= 0x030b0000
+#if PY_3_11_PLUS
   return eval_custom_code_py311_plus(tstate, frame, code, throw_flag);
 #else
   return eval_custom_code_py310_minus(tstate, frame, code, throw_flag);
@@ -306,7 +306,7 @@ static PyObject *_custom_eval_frame(PyThreadState *tstate,
 
 // https://peps.python.org/pep-0558/#fast-locals-proxy-implementation-details
 // https://devguide.python.org/internals/interpreter/#all-sorts-of-variables
-#if PY_VERSION_HEX >= 0x030b0000
+#if PY_3_11_PLUS
   if (frame->owner == FRAME_OWNED_BY_GENERATOR) {
     out = eval_frame_default(tstate, frame, throw_flag);
     eval_frame_callback_set(callback);
@@ -361,7 +361,7 @@ static PyObject *_custom_eval_frame(PyThreadState *tstate,
     disable_eval_frame = Py_False;
   } else {
     /* should calculate guards here if we want */
-#if PY_VERSION_HEX >= 0x030b0000
+#if PY_3_11_PLUS
     PyObject *args = Py_BuildValue("(O)", PyInterpreterFrameProxy_New(frame));
 #else
     PyObject *args = Py_BuildValue("(O)", frame);
@@ -369,7 +369,7 @@ static PyObject *_custom_eval_frame(PyThreadState *tstate,
     PyObject *result = PyObject_CallObject(callback, args);
     Py_DECREF(args);
     if (result == NULL) {
-#if PY_VERSION_HEX >= 0x030C0000
+#if PY_3_12_PLUS
       Internal_PyEvalFrameClearAndPop(tstate, frame);
 #endif
       return NULL;
@@ -426,7 +426,7 @@ static PyObject *_custom_eval_frame_shim(PyThreadState *tstate,
   return _custom_eval_frame(tstate, frame, throw_flag, callback);
 }
 
-#if PY_VERSION_HEX >= 0x03090000
+#if PY_3_9_PLUS
 static PyObject *custom_eval_frame_shim(PyThreadState *tstate,
                                         FrameObject *frame,
                                         int throw_flag) {
@@ -446,7 +446,7 @@ static PyObject *set_eval_frame(PyObject *new_callback, PyThreadState *tstate) {
   //  NOTE: Cache is not supported now
   PyObject *old_callback = eval_frame_callback_get();
 
-#if PY_VERSION_HEX >= 0x03090000
+#if PY_3_9_PLUS
   _PyFrameEvalFunction old_eval_frame =
       _PyInterpreterState_GetEvalFrameFunc(tstate->interp);
 #else
@@ -458,7 +458,7 @@ static PyObject *set_eval_frame(PyObject *new_callback, PyThreadState *tstate) {
   if (old_callback != Py_None && new_callback == Py_None) {
     if (old_eval_frame != &_PyEval_EvalFrameDefault) {
       // VLOG(7) << "set _PyEval_EvalFrameDefault";
-#if PY_VERSION_HEX >= 0x03090000
+#if PY_3_9_PLUS
       _PyInterpreterState_SetEvalFrameFunc(tstate->interp,
                                            &_PyEval_EvalFrameDefault);
 #else
@@ -468,7 +468,7 @@ static PyObject *set_eval_frame(PyObject *new_callback, PyThreadState *tstate) {
   } else if (old_callback == Py_None && new_callback != Py_None) {
     if (old_eval_frame != &custom_eval_frame_shim) {
       // VLOG(7) << "set custom_eval_frame_shim";
-#if PY_VERSION_HEX >= 0x03090000
+#if PY_3_9_PLUS
       _PyInterpreterState_SetEvalFrameFunc(tstate->interp,
                                            &custom_eval_frame_shim);
 #else
@@ -499,7 +499,7 @@ PyMODINIT_FUNC PyInit__eval_frame() {
   Py_INCREF(Py_None);
   eval_frame_callback_set(Py_None);
 
-#if PY_VERSION_HEX >= 0x030b0000
+#if PY_3_11_PLUS
   if (PyType_Ready(&PyInterpreterFrameProxyType) < 0) {
     // VLOG(7) << "PyInterpreterFrameProxyType has not been ready!";
   }

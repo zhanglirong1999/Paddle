@@ -25,7 +25,7 @@ extern "C" {
 
 #if SOT_IS_SUPPORTED
 
-#if PY_VERSION_HEX >= 0x030b0000
+#if PY_3_11_PLUS
 #include <internal/pycore_frame.h>
 typedef _PyInterpreterFrame FrameObject;
 #else

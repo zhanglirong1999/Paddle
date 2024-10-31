@@ -220,7 +220,7 @@ int need_skip(FrameObject* frame) {
     return 0;
   }
 
-#if PY_VERSION_HEX >= 0x030b0000
+#if PY_3_11_PLUS
   const char* filename = pystr_to_cstr(co_filename);
   PyObject* _filename = NULL;
   if (memcmp(filename, "<frozen", 7) == 0) {
@@ -235,7 +235,7 @@ int need_skip(FrameObject* frame) {
 
   int result = skip_info.in_skip_path(co_filename);
 
-#if PY_VERSION_HEX >= 0x030b0000
+#if PY_3_11_PLUS
   if (_filename != NULL) Py_DECREF(_filename);
 #endif
   return result;

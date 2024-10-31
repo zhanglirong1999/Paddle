@@ -23,11 +23,11 @@ extern "C" {
 
 #if SOT_IS_SUPPORTED
 
-#if PY_VERSION_HEX >= 0x030b0000
+#if PY_3_11_PLUS
 #include <internal/pycore_frame.h>
 #endif
 
-#if PY_VERSION_HEX >= 0x030b0000
+#if PY_3_11_PLUS
 int Internal_PyInterpreterFrame_GetLine(_PyInterpreterFrame *frame);
 static int Internal_PyFrame_OpAlreadyRan(_PyInterpreterFrame *frame,
                                          int opcode,
@@ -42,7 +42,7 @@ static void Internal_take_ownership(PyFrameObject *f,
                                     _PyInterpreterFrame *frame);
 void Internal_PyFrame_Clear(_PyInterpreterFrame *frame);
 
-#if PY_VERSION_HEX >= 0x030c0000
+#if PY_3_12_PLUS
 void Internal_PyEvalFrameClearAndPop(PyThreadState *tstate,
                                      _PyInterpreterFrame *frame);
 _PyInterpreterFrame *Internal_PyThreadState_PushFrame(PyThreadState *tstate,

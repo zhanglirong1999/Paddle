@@ -18,13 +18,13 @@ limitations under the License. */
 
 #if SOT_IS_SUPPORTED
 
-#if PY_VERSION_HEX >= 0x030b0000
+#if PY_3_11_PLUS
 #include <internal/pycore_code.h>
 #include <internal/pycore_frame.h>
 #define Py_BUILD_CORE       // internal/pycore_opcode.h need this macro
 #define NEED_OPCODE_TABLES  // To get _PyOpcode_Caches and _PyOpcode_Deopt
 
-#if PY_VERSION_HEX >= 0x030c0000
+#if PY_3_12_PLUS
 // see https://github.com/python/cpython/issues/105268#issuecomment-1678256123
 #undef _PyGC_FINALIZED
 #include <internal/pycore_runtime.h>
@@ -53,7 +53,7 @@ static int Internal_PyFrame_OpAlreadyRan(_PyInterpreterFrame *frame,
   for (_Py_CODEUNIT *instruction = _PyCode_CODE(frame->f_code);
        instruction < frame->prev_instr;
        instruction++) {
-#if PY_VERSION_HEX >= 0x030c0000
+#if PY_3_12_PLUS
     int check_opcode = _PyOpcode_Deopt[instruction->op.code];
     check_oparg |= instruction->op.arg;
 #else
@@ -73,7 +73,7 @@ static int Internal_PyFrame_OpAlreadyRan(_PyInterpreterFrame *frame,
   return 0;
 }
 
-#if PY_VERSION_HEX >= 0x030c0000
+#if PY_3_12_PLUS
 void Internal_PyObject_VirtualFree(void *obj, size_t size) {
   Internal_PyObject_Arena.free(Internal_PyObject_Arena.ctx, obj, size);
 }
@@ -465,7 +465,7 @@ PyFrameObject *Internal_PyFrame_MakeAndSetFrameObject(
     _PyInterpreterFrame *frame) {
   assert(frame->frame_obj == NULL);
 
-#if PY_VERSION_HEX >= 0x030c0000
+#if PY_3_12_PLUS
   PyObject *exc = PyErr_GetRaisedException();
 #else
   PyObject *error_type, *error_value, *error_traceback;
@@ -474,7 +474,7 @@ PyFrameObject *Internal_PyFrame_MakeAndSetFrameObject(
 
   PyFrameObject *f = Internal_PyFrame_New_NoTrack(frame->f_code);
   if (f == NULL) {
-#if PY_VERSION_HEX >= 0x030c0000
+#if PY_3_12_PLUS
     Py_XDECREF(exc);
 #else
     Py_XDECREF(error_type);
@@ -483,7 +483,7 @@ PyFrameObject *Internal_PyFrame_MakeAndSetFrameObject(
 #endif
     return NULL;
   }
-#if PY_VERSION_HEX >= 0x030c0000
+#if PY_3_12_PLUS
   PyErr_SetRaisedException(exc);
 #else
   PyErr_Restore(error_type, error_value, error_traceback);
@@ -525,7 +525,7 @@ static inline PyFrameObject *Internal_PyFrame_GetFrameObject(
 
 static void Internal_take_ownership(PyFrameObject *f,
                                     _PyInterpreterFrame *frame) {
-#if PY_VERSION_HEX >= 0x030c0000
+#if PY_3_12_PLUS
   assert(frame->owner != FRAME_OWNED_BY_CSTACK);
 #endif
 
@@ -534,7 +534,7 @@ static void Internal_take_ownership(PyFrameObject *f,
   Py_ssize_t size =
       ((char *)&frame->localsplus[frame->stacktop]) - (char *)frame;
 
-#if PY_VERSION_HEX >= 0x030c0000
+#if PY_3_12_PLUS
   Py_INCREF(frame->f_code);
 #endif
 
@@ -551,7 +551,7 @@ static void Internal_take_ownership(PyFrameObject *f,
   assert(!_PyFrame_IsIncomplete(frame));
   assert(f->f_back == NULL);
 
-#if PY_VERSION_HEX >= 0x030c0000
+#if PY_3_12_PLUS
   _PyInterpreterFrame *prev = _PyFrame_GetFirstComplete(frame->previous);
   frame->previous = NULL;
 #else
@@ -562,7 +562,7 @@ static void Internal_take_ownership(PyFrameObject *f,
 #endif
 
   if (prev) {
-#if PY_VERSION_HEX >= 0x030c0000
+#if PY_3_12_PLUS
     assert(prev->owner != FRAME_OWNED_BY_CSTACK);
 #endif
     /* Link PyFrameObjects.f_back and remove link through
@@ -576,7 +576,7 @@ static void Internal_take_ownership(PyFrameObject *f,
     } else {
       f->f_back = (PyFrameObject *)Py_NewRef(back);
     }
-#if PY_VERSION_HEX < 0x030c0000
+#if PY_VERSION_HEX < PY_3_12_0_HEX
     frame->previous = NULL;
 #endif
   }
@@ -586,7 +586,7 @@ static void Internal_take_ownership(PyFrameObject *f,
 }
 
 // Call on 3.11 _PyFrame_Clear is called on 3.12+ _PyFrame_ClearExceptCode
-#if PY_VERSION_HEX >= 0x030c0000
+#if PY_3_12_PLUS
 void Internal_PyFrame_ClearExceptCode(_PyInterpreterFrame *frame) {
 #else
 void Internal_PyFrame_Clear(_PyInterpreterFrame *frame) {
@@ -615,7 +615,7 @@ void Internal_PyFrame_Clear(_PyInterpreterFrame *frame) {
   Py_XDECREF(frame->frame_obj);
   Py_XDECREF(frame->f_locals);
 
-#if PY_VERSION_HEX >= 0x030c0000
+#if PY_3_12_PLUS
   Py_DECREF(frame->f_funcobj);
 #else
   Py_DECREF(frame->f_func);
