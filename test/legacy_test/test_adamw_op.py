@@ -156,7 +156,8 @@ class TestAdamW(OpTest):
 
 
 @unittest.skipIf(
-    not core.is_compiled_with_cuda(), "core is not compiled with CUDA"
+    not (core.is_compiled_with_cuda() or core.is_compiled_with_xpu()),
+    "core is not compiled with CUDA nor XPU",
 )
 class TestAdamW2(OpTest):
     def setUp(self):
@@ -209,7 +210,14 @@ class TestAdamW2(OpTest):
         }
 
     def test_check_output(self):
-        self.check_output_with_place(core.CUDAPlace(0), check_pir=True)
+        self.check_output_with_place(
+            (
+                core.CUDAPlace(0)
+                if not core.is_compiled_with_xpu()
+                else core.XPUPlace(0)
+            ),
+            check_pir=True,
+        )
 
 
 class TestAdamWOp(unittest.TestCase):
@@ -545,6 +553,8 @@ class TestAdamWOpMultiPrecisionWithMainGrad(unittest.TestCase):
         places = []
         if paddle.is_compiled_with_cuda():
             places.append('gpu')
+        if paddle.is_compiled_with_xpu():
+            places.append('xpu')
         return places
 
     def test_main(self):
@@ -581,11 +591,11 @@ class TestAdamWOpMultiPrecision(unittest.TestCase):
         )
 
         for idx in range(2):
-            if place == 'gpu' and use_amp:
+            if (place == 'gpu' or place == 'xpu') and use_amp:
                 model = paddle.amp.decorate(models=model, level='O2')
                 scaler = paddle.amp.GradScaler(init_loss_scaling=1024)
 
-            if place == 'gpu' and use_amp:
+            if (place == 'gpu' or place == 'xpu') and use_amp:
                 with paddle.amp.auto_cast(level='O2'):
                     output = model(input)
                     loss = paddle.mean(output)
@@ -610,6 +620,8 @@ class TestAdamWOpMultiPrecision(unittest.TestCase):
             places.append('cpu')
         if paddle.is_compiled_with_cuda():
             places.append('gpu')
+        if paddle.is_compiled_with_xpu():
+            places.append('xpu')
         return places
 
     def test_main(self):
@@ -719,7 +731,8 @@ def simple_lr_setting(param, decay_rate, n_layers):
 
 
 @unittest.skipIf(
-    not core.is_compiled_with_cuda(), "core is not compiled with CUDA"
+    not (core.is_compiled_with_cuda() or core.is_compiled_with_xpu()),
+    "core is not compiled with CUDA nor XPU",
 )
 class TestAdamWOpLayerwiseLR(TestAdamWOp):
     def setUp(self):
@@ -844,7 +857,12 @@ class TestAdamWOpLayerwiseLR(TestAdamWOp):
             opt.step()
             opt.clear_gradients()
 
-            np.testing.assert_allclose(linear1.weight.numpy(), fc1_w, rtol=1e-6)
+            np.testing.assert_allclose(
+                linear1.weight.numpy(),
+                fc1_w,
+                atol=2e-9 if core.is_compiled_with_xpu() else 0,
+                rtol=1e-6,
+            )
             np.testing.assert_allclose(linear1.bias.numpy(), fc1_b, rtol=1e-6)
             np.testing.assert_allclose(linear2.weight.numpy(), fc2_w, rtol=1e-6)
             np.testing.assert_allclose(linear2.bias.numpy(), fc2_b, rtol=1e-6)
@@ -852,7 +870,11 @@ class TestAdamWOpLayerwiseLR(TestAdamWOp):
     def test_adamw_op(self):
         with paddle.pir_utils.OldIrGuard():
             paddle.enable_static()
-            place = base.CUDAPlace(0)
+            place = (
+                base.CUDAPlace(0)
+                if not core.is_compiled_with_xpu()
+                else base.XPUPlace(0)
+            )
 
             learning_rate = 0.0001
             beta1 = 0.85
@@ -1043,7 +1065,11 @@ class TestAdamWOpLayerwiseLR(TestAdamWOp):
     def test_adamw_op_with_pir(self):
         with paddle.pir_utils.IrGuard():
             paddle.enable_static()
-            place = base.CUDAPlace(0)
+            place = (
+                base.CUDAPlace(0)
+                if not core.is_compiled_with_xpu()
+                else base.XPUPlace(0)
+            )
 
             learning_rate = 0.0001
             beta1 = 0.85
@@ -1390,7 +1416,12 @@ class TestAdamWOpLayerwiseLR(TestAdamWOp):
             opt.step()
             opt.clear_gradients()
 
-            np.testing.assert_allclose(linear1.weight.numpy(), fc1_w, rtol=1e-6)
+            np.testing.assert_allclose(
+                linear1.weight.numpy(),
+                fc1_w,
+                atol=2e-9 if core.is_compiled_with_xpu() else 0,
+                rtol=1e-6,
+            )
             np.testing.assert_allclose(linear1.bias.numpy(), fc1_b, rtol=1e-6)
             np.testing.assert_allclose(linear2.weight.numpy(), fc2_w, rtol=1e-6)
             np.testing.assert_allclose(linear2.bias.numpy(), fc2_b, rtol=1e-6)

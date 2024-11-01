@@ -2401,9 +2401,10 @@ set +x
         echo "Starting running xpu tests"
         export XPU_OP_LIST_DIR=$tmp_dir
         ut_startTime_s=`date +%s`
-        test_cases=$(ctest -N -V -LE "(RUN_TYPE=DIST_KUNLUN)" | grep "_xpu" )        # cases list which would be run exclusively
         get_quickly_disable_ut||disable_ut_quickly='disable_ut'   # indicate whether the case was in quickly disable list
+        test_cases=$(ctest -N -V -E "$disable_ut_quickly" -LE "(RUN_TYPE=DIST_KUNLUN)")        # cases list which would be run exclusively
 
+        single_card_test_num=0
         while read -r line; do
             if [[ "$line" == "" ]]; then
                 continue
@@ -2413,6 +2414,17 @@ set +x
                 continue
             fi
             testcase=$(echo "$line"|grep -oEi "\w+$")
+            single_card_test_num=$(($single_card_test_num+1))
+            if [[ $single_card_test_num -gt 1200 ]]; then
+                # too many test cases in single set will lead to ctest "RegularExpression::compile(): Expression too big." error
+                # therefore use a new test set
+                if [[ "$single_card_tests_1" == "" ]]; then
+                    single_card_tests_1="^$testcase$"
+                else
+                    single_card_tests_1="$single_card_tests_1|^$testcase$"
+                fi
+                continue
+            fi
             if [[ "$single_card_tests" == "" ]]; then
                 single_card_tests="^$testcase$"
             else
@@ -2420,6 +2432,7 @@ set +x
             fi
         done <<< "$test_cases";
         card_test "$single_card_tests" 1 4
+        card_test "$single_card_tests_1" 1 4
         failed_test_lists=''
         collect_failed_tests
         xputest_error=0
