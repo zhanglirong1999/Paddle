@@ -29,6 +29,9 @@ Operation *Builder::Build(OperationArgument &&argument) {
   if (op_role_ != -1) {
     op->set_attribute("op_role", Int32Attribute::get(context_, op_role_));
   }
+  if (chunk_id_ != -1) {
+    op->set_attribute("chunk_id", Int32Attribute::get(context_, chunk_id_));
+  }
   return op;
 }
 

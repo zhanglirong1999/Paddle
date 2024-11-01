@@ -118,6 +118,10 @@ class Builder {
   /// Set/Get the op_role
   void set_op_role(int op_role) { op_role_ = op_role; }
   int op_role() const { return op_role_; }
+
+  /// Set/Get the chunk_id
+  void set_chunk_id(int chunk_id) { chunk_id_ = chunk_id; }
+  int chunk_id() const { return chunk_id_; }
   IrContext *ir_context() const { return context_; }
 
   Block *block() const { return insertion_point_.first; }
@@ -178,6 +182,7 @@ class Builder {
   // by now the op_role is used by autoparallel for distinguish the op in fw,
   // bw, opt region.
   int op_role_ = -1;
+  int chunk_id_ = -1;
 };
 
 template <typename OpTy, typename... Args>

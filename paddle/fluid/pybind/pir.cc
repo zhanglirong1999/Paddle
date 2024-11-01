@@ -1089,6 +1089,21 @@ void BindOperation(py::module *m) {
             self.set_attribute(
                 "op_role",
                 Int32Attribute::get(pir::IrContext::Instance(), op_role));
+          })
+      .def_property(
+          "chunk_id",
+          [](Operation &self) -> py::object {
+            auto int_attr = self.attribute<Int32Attribute>("chunk_id");
+            if (int_attr) {
+              return py::cast(int_attr.data());
+            } else {
+              return py::cast(-1);
+            }
+          },
+          [](Operation &self, const int &chunk_id) {
+            self.set_attribute(
+                "chunk_id",
+                Int32Attribute::get(pir::IrContext::Instance(), chunk_id));
           });
   py::class_<Operation::BlockContainer> block_container(
       *m, "Operation_BlockContainer", R"DOC(
@@ -2145,6 +2160,9 @@ void BindUtils(pybind11::module *m) {
          []() { ApiBuilder::Instance().ResetInsertionPointToStart(); });
   m->def("reset_insertion_point_to_end",
          []() { ApiBuilder::Instance().ResetInsertionPointToEnd(); });
+  m->def("set_chunk_id",
+         [](int chunk_id) { ApiBuilder::Instance().SetChunckId(chunk_id); });
+  m->def("get_chunk_id", []() { return ApiBuilder::Instance().GetChunckId(); });
   m->def("set_op_role",
          [](int op_role) { ApiBuilder::Instance().SetOpRole(op_role); });
   m->def("get_op_role", []() { return ApiBuilder::Instance().GetOpRole(); });

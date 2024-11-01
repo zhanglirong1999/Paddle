@@ -16,7 +16,11 @@ import unittest
 
 import paddle
 import paddle.distributed as dist
-from paddle.base.framework import auto_complete_op_role, pir_op_role_guard
+from paddle.base.framework import (
+    auto_complete_op_role,
+    pir_chunk_id_guard,
+    pir_op_role_guard,
+)
 from paddle.distributed import Replicate, Shard
 from paddle.distributed.auto_parallel.static.mix_to_dist_pass import (
     apply_mix2dist_pass,
@@ -39,17 +43,17 @@ class TestOpRole(unittest.TestCase):
                 x1 = paddle.nn.functional.relu(x0)
                 x2 = paddle.nn.functional.relu(x1)
 
-                with pir_op_role_guard(1):
+                with pir_op_role_guard(1), pir_chunk_id_guard(2):
                     y0 = paddle.static.data(name='y0', shape=[1, 128, 512])
                     y1 = paddle.nn.functional.relu(y0)
                     z0 = paddle.add(y1, x2)
                     z0 = z0 * 3.0
-                with pir_op_role_guard(3):
+                with pir_op_role_guard(3), pir_chunk_id_guard(1):
                     z1 = paddle.nn.functional.relu(z0)
                     z2 = paddle.add(y0, z1)
                     z4 = paddle.split(z0, num_or_sections=[8, 100, 20], axis=1)
 
-                with pir_op_role_guard(0):
+                with pir_op_role_guard(0), pir_chunk_id_guard(3):
                     z3 = paddle.add(y1, z2)
 
                 # op_role = -1
@@ -57,26 +61,26 @@ class TestOpRole(unittest.TestCase):
 
         # check global shape
         std_ops = [
-            "pd_op.data:-1",
-            "pd_op.data:1",
-            "pd_op.relu:-1",
-            "pd_op.relu:-1",
-            "pd_op.relu:1",
-            "pd_op.add:1",
-            "pd_op.full:1",
-            "pd_op.scale:1",
-            "pd_op.relu:3",
-            "pd_op.add:3",
-            "pd_op.full_int_array:3",
-            "pd_op.full:3",
-            "pd_op.split:3",
-            "builtin.split:3",
-            "pd_op.add:0",
-            "pd_op.add:-1",
+            "pd_op.data:-1:-1",
+            "pd_op.data:1:2",
+            "pd_op.relu:-1:-1",
+            "pd_op.relu:-1:-1",
+            "pd_op.relu:1:2",
+            "pd_op.add:1:2",
+            "pd_op.full:1:2",
+            "pd_op.scale:1:2",
+            "pd_op.relu:3:1",
+            "pd_op.add:3:1",
+            "pd_op.full_int_array:3:1",
+            "pd_op.full:3:1",
+            "pd_op.split:3:1",
+            "builtin.split:3:1",
+            "pd_op.add:0:3",
+            "pd_op.add:-1:-1",
         ]
 
         cur_ops = [
-            f"{op.name()}:{op.op_role}"
+            f"{op.name()}:{op.op_role}:{op.chunk_id}"
             for op in main_program.global_block().ops
         ]
         self.assertEqual(cur_ops, std_ops)
@@ -142,6 +146,7 @@ class TestOpRole(unittest.TestCase):
             f"{op.name()}:{op.op_role}"
             for op in main_program.global_block().ops
         ]
+
         self.assertEqual(cur_ops, std_ops)
 
 

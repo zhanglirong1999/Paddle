@@ -8477,3 +8477,16 @@ def pir_op_role_guard(op_role: int - 1) -> Generator[None, None, None]:
     finally:
         if paddle.framework.in_pir_mode():
             pir.set_op_role(original_op_rope)
+
+
+@signature_safe_contextmanager
+def pir_chunk_id_guard(chunk_id: int - 1) -> Generator[None, None, None]:
+
+    if paddle.framework.in_pir_mode():
+        original_chunk_id = pir.get_chunk_id()
+        pir.set_chunk_id(chunk_id)
+    try:
+        yield
+    finally:
+        if paddle.framework.in_pir_mode():
+            pir.set_chunk_id(original_chunk_id)

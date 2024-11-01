@@ -26,6 +26,7 @@ from paddle.base.core import (
     has_decomp,
     has_decomp_vjp,
 )
+from paddle.base.framework import pir_chunk_id_guard, pir_op_role_guard
 from paddle.base.libpaddle.pir import Block, Operation
 from paddle.base.wrapped_decorator import signature_safe_contextmanager
 from paddle.decomposition.recompute import DebugPrint, auto_recompute
@@ -868,23 +869,28 @@ def decompose_dist_program(pir_program):
                 ) and _check_prim_dynamic(op):
                     skip_decomp = True
                 if not skip_decomp:
-                    pir.set_insertion_point(op)
-                    orig_outs = op.results()
+                    with pir_op_role_guard(op.op_role), pir_chunk_id_guard(
+                        op.chunk_id
+                    ):
+                        pir.set_insertion_point(op)
+                        orig_outs = op.results()
 
-                    is_next_split = False
-                    decomp_outs = call_decomp_vjp(op)
-                    for i in range(len(orig_outs)):
-                        if orig_outs[i].has_one_use():
-                            next_op = orig_outs[i].first_use().owner()
-                            if next_op.name() == "builtin.split":
-                                is_next_split = True
-                                _check_op_results(
-                                    next_op.name(),
-                                    next_op.results(),
-                                    decomp_outs[i],
-                                )
-                                next_op.replace_all_uses_with(decomp_outs[i])
-                                block.remove_op(next_op)
+                        is_next_split = False
+                        decomp_outs = call_decomp_vjp(op)
+                        for i in range(len(orig_outs)):
+                            if orig_outs[i].has_one_use():
+                                next_op = orig_outs[i].first_use().owner()
+                                if next_op.name() == "builtin.split":
+                                    is_next_split = True
+                                    _check_op_results(
+                                        next_op.name(),
+                                        next_op.results(),
+                                        decomp_outs[i],
+                                    )
+                                    next_op.replace_all_uses_with(
+                                        decomp_outs[i]
+                                    )
+                                    block.remove_op(next_op)
 
                     if not is_next_split:
                         new_outs = _analyse_decomp_results(
