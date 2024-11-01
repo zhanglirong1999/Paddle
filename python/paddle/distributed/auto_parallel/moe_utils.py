@@ -16,6 +16,7 @@
 from __future__ import annotations
 
 import copy
+import os
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -39,6 +40,9 @@ def _specific_alltoall_dim(
     """
     Get the specific dimension for alltoall communication in nd_mesh reshard.
     """
+    if not os.getenv("FLAGS_enable_moe_utils") == "true":
+        return None
+
     mesh_dim = None
     src_mesh = dist_tensor.process_mesh
     src_placements = dist_tensor.placements
@@ -137,6 +141,7 @@ class _local_reshape(PyLayer):
         ctx,
         dist_tensor: Tensor,
         global_shape: list,
+        local_shape: list,
         mesh: ProcessMesh,
         placements: list[Placement],
     ):
@@ -149,10 +154,6 @@ class _local_reshape(PyLayer):
         ctx.x_mesh = copy.deepcopy(dist_tensor.process_mesh)
         ctx.x_placements = copy.deepcopy(dist_tensor.placements)
 
-        local_shape = _cal_local_shape(global_shape, mesh, placements)
-        assert np.prod(local_shape) == np.prod(
-            local_tensor.shape
-        ), f"The local shapes {local_shape} and {local_tensor.shape} are mismatched."
         local_tensor = local_tensor.reshape(local_shape)
         out = paddle.Tensor(
             local_tensor,
@@ -192,19 +193,15 @@ def _dist_reshape(
     and mannualy set the process_mesh and placements of the output.
     """
     tgt_global_shape = infer_positive_shape(dist_tensor.shape, global_shape)
-    src_mesh = dist_tensor.process_mesh
-    if (
-        src_mesh.process_ids == mesh.process_ids
-        and src_mesh.shape != mesh.shape
-    ):
-        # trying to modify the mesh shape, only supported when the
-        # input and output tensors are all replicated.
-        assert all(
-            p.is_replicated() for p in dist_tensor.placements + placements
-        ), "Only support modifying the mesh shape when the input and output tensors are all replicated."
+    tgt_local_shape = _cal_local_shape(tgt_global_shape, mesh, placements)
+    src_local_shape = dist_tensor._local_value().shape
+    assert np.prod(tgt_local_shape) == np.prod(
+        src_local_shape
+    ), f"The local shapes {src_local_shape} and {tgt_local_shape} are mismatched."
+
     if paddle.in_dynamic_mode():
         return _local_reshape.apply(
-            dist_tensor, tgt_global_shape, mesh, placements
+            dist_tensor, tgt_global_shape, tgt_local_shape, mesh, placements
         )
     else:
         raise NotImplementedError(
@@ -215,6 +212,9 @@ def _dist_reshape(
 def _reshard_mesh_shape(
     dist_tensor: Tensor, mesh: ProcessMesh, placements: list[Placement]
 ):
+    if not os.getenv("FLAGS_enable_moe_utils") == "true":
+        return False
+
     src_mesh = dist_tensor.process_mesh
     if src_mesh == mesh or src_mesh.process_ids != mesh.process_ids:
         return False

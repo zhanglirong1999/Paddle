@@ -12,10 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
 import unittest
 
-sys.path.append("..")
 import collective.test_communication_api_base as test_base
 
 
@@ -30,7 +28,12 @@ class TestSemiAutoParallelMoEUtils(test_base.CommunicationTestDistBase):
 
     def test_moe_utils(self):
         envs_list = test_base.gen_product_envs_list(
-            {"dtype": "float32", "seed": "2024"}, {"backend": ["gpu"]}
+            {
+                "dtype": "float32",
+                "seed": "2024",
+                "FLAGS_enable_moe_utils": "true",
+            },
+            {"backend": ["gpu"]},
         )
         for envs in envs_list:
             self.run_test_case(
