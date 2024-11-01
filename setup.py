@@ -1914,6 +1914,7 @@ def get_setup_parameters():
         'paddle.distributed.fleet.meta_parallel.sharding',
         'paddle.distributed.fleet.meta_parallel.parallel_layers',
         'paddle.distributed.auto_parallel',
+        'paddle.distributed.auto_parallel.intermediate',
         'paddle.distributed.auto_parallel.dygraph',
         'paddle.distributed.auto_parallel.static',
         'paddle.distributed.auto_parallel.static.operators',

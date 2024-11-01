@@ -13,6 +13,7 @@
 # limitations under the License.
 import logging
 import os
+import random
 from functools import reduce
 
 import numpy as np
@@ -21,6 +22,9 @@ from single_llama_model import LlamaForCausalLM, LlamaPretrainingCriterion
 import paddle
 import paddle.distributed as dist
 from paddle import LazyGuard
+from paddle.distributed.auto_parallel.intermediate.sharded_data_parallel import (
+    sharded_data_parallel,
+)
 from paddle.io import BatchSampler, DataLoader, Dataset
 
 
@@ -124,11 +128,25 @@ class TestParallelAPI:
             self.amp_level = os.getenv("amp_level")
         if os.getenv("amp_master_grad") == "true":
             self.amp_master_grad = True
+        self.sharding_stage_to_level = [None, "os", "os_g", "p_g_os"]
+        self.level = self.sharding_stage_to_level[
+            int(os.getenv("sharding_stage", 0))
+        ]
 
+        seed = int(os.getenv("seed", 2024))
+        np.random.seed(seed)
+        random.seed(seed)
+        paddle.seed(seed)
+        self.only_build = int(os.getenv("only_build", 0))
         self.init_dist_env()
 
     def init_dist_env(self):
-        mesh_dims = [("dp", self.dp), ("pp", self.mp), ("mp", self.pp)]
+        order = ["dp", "pp", "mp"]
+        dp_degree = self.dp
+        mp_degree = self.mp
+        pp_degree = self.pp
+        degree = [dp_degree, pp_degree, mp_degree]
+        mesh_dims = list(filter(lambda x: x[1] > 1, list(zip(order, degree))))
         if not mesh_dims:
             mesh_dims = [("dp", 1)]
         dim_names = [mesh_dim[0] for mesh_dim in mesh_dims]
@@ -139,11 +157,15 @@ class TestParallelAPI:
         global_mesh = dist.ProcessMesh(mesh_arr, dim_names)
         dist.auto_parallel.set_mesh(global_mesh)
 
-    def parallel_model(self, layer, optimizer=None, only_build=False):
+    def parallel_model(self, layer, optimizer=None):
         # call parallel api here
-        return layer
+        if self.dp > 1:
+            layer, optimizer = sharded_data_parallel(
+                layer, optimizer, self.level
+            )
+        return layer, optimizer
 
-    def run_llama(self, to_static=0, only_build=False):
+    def run_llama(self, to_static=0):
         if self.config.use_lazy_init:
             with LazyGuard():
                 model = LlamaForCausalLM(self.config)
@@ -162,19 +184,16 @@ class TestParallelAPI:
                 dtype=self.amp_dtype,
                 master_grad=self.amp_master_grad,
             )
-        optimizer = dist.shard_optimizer(optimizer)
-        model = self.parallel_model(
-            model, optimizer=optimizer, only_build=only_build
-        )
+        model, optimizer = self.parallel_model(model, optimizer)
 
         criterion = LlamaPretrainingCriterion(self.config)
-        criterion = self.parallel_model(criterion)
         if self.config.use_lazy_init:
             for param in model.parameters():
                 assert not param._is_initialized()
                 param.initialize()
 
-        if only_build:
+        if self.only_build:
+            # check model here
             return
 
         train_dataset = RandomDataset(self.config.seq_length)
@@ -213,52 +232,51 @@ class TestParallelAPI:
                 scaler = paddle.amp.GradScaler(init_loss_scaling=1024)
                 scaler = dist.shard_scaler(scaler)
 
-            for epoch_idx in range(1):
-                for step, inputs in enumerate(dist_loader()):
-                    input_ids, labels = inputs
-                    custom_black_list = [
-                        "reduce_sum",
-                        "c_softmax_with_cross_entropy",
-                    ]
-                    custom_white_list = []
-                    if self.amp_level == "O2":
-                        custom_white_list.extend(
-                            ["lookup_table", "lookup_table_v2"]
-                        )
-                    with paddle.amp.auto_cast(
-                        self.amp,
-                        custom_black_list=set(custom_black_list),
-                        custom_white_list=set(custom_white_list),
-                        level=self.amp_level,
-                        dtype=self.amp_dtype,
-                    ):
-                        logits = model(input_ids)
-                        tr_loss_step = criterion(logits, labels)
+            for step, inputs in enumerate(dist_loader()):
+                input_ids, labels = inputs
+                custom_black_list = [
+                    "reduce_sum",
+                    "c_softmax_with_cross_entropy",
+                ]
+                custom_white_list = []
+                if self.amp_level == "O2":
+                    custom_white_list.extend(
+                        ["lookup_table", "lookup_table_v2"]
+                    )
+                with paddle.amp.auto_cast(
+                    self.amp,
+                    custom_black_list=set(custom_black_list),
+                    custom_white_list=set(custom_white_list),
+                    level=self.amp_level,
+                    dtype=self.amp_dtype,
+                ):
+                    logits = model(input_ids)
+                    tr_loss_step = criterion(logits, labels)
 
-                    if self.gradient_accumulation_steps > 1:
-                        tr_loss_step /= self.gradient_accumulation_steps
+                if self.gradient_accumulation_steps > 1:
+                    tr_loss_step /= self.gradient_accumulation_steps
+                if scaler is not None:
+                    scaler.scale(tr_loss_step).backward()
+                else:
+                    tr_loss_step.backward()
+                tr_loss += tr_loss_step
+
+                if global_step % self.gradient_accumulation_steps == 0:
+                    logging.info(
+                        f"step: {global_step // self.gradient_accumulation_steps}  loss: {tr_loss.numpy()}"
+                    )
                     if scaler is not None:
-                        scaler.scale(tr_loss_step).backward()
+                        scaler.step(optimizer)
+                        scaler.update()
                     else:
-                        tr_loss_step.backward()
-                    tr_loss += tr_loss_step
+                        optimizer.step()
+                    optimizer.clear_grad()
+                    lr_scheduler.step()
+                    tr_loss = 0
 
-                    if global_step % self.gradient_accumulation_steps == 0:
-                        logging.info(
-                            f"step: {global_step // self.gradient_accumulation_steps}  loss: {tr_loss.numpy()}"
-                        )
-                        if scaler is not None:
-                            scaler.step(optimizer)
-                            scaler.update()
-                        else:
-                            optimizer.step()
-                        optimizer.clear_grad()
-                        lr_scheduler.step()
-                        tr_loss = 0
-
-                    global_step += 1
-                    if global_step // self.gradient_accumulation_steps >= 10:
-                        break
+                global_step += 1
+                if global_step // self.gradient_accumulation_steps >= 10:
+                    break
         else:
             strategy = dist.Strategy()
             if self.gradient_accumulation_steps > 1:
@@ -292,8 +310,7 @@ class TestParallelAPI:
                     break
 
     def run_test_cases(self):
-        self.run_llama(only_build=True)
-        # self.run_llama(to_static=0)
+        self.run_llama(to_static=0)
         # self.run_llama(to_static=1)
 
 
