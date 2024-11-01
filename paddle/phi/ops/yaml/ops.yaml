@@ -826,17 +826,6 @@
     func : c_scatter
   traits : paddle::dialect::ForwardOnlyTrait
 
-- op : c_sync_calc_stream
-  args : (Tensor x)
-  output : Tensor(out)
-  infer_meta :
-    func : UnchangedInferMeta
-    param : [x]
-  kernel :
-    func : c_sync_calc_stream
-  inplace : (x -> out)
-  traits : paddle::dialect::ForwardOnlyTrait
-
 - op : c_sync_comm_stream
   args : (Tensor x, int ring_id)
   output : Tensor(out)
