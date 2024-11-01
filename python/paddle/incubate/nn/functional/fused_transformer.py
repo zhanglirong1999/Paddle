@@ -1260,7 +1260,7 @@ def fused_multi_transformer(
     )  # semantic transfer
 
     if in_dynamic_or_pir_mode():
-        cache_kv_out, final_out = _legacy_C_ops.fused_multi_transformer(
+        cache_kv_out, final_out = _C_ops.fused_multi_transformer_(
             x,
             ln_scales,
             ln_biases,
@@ -1281,32 +1281,18 @@ def fused_multi_transformer(
             ffn1_biases,
             ffn2_weights,
             ffn2_biases,
-            cache_kvs,
-            'pre_layer_norm',
             pre_layer_norm,
-            'epsilon',
             epsilon,
-            'residual_alpha',
             residual_alpha,
-            'dropout_rate',
             dropout_rate,
-            'rotary_emb_dims',
             rotary_emb_dims,
-            'is_test',
             not training,
-            'dropout_implementation',
             mode,
-            'act_method',
             activation,
-            'trans_qkvw',
             trans_qkvw,
-            'ring_id',
             ring_id,
-            'norm_type',
             norm_type,
-            'use_neox_rotary_style',
             use_neox_rotary_style,
-            'gqa_group_size',
             gqa_group_size,
         )
         if cache_kvs is not None:
@@ -1328,40 +1314,40 @@ def fused_multi_transformer(
 
         # set inputs
         inputs = {}
-        inputs['X'] = [x]
-        inputs['LnScale'] = ln_scales
-        inputs['QKVW'] = qkv_weights
+        inputs['x'] = [x]
+        inputs['ln_scales'] = ln_scales
+        inputs['qkv_weights'] = qkv_weights
 
         if ln_biases is not None:
-            inputs['LnBias'] = ln_biases
+            inputs['ln_biases'] = ln_biases
         if qkv_biases is not None:
-            inputs['QKVBias'] = qkv_biases
+            inputs['qkv_biases'] = qkv_biases
         if cache_kvs is not None:
             assert len(cache_kvs) == len(qkv_weights)
-            inputs['CacheKV'] = cache_kvs
+            inputs['cache_kvs'] = cache_kvs
             if time_step is not None:
-                inputs['TimeStep'] = time_step
+                inputs['time_step'] = time_step
         if pre_caches is not None:
-            inputs['PreCaches'] = pre_caches
+            inputs['pre_caches'] = pre_caches
         if beam_offset is not None:
-            inputs['BeamCacheOffset'] = beam_offset
+            inputs['beam_offset'] = beam_offset
         if rotary_emb_dims > 0:
-            inputs['RotaryPosEmb'] = rotary_embs
-        inputs['SeqLengths'] = seq_lens
-        inputs['SrcMask'] = attn_mask
-        inputs['OutLinearW'] = linear_weights
+            inputs['rotary_embs'] = rotary_embs
+        inputs['seq_lengths'] = seq_lens
+        inputs['src_mask'] = attn_mask
+        inputs['out_linear_weights'] = linear_weights
         if linear_biases is not None:
-            inputs['OutLinearBias'] = linear_biases
+            inputs['out_linear_biases'] = linear_biases
 
-        inputs['FFNLnScale'] = ffn_ln_scales
+        inputs['ffn_ln_scales'] = ffn_ln_scales
         if ffn_ln_biases is not None:
-            inputs['FFNLnBias'] = ffn_ln_biases
-        inputs['FFN1Weight'] = ffn1_weights
+            inputs['ffn_ln_biases'] = ffn_ln_biases
+        inputs['ffn1_weights'] = ffn1_weights
         if ffn1_biases is not None:
-            inputs['FFN1Bias'] = ffn1_biases
-        inputs['FFN2Weight'] = ffn2_weights
+            inputs['ffn1_biases'] = ffn1_biases
+        inputs['ffn2_weights'] = ffn2_weights
         if ffn2_biases is not None:
-            inputs['FFN2Bias'] = ffn2_biases
+            inputs['ffn2_biases'] = ffn2_biases
 
         # set attrs
         attrs = {
@@ -1382,10 +1368,10 @@ def fused_multi_transformer(
 
         outputs = {}
         final_out = helper.create_variable_for_type_inference(dtype=dtype)
-        outputs['Out'] = final_out
+        outputs['out'] = final_out
         if cache_kvs:
             # NOTE: inplace
-            outputs['CacheKVOut'] = cache_kvs
+            outputs['cache_kv_outs'] = cache_kvs
 
         helper.append_op(
             type='fused_multi_transformer',
