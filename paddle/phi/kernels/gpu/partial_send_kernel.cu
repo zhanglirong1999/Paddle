@@ -27,13 +27,11 @@
 namespace phi {
 
 template <typename T, typename Context>
-void PartialSendCUDAKernel(const Context& dev_ctx,
-                           const DenseTensor& x_in,
-                           int ring_id UNUSED,
-                           int peer,
-                           bool use_calc_stream UNUSED,
-                           int num,
-                           int id) {
+void PartialSendKernel(const Context& dev_ctx,
+                       const DenseTensor& x_in,
+                       int peer,
+                       int num,
+                       int id) {
 #if (defined(PADDLE_WITH_RCCL) || defined(PADDLE_WITH_NCCL)) && \
     NCCL_VERSION_CODE >= 2703
   auto x = &x_in;
@@ -107,7 +105,7 @@ void PartialSendCUDAKernel(const Context& dev_ctx,
 PD_REGISTER_KERNEL(partial_send,
                    GPU,
                    ALL_LAYOUT,
-                   phi::PartialSendCUDAKernel,
+                   phi::PartialSendKernel,
                    float,
                    double,
                    phi::dtype::bfloat16,
@@ -118,7 +116,7 @@ PD_REGISTER_KERNEL(partial_send,
 PD_REGISTER_KERNEL(partial_send,
                    GPU,
                    ALL_LAYOUT,
-                   phi::PartialSendCUDAKernel,
+                   phi::PartialSendKernel,
                    float,
                    double,
                    int,
