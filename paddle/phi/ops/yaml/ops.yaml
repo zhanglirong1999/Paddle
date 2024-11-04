@@ -3980,7 +3980,7 @@
     data_type : x
   backward : rank_attention_grad
   optional : ins_rank, input_help
-  # interfaces : paddle::dialect::InferSymbolicShapeInterface
+  interfaces : paddle::dialect::InferSymbolicShapeInterface
 
 - op : read_file
   args : (str filename = "", DataType dtype=DataType::UINT8, Place place=CPUPlace())

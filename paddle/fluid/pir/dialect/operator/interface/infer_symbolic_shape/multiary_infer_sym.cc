@@ -3491,12 +3491,55 @@ bool PyramidHashOpInferSymbolicShape(
 //   return QuantizeLinearOpInferSymbolicShape(op, infer_context);
 // }
 
-// bool RankAttentionOpInferSymbolicShape(pir::Operation *op,
-//                                        pir::InferSymbolicShapeContext
-//                                        *infer_context) {
-//   // pass
-//   return true;
-// }
+bool RankAttentionOpInferSymbolicShape(
+    pir::Operation *op, pir::InferSymbolicShapeContext *infer_context) {
+  const auto &x_shape_or_data =
+      infer_context->GetShapeOrDataForValue(op->operand_source(0));
+  const auto &rank_offset_shape_or_data =
+      infer_context->GetShapeOrDataForValue(op->operand_source(1));
+  const auto &rank_param_shape_or_data =
+      infer_context->GetShapeOrDataForValue(op->operand_source(2));
+
+  const std::vector<symbol::DimExpr> &x_shape = x_shape_or_data.shape();
+  const std::vector<symbol::DimExpr> &offset_shape =
+      rank_offset_shape_or_data.shape();
+  const std::vector<symbol::DimExpr> &param_shape =
+      rank_param_shape_or_data.shape();
+
+  int max_rank = op->attribute<pir::Int32Attribute>("max_rank").data();
+  infer_context->AddEqualCstr((offset_shape[1] - 1) / 2,
+                              symbol::DimExpr(max_rank));
+
+  std::vector<symbol::DimExpr> out_shape = {x_shape[0], param_shape[1]};
+  infer_context->SetShapeOrDataForValue(
+      op->result(1),
+      symbol::ShapeOrDataDimExprs{
+          symbol::TensorShapeOrDataDimExprs(out_shape)});
+
+  if (details::IsFakeValue(op->result(0))) {
+    infer_context->SetSymbolForValueByStaticShape(op->result(0));
+  } else {
+    std::vector<symbol::DimExpr> x_help_shape = {x_shape[0],
+                                                 x_shape[1] * max_rank};
+    infer_context->SetShapeOrDataForValue(
+        op->result(0),
+        symbol::ShapeOrDataDimExprs{
+            symbol::TensorShapeOrDataDimExprs(x_help_shape)});
+  }
+
+  if (details::IsFakeValue(op->result(2))) {
+    infer_context->SetSymbolForValueByStaticShape(op->result(2));
+  } else {
+    std::vector<symbol::DimExpr> ins_rank_shape = {x_shape[0], 1};
+    infer_context->SetShapeOrDataForValue(
+        op->result(2),
+        symbol::ShapeOrDataDimExprs{
+            symbol::TensorShapeOrDataDimExprs(ins_rank_shape)});
+  }
+
+  return true;
+}
+
 bool RandomRoutingOpInferSymbolicShape(
     pir::Operation *op, pir::InferSymbolicShapeContext *infer_context) {
   const auto &top_value_shape =
