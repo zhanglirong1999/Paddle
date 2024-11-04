@@ -22,6 +22,9 @@ from single_llama_model import LlamaForCausalLM, LlamaPretrainingCriterion
 import paddle
 import paddle.distributed as dist
 from paddle import LazyGuard
+from paddle.distributed.auto_parallel.intermediate.parallel_base import (
+    parallelize_model_and_optimizer,
+)
 from paddle.distributed.auto_parallel.intermediate.sharded_data_parallel import (
     sharded_data_parallel,
 )
@@ -163,6 +166,10 @@ class TestParallelAPI:
             layer, optimizer = sharded_data_parallel(
                 layer, optimizer, self.level
             )
+        if self.mp > 1:
+            # TODO(yaliu): add mp here
+            return None, None
+        layer, optimizer = parallelize_model_and_optimizer(layer, optimizer)
         return layer, optimizer
 
     def run_llama(self, to_static=0):
