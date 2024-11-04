@@ -2354,12 +2354,78 @@ bool GroupNormOpInferSymbolicShape(
   return true;
 }
 
-// bool InstanceNormOpInferSymbolicShape(pir::Operation *op,
-//                                       pir::InferSymbolicShapeContext
-//                                       *infer_context) {
-//   // pass
-//   return true;
-// }
+bool InstanceNormOpInferSymbolicShape(
+    pir::Operation *op, pir::InferSymbolicShapeContext *infer_context) {
+  const std::vector<symbol::DimExpr> &x_shape =
+      infer_context->GetShapeOrDataForValue(op->operand_source(0)).shape();
+  PADDLE_ENFORCE_GE(
+      x_shape.size(),
+      2,
+      common::errors::InvalidArgument(
+          "ShapeError: the dimension of input X must "
+          "greater than or equal to 2. But received: the shape of input "
+          "X = [%s], the dimension of input X =[%d]",
+          x_shape,
+          x_shape.size()));
+  PADDLE_ENFORCE_LE(
+      x_shape.size(),
+      5,
+      common::errors::InvalidArgument(
+          "ShapeError: the dimension of input X must "
+          "smaller than or equal to 5, But received: the shape of input "
+          "X = [%s], the dimension of input X = [%d]",
+          x_shape,
+          x_shape.size()));
+  symbol::DimExpr N = x_shape[0];
+  symbol::DimExpr C = x_shape[1];
+  symbol::DimExpr NxC = N * C;
+  if (op->operand_source(1)) {
+    const std::vector<symbol::DimExpr> &scale_shape =
+        infer_context->GetShapeOrDataForValue(op->operand_source(1)).shape();
+    PADDLE_ENFORCE_EQ(
+        scale_shape.size(),
+        1UL,
+        common::errors::InvalidArgument(
+            "ShapeError: the dimension of scale must equal to 1."
+            "But received: the shape of scale is [%s], the dimension "
+            "of scale is [%d]",
+            scale_shape,
+            scale_shape.size()));
+    infer_context->AddEqualCstr(C, scale_shape[0]);
+  }
+  if (op->operand(2)) {
+    const std::vector<symbol::DimExpr> &bias_shape =
+        infer_context->GetShapeOrDataForValue(op->operand_source(2)).shape();
+    PADDLE_ENFORCE_EQ(
+        bias_shape.size(),
+        1UL,
+        common::errors::InvalidArgument(
+            "ShapeError: the dimension of bias must equal to 1."
+            "But received: the shape of bias is [%s],the dimension "
+            "of bias is [%d]",
+            bias_shape,
+            bias_shape.size()));
+    infer_context->AddEqualCstr(C, bias_shape[0]);
+  }
+  infer_context->SetShapeOrDataForValue(
+      op->result(0),
+      symbol::ShapeOrDataDimExprs{symbol::TensorShapeOrDataDimExprs(x_shape)});
+  if (paddle::dialect::details::IsFakeValue(op->result(1))) {
+    infer_context->SetSymbolForValueByStaticShape(op->result(1));
+  } else {
+    infer_context->SetShapeOrDataForValue(
+        op->result(1),
+        symbol::ShapeOrDataDimExprs{symbol::TensorShapeOrDataDimExprs({NxC})});
+  }
+  if (paddle::dialect::details::IsFakeValue(op->result(2))) {
+    infer_context->SetSymbolForValueByStaticShape(op->result(2));
+  } else {
+    infer_context->SetShapeOrDataForValue(
+        op->result(2),
+        symbol::ShapeOrDataDimExprs{symbol::TensorShapeOrDataDimExprs({NxC})});
+  }
+  return true;
+}
 
 bool LerpOpInferSymbolicShape(pir::Operation *op,
                               pir::InferSymbolicShapeContext *infer_context) {

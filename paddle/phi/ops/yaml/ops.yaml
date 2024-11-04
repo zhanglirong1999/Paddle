@@ -2711,6 +2711,7 @@
   optional : scale, bias
   intermediate : saved_mean, saved_variance
   backward : instance_norm_grad
+  interfaces : paddle::dialect::InferSymbolicShapeInterface
 
 - op : inverse
   args : (Tensor x)
