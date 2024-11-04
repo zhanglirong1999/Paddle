@@ -26,7 +26,7 @@ trt_plugin_lib.initLibNvInferPlugins(None, "")
 
 import paddle
 from paddle import pir
-from paddle.base.core import get_value_shape_range_info
+from paddle.base.core import clear_shape_info, get_value_shape_range_info
 from paddle.base.log_helper import get_logger
 
 from .impls.activation import *  # noqa: F403
@@ -123,6 +123,7 @@ class PaddleToTensorRTConverter:
 
     def convert_subgraph_to_trt(self, program, group_op):
         _logger.info(f"start process {group_op}")
+
         operations = next(iter(group_op.blocks())).ops
         input_values, output_values = self.find_graph_inputs_outputs(group_op)
         builder = trt.Builder(trt.Logger(trt.Logger.ERROR))
@@ -270,13 +271,14 @@ class PaddleToTensorRTConverter:
                         max_value = get_value_shape_range_info(
                             value, True, paddle.base.core.ShapeMode.kMAX
                         )
-                _logger.info(f"set min_shape of {value} as {min_shape}")
-                _logger.info(f"set opt_shape of {value} as {opt_shape}")
-                _logger.info(f"set max_shape of {value} as {max_shape}")
-                profile.set_shape(
-                    input_name, min=min_shape, opt=opt_shape, max=max_shape
-                )
-                if trt_input.is_shape_tensor:
+                if not trt_input.is_shape_tensor:
+                    _logger.info(f"set min_shape of {value} as {min_shape}")
+                    _logger.info(f"set opt_shape of {value} as {opt_shape}")
+                    _logger.info(f"set max_shape of {value} as {max_shape}")
+                    profile.set_shape(
+                        input_name, min=min_shape, opt=opt_shape, max=max_shape
+                    )
+                else:
                     _logger.info(
                         f"set min_value of shape input: {value} as {min_value}"
                     )
@@ -438,3 +440,5 @@ class PaddleToTensorRTConverter:
                     orin_out_values[o_i].replace_all_uses_with(new_out[o_i])
 
                 self.program.global_block().remove_op(op)
+        # # Call clear_shape_info to clear the previous shape information
+        clear_shape_info()
