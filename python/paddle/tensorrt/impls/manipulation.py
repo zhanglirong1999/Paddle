@@ -829,3 +829,71 @@ def strided_slice_converter(network, paddle_op, inputs):
     layer.set_input(3, step_tensor)
 
     return layer.get_output(0)
+
+
+@converter_registry.register("pd_op.roll", trt_version="8.x")
+def roll_converter(network, paddle_op, inputs):
+    input_tensor = inputs[0]
+    axis = paddle_op.attrs()["axis"]
+
+    shifts_op = paddle_op.operands()[1].source().get_defining_op()
+    if shifts_op.name() == "pd_op.full_int_array":
+        shifts = shifts_op.attrs()["value"]
+    else:
+        shifts = inputs[1]
+
+    axis_size = len(axis)
+    input_shape_tensor = trt_shape(network, input_tensor)
+
+    for i in range(axis_size):
+        axi = axis[i]
+        if isinstance(shifts, trt.ITensor):
+            shift = get_shape_tensor_element(network, shifts, i)
+            input_shift = shift
+        else:
+            shift = shifts[i]
+            input_shift = add_1D_constant_layer(network, shift)
+        input_axis = get_shape_tensor_element(network, input_shape_tensor, axi)
+
+        # 1.sub_value mod input_axis
+        input1 = trt_sub(network, input_axis, input_shift)
+        tmp_div_res = trt_floor_div(network, input1, input_axis)
+        tmp_prod_res = trt_mul(network, tmp_div_res, input_axis)
+        start = trt_sub(network, input1, tmp_prod_res)
+        # 2.avoid start less than 0,start mod input_axis
+        start = trt_sum(network, start, input_axis)
+        tmp_div_res1 = trt_floor_div(network, start, input_axis)
+        tmp_prod_res1 = trt_mul(network, tmp_div_res1, input_axis)
+        start = trt_sub(network, start, tmp_prod_res1)
+        zero_tensor = add_1D_constant_layer(network, 0)
+        step = add_1D_constant_layer(network, 1)
+        # 3.make index_tensor0
+        sub_qutient = trt_sub(network, input_axis, start)
+        quotient_tensor = trt_floor_div(network, sub_qutient, step)
+        start1 = get_shape_tensor_element(network, start, 0, is_scalar=True)
+        fill_layer0 = network.add_fill(shape=(), op=trt.FillOperation.LINSPACE)
+        fill_layer0.set_input(0, quotient_tensor)
+        fill_layer0.set_input(1, start1)
+        fill_layer0.set_input(2, step)
+        index_tensor0 = fill_layer0.get_output(0)
+        # 4.make index_tensor1
+        sub_qutient_tensor = trt_sub(network, start, zero_tensor)
+        quotient_tensor = trt_floor_div(network, sub_qutient_tensor, step)
+        start2 = add_1D_constant_layer(network, 0, is_scalar=True)
+        fill_layer1 = network.add_fill(shape=(), op=trt.FillOperation.LINSPACE)
+        fill_layer1.set_input(0, quotient_tensor)
+        fill_layer1.set_input(1, start2)
+        fill_layer1.set_input(2, step)
+        index_tensor1 = fill_layer1.get_output(0)
+        itensors = [index_tensor0, index_tensor1]
+        concat_input_tensor = trt_concat(network, itensors)
+        if i == 0:
+            layer = network.add_gather(
+                input=input_tensor, indices=concat_input_tensor, axis=axi
+            )
+        else:
+            layer = network.add_gather(
+                input=layer.get_output(0), indices=concat_input_tensor, axis=axi
+            )
+
+    return layer.get_output(0)
