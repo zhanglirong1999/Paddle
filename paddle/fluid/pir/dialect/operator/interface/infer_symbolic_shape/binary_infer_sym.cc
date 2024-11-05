@@ -658,6 +658,11 @@ bool DepthwiseConv2dOpInferSymbolicShape(
   return Conv2dOpInferSymbolicShape(op, infer_context);
 }
 
+bool DepthwiseConv2dTransposeOpInferSymbolicShape(
+    pir::Operation *op, pir::InferSymbolicShapeContext *infer_context) {
+  return Conv2dTransposeOpInferSymbolicShape(op, infer_context);
+}
+
 bool DotOpInferSymbolicShape(pir::Operation *op,
                              pir::InferSymbolicShapeContext *infer_context) {
   const auto x_shape_or_data =
