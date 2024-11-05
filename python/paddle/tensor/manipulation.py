@@ -52,7 +52,7 @@ if TYPE_CHECKING:
         DTypeLike,
         NestedList,
         NestedSequence,
-        Numberic,
+        Numeric,
         ShapeLike,
         TensorOrTensors,
     )
@@ -6261,7 +6261,7 @@ def moveaxis(
 
 
 def masked_fill(
-    x, mask: Tensor, value: Numberic, name: str | None = None
+    x, mask: Tensor, value: Numeric, name: str | None = None
 ) -> Tensor:
     """
     Fills elements of self tensor with value where mask is True. The shape of mask must be broadcastable with the shape of the underlying tensor.
@@ -6307,7 +6307,7 @@ def masked_fill(
 
 @inplace_apis_in_dygraph_only
 def masked_fill_(
-    x, mask: Tensor, value: Numberic, name: str | None = None
+    x, mask: Tensor, value: Numeric, name: str | None = None
 ) -> Tensor:
     """
     Inplace version of ``masked_fill`` API, the output Tensor will be inplaced with input ``x``.

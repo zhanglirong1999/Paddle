@@ -52,8 +52,8 @@ if TYPE_CHECKING:
 
     from paddle._typing import (
         DTypeLike,
-        NestedNumbericSequence,
-        Numberic,
+        NestedNumericSequence,
+        Numeric,
         ParamAttrLike,
         PlaceLike,
         ShapeLike,
@@ -854,7 +854,7 @@ def _to_tensor_static(
 
 
 def to_tensor(
-    data: TensorLike | NestedNumbericSequence,
+    data: TensorLike | NestedNumericSequence,
     dtype: DTypeLike | None = None,
     place: PlaceLike | None = None,
     stop_gradient: bool = True,
@@ -3185,8 +3185,8 @@ def polar(
 @dygraph_only
 def cauchy_(
     x: paddle.Tensor,
-    loc: Numberic = 0,
-    scale: Numberic = 1,
+    loc: Numeric = 0,
+    scale: Numeric = 1,
     name: str | None = None,
 ) -> paddle.Tensor:
     """Fills the tensor with numbers drawn from the Cauchy distribution.
