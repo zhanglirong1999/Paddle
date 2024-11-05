@@ -1723,6 +1723,11 @@ bool FlashAttnVarlenQkvpackedOpInferSymbolicShape(
   return true;
 }
 
+bool FlashAttnQkvpackedOpInferSymbolicShape(
+    pir::Operation *op, pir::InferSymbolicShapeContext *infer_context) {
+  return FlashAttnVarlenQkvpackedOpInferSymbolicShape(op, infer_context);
+}
+
 // bool FlashAttnUnpaddedOpInferSymbolicShape(pir::Operation *op,
 //                                            pir::InferSymbolicShapeContext
 //                                            *infer_context) {
