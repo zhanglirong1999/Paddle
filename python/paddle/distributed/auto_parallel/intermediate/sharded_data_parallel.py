@@ -51,7 +51,7 @@ class ShardedDataParallel(ParallelModel):
 
 
 def sharded_data_parallel(
-    model, optimizer, level=None, offload=False, exclude_layer=None
+    model, optimizer=None, level=None, offload=False, exclude_layer=None
 ):
     """
     sharded_data_parallel converts model and optimizer to distributed and supports set zero stage1/2/3
@@ -72,7 +72,8 @@ def sharded_data_parallel(
         ParallelOptimizer: a distributed optimizer
     """
     sdp_model = ShardedDataParallel(model, offload, exclude_layer)
-    optimizer = ParallelOptimizer(optimizer, level)
+    if optimizer is not None:
+        optimizer = ParallelOptimizer(optimizer, level)
 
     # check global_mesh
     mesh = fleet.auto.get_mesh()
