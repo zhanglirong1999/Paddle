@@ -3244,6 +3244,8 @@ All parameter, weight, gradient are variables in Paddle.
       .value("BFLOAT16", phi::DataType::BFLOAT16)
       .value("FLOAT8_E4M3FN", phi::DataType::FLOAT8_E4M3FN)
       .value("FLOAT8_E5M2", phi::DataType::FLOAT8_E5M2)
+      .value("PSTRING", phi::DataType::PSTRING)
+      .value("ALL_DTYPE", phi::DataType::ALL_DTYPE)
       .export_values();
 
   py::class_<paddle::platform::EngineParams> engine_params(m,
