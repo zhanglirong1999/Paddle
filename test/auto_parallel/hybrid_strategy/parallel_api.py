@@ -14,6 +14,7 @@
 import logging
 import os
 import random
+from collections import OrderedDict
 from functools import reduce
 
 import numpy as np
@@ -24,6 +25,10 @@ import paddle.distributed as dist
 from paddle import LazyGuard
 from paddle.distributed.auto_parallel.intermediate.parallel_base import (
     parallelize_model_and_optimizer,
+)
+from paddle.distributed.auto_parallel.intermediate.pipeline_parallel import (
+    SplitPoint,
+    pipeline_parallel,
 )
 from paddle.distributed.auto_parallel.intermediate.sharded_data_parallel import (
     sharded_data_parallel,
@@ -210,6 +215,18 @@ class TestParallelAPI:
                     ]
 
     def parallel_model(self, layer, optimizer=None):
+        if self.pp > 1:
+            decoders_per_rank = self.config.num_hidden_layers // self.pp
+            split_spec = OrderedDict(
+                [
+                    (
+                        f"llama.layers.{i * decoders_per_rank - 1}",
+                        SplitPoint.END,
+                    )
+                    for i in range(1, self.pp)
+                ]
+            )
+            layer, optimizer = pipeline_parallel(layer, optimizer, split_spec)
         if self.dp > 1:
             layer, optimizer = sharded_data_parallel(
                 layer, optimizer, self.level
@@ -276,7 +293,6 @@ class TestParallelAPI:
         model, optimizer = self.parallel_model(model, optimizer)
 
         criterion = LlamaPretrainingCriterion(self.config)
-        criterion = self.parallel_model(criterion)
 
         if self.config.use_lazy_init:
             for param in model.parameters():
