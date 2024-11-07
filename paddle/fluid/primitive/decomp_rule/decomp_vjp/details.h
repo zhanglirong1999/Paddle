@@ -22,8 +22,8 @@
 #include <vector>
 #include "paddle/common/ddim.h"
 #include "paddle/fluid/prim/api/generated_prim/prim_generated_api.h"
-#include "paddle/fluid/primitive/type/lazy_tensor.h"
-#include "paddle/fluid/primitive/utils/utils.h"
+#include "paddle/fluid/primitive/base/lazy_tensor.h"
+#include "paddle/fluid/primitive/decomp_utils/decomp_utils.h"
 #include "paddle/phi/common/amp_type_traits.h"
 
 namespace paddle {

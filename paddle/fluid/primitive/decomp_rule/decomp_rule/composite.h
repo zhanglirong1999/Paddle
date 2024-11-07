@@ -15,8 +15,8 @@
 #pragma once
 
 #include <numeric>
-#include "paddle/fluid/primitive/type/lazy_tensor.h"
-#include "paddle/fluid/primitive/utils/utils.h"
+#include "paddle/fluid/primitive/base/lazy_tensor.h"
+#include "paddle/fluid/primitive/decomp_utils/decomp_utils.h"
 
 namespace paddle {
 namespace primitive {

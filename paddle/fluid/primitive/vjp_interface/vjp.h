@@ -14,5 +14,5 @@
 
 #pragma once
 
-#include "paddle/fluid/primitive/rule/vjp/generated/generated_vjp.h"
-#include "paddle/fluid/primitive/rule/vjp/manual/manual_vjp.h"
+#include "paddle/fluid/primitive/vjp_interface/generated/generated_vjp.h"
+#include "paddle/fluid/primitive/vjp_interface/manual/manual_vjp.h"

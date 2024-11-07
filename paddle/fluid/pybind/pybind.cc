@@ -1032,7 +1032,7 @@ void BindVjp(pybind11::module *m) {
            )DOC");
 }
 
-void BindDecomp(pybind11::module *m) {
+void BindDecompRule(pybind11::module *m) {
   m->def("sinking_decomp",
          [](pir::Program *program,
             std::vector<pir::Value> &src_vars,
@@ -1057,7 +1057,7 @@ void BindDecomp(pybind11::module *m) {
            return res;
          });
 
-  m->def("call_decomp", [](pir::Operation &fwd_op) {
+  m->def("call_decomp_rule", [](pir::Operation &fwd_op) {
     py::list res;
     std::vector<std::vector<pir::Value>> decomp_res = call_decomp_rule(&fwd_op);
     for (size_t i = 0; i < decomp_res.size(); ++i) {
@@ -1074,7 +1074,7 @@ void BindDecomp(pybind11::module *m) {
     return res;
   });
 
-  m->def("has_decomp", [](pir::Operation &fwd_op) {
+  m->def("has_decomp_rule", [](pir::Operation &fwd_op) {
     return paddle::has_decomp_rule(fwd_op);
   });
 }
@@ -1082,16 +1082,7 @@ void BindDecomp(pybind11::module *m) {
 void BindDecompVjp(pybind11::module *m) {
   m->def("call_decomp_vjp", [](pir::Operation &vjp_op) {
     py::list res;
-    paddle::dialect::DecompVjpInterface decomp_vjp_interface =
-        vjp_op.dyn_cast<paddle::dialect::DecompVjpInterface>();
-    PADDLE_ENFORCE(
-        decomp_vjp_interface,
-        common::errors::InvalidArgument(
-            "[Prim] The decomp_vjp function is not registered in %s vjp_op ",
-            vjp_op.name()));
-    std::vector<std::vector<pir::Value>> decomp_res =
-        decomp_vjp_interface.DecompVjp(&vjp_op);
-
+    std::vector<std::vector<pir::Value>> decomp_res = call_decomp_vjp(&vjp_op);
     for (size_t i = 0; i < decomp_res.size(); ++i) {
       py::list sub_res;
       for (size_t j = 0; j < decomp_res[i].size(); ++j) {
@@ -1102,13 +1093,8 @@ void BindDecompVjp(pybind11::module *m) {
     return res;
   });
 
-  m->def("has_decomp_vjp", [](pir::Operation &vjp_op) {
-    pir::IrContext *ctx = pir::IrContext::Instance();
-    pir::OpInfo vjp_op_info = ctx->GetRegisteredOpInfo(vjp_op.name());
-    auto decomp_vjp_interface_impl =
-        vjp_op_info.GetInterfaceImpl<paddle::dialect::DecompVjpInterface>();
-    return decomp_vjp_interface_impl != nullptr;
-  });
+  m->def("has_decomp_vjp",
+         [](pir::Operation &vjp_op) { return paddle::has_decomp_vjp(vjp_op); });
 }
 
 PYBIND11_MODULE(libpaddle, m) {
@@ -3396,7 +3382,7 @@ All parameter, weight, gradient are variables in Paddle.
 
   BindPir(&m);
   BindVjp(&m);
-  BindDecomp(&m);
+  BindDecompRule(&m);
   BindDecompVjp(&m);
 #ifdef PADDLE_WITH_DISTRIBUTE
   BindDistApi(&m);
