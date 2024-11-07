@@ -570,16 +570,18 @@ def replace_moe_global_mesh_tensor(op):
 
 # Note: this is the pass in the dense program
 comm_ops = [
-    "pd_op.c_allreduce_sum",
     "pd_op.all_gather",
-    "pd_op.c_allreduce_max",
     "pd_op.reduce_scatter",
 ]
 
 
 def remove_unuseful_comm_op_pass(program):
     for op in program.global_block().ops:
-        if op.name() in comm_ops:
+        if op.name() in comm_ops or (
+            op.name() == "pd_op.all_reduce"
+            and op.int_attr("reduce_type")
+            in [dist.ReduceOp.SUM, dist.ReduceOp.MAX]
+        ):
             ring_id = op.int_attr("ring_id")
             process_group = get_process_group(ring_id)
             if process_group.nranks == 1:
