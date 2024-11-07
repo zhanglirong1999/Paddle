@@ -38,7 +38,8 @@ class TestTensorParallelAPI(test_base.CommunicationTestDistBase):
             "amp_level": ["O2"],
             "amp_dtype": ["bfloat16"],
             "amp_master_grad": ["true"],
-            "layz_init": ["true", "false"],
+            "use_lazy_init": ["true", "false"],
+            "sequence_parallel": ["true", "false"],
         }
 
     def test_simple_net_mp2(self):
