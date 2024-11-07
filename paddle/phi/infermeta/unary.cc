@@ -5352,8 +5352,7 @@ void UnchangedArrayInferMeta(const MetaTensor& x, MetaTensor* out) {
 void UnchangedVectorInferMeta(const std::vector<const MetaTensor*>& xs,
                               std::vector<MetaTensor*> outs) {
   for (size_t i = 0; i < xs.size(); ++i) {
-    outs[i]->set_dtype(xs[i]->dtype());
-    outs[i]->set_layout(xs[i]->layout());
+    outs[i]->share_meta(*xs[i]);
   }
 }
 
