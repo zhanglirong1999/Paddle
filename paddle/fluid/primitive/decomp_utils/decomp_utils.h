@@ -303,6 +303,83 @@ Tensor ConverToOrig(const Tensor& out, phi::DataType input_dtype) {
   return out;
 }
 
+class LayerNormDecompHelper {
+ public:
+  LayerNormDecompHelper(const Tensor& x,
+                        const paddle::optional<Tensor>& scale,
+                        const paddle::optional<Tensor>& bias,
+                        int begin_norm_axis) {
+    auto x_dims = x.dims();
+    x_rank_ = x_dims.size();
+    begin_norm_axis_ = begin_norm_axis;
+    if (begin_norm_axis_ < 0) {
+      begin_norm_axis_ += x_rank_;
+    }
+
+    scale_need_reshape_ = (begin_norm_axis + 1 != x_rank_);
+    static_norm_shape_ = true;
+
+    for (int i = begin_norm_axis; i < x_rank_; ++i) {
+      if (x_dims[i] < 0) {
+        static_norm_shape_ = false;
+        normlized_numel_ = -1;
+        break;
+      }
+
+      normlized_shape_.push_back(x_dims[i]);
+
+      normlized_numel_ *= x_dims[i];
+    }
+
+    if (!static_norm_shape_) {
+      // try get static norm numel from sacle for bias
+      normlized_numel_ = -1;
+      if (scale.get_ptr()) {
+        normlized_numel_ = scale->dims()[0];
+      } else if (bias.get_ptr()) {
+        normlized_numel_ = bias->dims()[0];
+      }
+    }
+  }
+
+  template <typename T>
+  Tensor Process(const Tensor& s, const Tensor& x) {
+    if (!scale_need_reshape_) {
+      return s;
+    }
+
+    if (static_norm_shape_) {
+      return reshape<T>(s, normlized_shape_);
+    } else {
+      return backend::reshape_with_tensor<T>(
+          s, get_slice_vec<T>(shape<T>(x), begin_norm_axis_, x_rank_));
+    }
+  }
+
+  template <typename T>
+  Tensor GetNormlizedNumel(const Tensor& x) {
+    if (normlized_numel_ != -1) {
+      return full_scalar<T>(normlized_numel_, x.dtype());
+    } else {
+      auto x_shape = shape<T>(x);
+      auto numel = get_slice<T>(x_shape, begin_norm_axis_);
+      for (int64_t i = begin_norm_axis_ + 1; i < x_rank_; ++i) {
+        numel = numel * get_slice<T>(x_shape, i);
+      }
+
+      return cast<T>(numel, x.type());
+    }
+  }
+
+ private:
+  std::vector<int64_t> normlized_shape_;
+  bool scale_need_reshape_;
+  bool static_norm_shape_;
+  int64_t x_rank_;
+  int64_t normlized_numel_{1};
+  int begin_norm_axis_;
+};
+
 template <typename T>
 class BatchNormDecompHelper {
  public:
