@@ -303,5 +303,91 @@ Tensor ConverToOrig(const Tensor& out, phi::DataType input_dtype) {
   return out;
 }
 
+template <typename T>
+class BatchNormDecompHelper {
+ public:
+  BatchNormDecompHelper(const Tensor& x,
+                        const paddle::optional<Tensor>& scale,
+                        const paddle::optional<Tensor>& bias,
+                        const std::string& data_format) {
+    auto x_dims = phi::vectorize(x.dims());
+    x_rank_ = x_dims.size();
+
+    if (data_format == "NCHW") {
+      channel_axis_ = 1;
+      reduce_axis_.push_back(0);
+      for (int64_t i = channel_axis_ + 1; i < x_rank_; ++i) {
+        reduce_axis_.push_back(i);
+      }
+    } else if (data_format == "NHWC") {
+      channel_axis_ = x_rank_ - 1;
+      for (int64_t i = 0; i < channel_axis_; ++i) {
+        reduce_axis_.push_back(i);
+      }
+    } else {
+      PADDLE_THROW(
+          common::errors::Unimplemented("Only support NCHW and NHWC format."));
+    }
+
+    scale_bias_new_shape_.push_back(0);
+    for (int64_t i = channel_axis_ + 1; i < x_rank_; ++i) {
+      scale_bias_new_shape_.push_back(1);
+    }
+
+    // int64_t channel_dim = x_dims[channel_axis_];
+    // if ((channel_dim < 0) && scale) {
+    //   channel_dim = scale->dims()[0];
+    // }
+    // if ((channel_dim < 0) && bias) {
+    //   channel_dim = bias->dims()[0];
+    // }
+  }
+
+  const std::vector<int64_t>& GetReduceAxis() const { return reduce_axis_; }
+
+  const std::vector<int64_t>& GetScaleBiasNewShape() const {
+    return scale_bias_new_shape_;
+  }
+
+  Tensor GetNHW(const Tensor& x) {
+    auto x_dims = x.dims();
+
+    bool static_nhw = true;
+    int64_t nhw_numel = 1;
+    for (int64_t i = 0; i < x_rank_; ++i) {
+      if (i == channel_axis_) {
+        continue;
+      }
+      if (x_dims[i] < 0) {
+        static_nhw = false;
+        break;
+      }
+      nhw_numel *= x_dims[i];
+    }
+
+    if (static_nhw) {
+      return full_scalar<T>(nhw_numel, x.dtype());
+    } else {
+      auto x_shape = shape<T>(x);
+      auto nhw = get_slice<T>(x_shape, 0);
+      for (int64_t i = 0; i < x_rank_; ++i) {
+        if (i == channel_axis_) {
+          continue;
+        }
+
+        nhw = nhw * get_slice<T>(x_shape, i);
+      }
+
+      return cast<T>(nhw, x.dtype());
+    }
+  }
+
+ private:
+  std::vector<int64_t> reduce_axis_;
+  std::vector<int64_t> scale_bias_new_shape_;
+  int64_t channel_axis_;
+  int64_t x_rank_;
+};
+
 }  // namespace primitive
 }  // namespace paddle
