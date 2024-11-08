@@ -80,21 +80,24 @@ def append_full_like(float_value, copy_value, value, state, backward_ops):
             full_like_op = value_grad.get_defining_op()
             backward_ops_ = [full_like_op]
         elif copy_value.is_combine():
-            values = paddle._C_ops.builtin_split(copy_value)
-            value_grad = []
-            backward_ops_ = []
-            backward_ops_.append(values[0].get_defining_op())
-            for v in values:
-                grad = paddle.full_like(
-                    v,
-                    float_value,
-                    dtype=v.dtype,
-                )
-                value_grad.append(grad)
-                full_like_op = grad.get_defining_op()
-                full_op = full_like_op.operand_source(1).get_defining_op()
-                backward_ops_.append(full_like_op)
-                backward_ops_.append(full_op)
+            raise ValueError(
+                "This kind of scene, where VectorType grad be fulled with zeros should not occur."
+            )
+            # values = paddle._C_ops.builtin_split(copy_value)
+            # value_grad = []
+            # backward_ops_ = []
+            # backward_ops_.append(values[0].get_defining_op())
+            # for v in values:
+            #     grad = paddle.full_like(
+            #         v,
+            #         float_value,
+            #         dtype=v.dtype,
+            #     )
+            #     value_grad.append(grad)
+            #     full_like_op = grad.get_defining_op()
+            #     full_op = full_like_op.operand_source(1).get_defining_op()
+            #     backward_ops_.append(full_like_op)
+            #     backward_ops_.append(full_op)
         else:
             value_grad = paddle.full_like(
                 copy_value,
@@ -254,6 +257,8 @@ def prepare_grad_outputs(grad_outputs, outputs, state):
         if output in visited_output:
             continue
         for opresult in output.get_defining_op().results():
+            if opresult.is_combine():
+                continue
             if opresult in state.value_to_valuegrad:
                 visited_output.add(opresult)
                 continue
