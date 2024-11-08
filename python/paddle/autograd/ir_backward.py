@@ -163,9 +163,16 @@ def append_add_n(
             for tmp in state.value_to_valuegrad[value]:
                 state.value_to_sumvaluegrad[value].append(tmp)
             state.value_to_valuegrad[value] = [[grad_value]]
-
+        elif len(add_n_list) == 1:
+            update_bwdop_structure(
+                backward_ops,
+                state.op_to_opgrad[op],
+                cast_op,
+            )
+            for tmp in state.value_to_valuegrad[value]:
+                state.value_to_sumvaluegrad[value].append(tmp)
+            state.value_to_valuegrad[value] = [add_n_list]
         else:
-
             if value.is_dense_tensor_array_type():
                 add_n_value = paddle._C_ops.add_n_array(add_n_list)
             else:

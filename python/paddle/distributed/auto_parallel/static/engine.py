@@ -29,7 +29,6 @@ import paddle.distributed.auto_parallel.static.utils as auto_utils
 from paddle import pir, static, utils
 from paddle.base.executor import _to_name_str
 from paddle.base.framework import auto_complete_op_role
-from paddle.distributed import fleet
 from paddle.distributed.fleet.meta_optimizers.common import OpRole
 from paddle.distributed.passes.pass_base import new_pass
 from paddle.distributed.passes.pass_utils import (
@@ -254,12 +253,6 @@ class Engine:
             raise TypeError(
                 "'cluster' must be the object or class `paddle.distributed.auto_parallel.Cluster`"
             )
-
-        if os.getenv("POD_NAME"):
-            self._logger.info(
-                "Distribute training by paddle.distributed.launch"
-            )
-            fleet.init(is_collective=True)
 
         # for compute cost
         # TODO: remove _fwd_main_progs and _orig_optimizer and _pir_main_progs
@@ -1380,6 +1373,7 @@ class Engine:
                         initial_op = param.get_defining_op()
                         new_param = block.add_kwarg(var_name, param.type())
                         new_param.persistable = True
+                        new_param.place_attr = scope_var.get_tensor()._place()
                         param.replace_all_uses_with(new_param)
                         del_ops.append(op)
                         del_ops.append(initial_op)

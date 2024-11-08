@@ -102,6 +102,7 @@ using pir::TuplePopOp;
 
 using paddle::dialect::IntArrayAttribute;
 using paddle::dialect::OperationDistAttribute;
+using paddle::dialect::PlaceAttribute;
 using paddle::dialect::TensorDistAttribute;
 using pir::ArrayAttribute;
 using pir::Attribute;
@@ -110,6 +111,7 @@ using pir::BlockArgument;
 using pir::BoolAttribute;
 using pir::CloneOptions;
 using pir::Int32Attribute;
+using pir::Int64Attribute;
 using pir::IrContext;
 using pir::IrMapping;
 using pir::IrParser;
@@ -267,7 +269,7 @@ pir::Value AppendDataOp(pir::Block *block,
            ctx, phi::IntArray(phi::vectorize(GetValueDims(value))))},
       {"dtype",
        paddle::dialect::DataTypeAttribute::get(ctx, GetValueDtype(value))},
-      {"place", paddle::dialect::PlaceAttribute::get(ctx, phi::Place())}};
+      {"place", PlaceAttribute::get(ctx, phi::Place())}};
   std::vector<pir::Type> output_types{value.type()};
   pir::Operation *operation =
       pir::Operation::Create({}, attribute_map, output_types, op_info);
@@ -854,10 +856,10 @@ void BindOperation(py::module *m) {
                  attr_name, StrAttribute::get(pir::IrContext::Instance(), val));
            })
       .def("set_int_attr",
-           [](Operation &self, std::string &attr_name, const int64_t &val) {
+           [](Operation &self, std::string &attr_name, const int &val) {
              self.set_attribute(
                  attr_name,
-                 pir::Int64Attribute::get(pir::IrContext::Instance(), val));
+                 pir::Int32Attribute::get(pir::IrContext::Instance(), val));
            })
       .def("attrs",
            [](Operation &self) -> py::dict {
@@ -1317,6 +1319,18 @@ void BindValue(py::module *m) {
           [](Value self, phi::DataType dtype) {
             PADDLE_THROW(common::errors::InvalidArgument(
                 "can't set dtype when building static graph"));
+          })
+      .def_property(
+          "place_attr",
+          [](Value self) -> phi::Place {
+            auto palce_attr = self.attribute<PlaceAttribute>("place");
+            return palce_attr ? palce_attr.data() : phi::Place();
+          },
+          [](Value self, const phi::Place &place) {
+            // auto place = CastPyArg2Place(place_obj.release().ptr(), 1);
+            auto place_attr =
+                dialect::PlaceAttribute::get(pir::IrContext::Instance(), place);
+            self.set_attribute("palce", place_attr);
           })
       .def("initialized",
            [](Value self) {
