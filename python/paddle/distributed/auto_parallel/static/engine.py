@@ -909,6 +909,17 @@ class Engine:
             with decomp.prim_guard():
                 decomp.decompose_dist_program(dense_program)
 
+        if core._enable_auto_recompute():
+            from paddle.decomposition import decomp
+
+            logging.info("apply auto_recompute in auto parallel")
+            dense_program = decomp.auto_recompute_pir_program(
+                dense_program,
+                lambda op: bool(
+                    op.has_attr('op_role') and op.attrs()["op_role"] == 0
+                ),
+            )
+
         if self._strategy.pipeline.enable:
             self._job_plan = pipeline_pass(
                 [dense_program], [dense_program], self._strategy.pipeline
