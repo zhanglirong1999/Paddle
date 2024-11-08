@@ -103,7 +103,7 @@ class ReduceCommonOpPattern : public pir::OpRewritePattern<OpType> {
 
     if constexpr (std::is_same_v<OpType, paddle::dialect::MeanOp> ||
                   std::is_same_v<OpType, paddle::dialect::AnyOp> ||
-                  std::is_same_v<OpType, paddle::dialect::MeanOp>) {
+                  std::is_same_v<OpType, paddle::dialect::AllOp>) {
       if (!op->HasAttribute("axis")) {
         VLOG(3) << "The axis attribute does not exist";
         return false;
@@ -171,6 +171,14 @@ class ElementwiseCommonOpPattern : public pir::OpRewritePattern<OpType> {
     pir::Value y = op.operand_source(1);
     auto x_dtype = pir::GetDataTypeFromValue(x);
     auto y_dtype = pir::GetDataTypeFromValue(y);
+
+    if constexpr (std::is_same_v<OpType, paddle::dialect::ElementwisePowOp>) {
+      if (x_dtype.isa<pir::Int32Type>() || y_dtype.isa<pir::Int32Type>()) {
+        VLOG(3) << "elementwise_pow do not support int32 datatype.";
+        return false;
+      }
+    }
+
     if (x_dtype.isa<pir::BoolType>() || y_dtype.isa<pir::BoolType>()) {
       if constexpr (std::is_same_v<OpType, paddle::dialect::MultiplyOp>) {
         VLOG(3) << "elementwise_mul do not support boolean datatype.";
@@ -179,6 +187,9 @@ class ElementwiseCommonOpPattern : public pir::OpRewritePattern<OpType> {
         VLOG(3) << "elementwise_sub do not support boolean datatype.";
       } else if constexpr (std::is_same_v<OpType, paddle::dialect::DivideOp>) {
         VLOG(3) << "elementwise_div do not support boolean datatype.";
+      } else if constexpr (std::is_same_v<OpType,  // NOLINT
+                                          paddle::dialect::ElementwisePowOp>) {
+        VLOG(3) << "elementwise_pow do not support boolean datatype.";
       } else if constexpr (std::is_same_v<OpType, paddle::dialect::MinimumOp>) {
         VLOG(3) << "elementwise_min do not support boolean datatype.";
       } else if constexpr (std::is_same_v<OpType, paddle::dialect::MaximumOp>) {
@@ -205,6 +216,8 @@ using MultiplyOpPattern =
 using SubtractOpPattern =
     ElementwiseCommonOpPattern<paddle::dialect::SubtractOp>;
 using DivideOpPattern = ElementwiseCommonOpPattern<paddle::dialect::DivideOp>;
+using ElementwisePowOpPattern =
+    ElementwiseCommonOpPattern<paddle::dialect::ElementwisePowOp>;
 using MinimumOpPattern = ElementwiseCommonOpPattern<paddle::dialect::MinimumOp>;
 using MaximumOpPattern = ElementwiseCommonOpPattern<paddle::dialect::MaximumOp>;
 using FloorDivideOpPattern =
@@ -1127,33 +1140,6 @@ class LessThanOpPattern
     return true;
   }
 };
-
-class ElementwisePowOpPattern
-    : public pir::OpRewritePattern<paddle::dialect::ElementwisePowOp> {
- public:
-  using pir::OpRewritePattern<
-      paddle::dialect::ElementwisePowOp>::OpRewritePattern;
-  bool MatchAndRewrite(paddle::dialect::ElementwisePowOp op,
-                       pir::PatternRewriter &rewriter) const override {
-    if (op->HasAttribute(kCanRunTrtAttr) &&
-        op->attribute<pir::BoolAttribute>(kCanRunTrtAttr).data()) {
-      return false;
-    }
-    pir::Value x = op.operand_source(0);
-    pir::Value y = op.operand_source(1);
-    auto x_dtype = pir::GetDataTypeFromValue(x);
-    auto y_dtype = pir::GetDataTypeFromValue(y);
-    if (x_dtype.isa<pir::BoolType>() || x_dtype.isa<pir::Int32Type>() ||
-        y_dtype.isa<pir::BoolType>() || y_dtype.isa<pir::Int32Type>()) {
-      VLOG(3) << "elementwise_pow do not support"
-                 "boolean datatype and int32 datatype.";
-      return false;
-    }
-    op->set_attribute(kCanRunTrtAttr, rewriter.bool_attr(true));
-    return true;
-  }
-};
-
 class MulticlassNms3OpPattern
     : public pir::OpRewritePattern<paddle::dialect::MulticlassNms3Op> {
  public:
