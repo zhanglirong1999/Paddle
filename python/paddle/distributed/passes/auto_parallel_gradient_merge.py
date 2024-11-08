@@ -347,15 +347,27 @@ def _pir_append_gradient_merge_backward_op(
 
         # NOTE(zhangweilong): grad may in different device in auto_parallel, so need consider all_gather op
         for used_grad_op in grad.all_used_ops():
+            move_to_opt_block_flag = False
+            move_to_opt_ops = []
             if used_grad_op.num_operands() == 1:
                 move_to_opt_block_flag = True
+                move_to_opt_ops.append(used_grad_op)
+            elif used_grad_op.name() == "pd_op.slice":
+                move_to_opt_ops.append(used_grad_op)
+                for i in range(1, used_grad_op.num_operands()):
+                    move_to_opt_ops.append(
+                        used_grad_op.operand_source(i).get_defining_op()
+                    )
+                move_to_opt_block_flag = True
+            if move_to_opt_block_flag:
                 for used_op_result in used_grad_op.results():
                     for used_op in used_op_result.all_used_ops():
                         if used_op.op_role != int(OpRole.Optimize):
                             move_to_opt_block_flag = False
                             break
                 if move_to_opt_block_flag:
-                    used_grad_op.op_role = int(OpRole.Optimize)
+                    for move_op in move_to_opt_ops:
+                        move_op.op_role = int(OpRole.Optimize)
 
         opt_ops_use_grad = [
             op
