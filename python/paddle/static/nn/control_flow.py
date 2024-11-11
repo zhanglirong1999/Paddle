@@ -681,7 +681,7 @@ def assign_skip_lod_tensor_array(input, output):
 
 
 def create_fake_value_for_undefined_var(while_op, value):
-    # Create a fake value for create WhileOp, it's type will be reset after body is executed.
+    # Create a fake value for create WhileOp, and set its type and stop_gradient as next_var
     stop_gradient = value.stop_gradient
     fake_value = paddle.full(shape=value.shape, dtype=value.dtype, fill_value=0)
     fake_value_op = fake_value.get_defining_op()
