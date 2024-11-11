@@ -36,7 +36,8 @@ bool ItersFusionPolicy::CheckItersRelation(const PatternNodePtr& source,
     for (const auto& related_iter : source_related_iters) {
       if (iters_manager_->CanFindRelatedIters(related_iter,
                                               target_unique_iters)) {
-        VLOG(4) << "Can not fuse because find related iters";
+        VLOG(4) << "Can not fuse from " << source->fusion_iters().DebugStr()
+                << " to " << target->fusion_iters().DebugStr();
         return false;
       }
     }

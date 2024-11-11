@@ -336,6 +336,13 @@ ShardableAxesSignature CreateSignatureForReshape(
     return shape_analysis->IsProductEqual(
         op->operand_source(0), 0, lhs_end, op->result(0), 0, rhs_end);
   };
+  const auto axis_equal = [&](int input_axis, int output_axis) {
+    const auto& input_sym =
+        shape_analysis->GetProductDimExpr(op->operand_source(0), {input_axis});
+    const auto& output_sym =
+        shape_analysis->GetProductDimExpr(op->result(0), {output_axis});
+    return shape_analysis->IsEqual(input_sym, output_sym);
+  };
   const auto axis_equal_one = [&shape_analysis](pir::Value v, int axis) {
     const auto& sym = shape_analysis->GetProductDimExpr(v, {axis});
     return shape_analysis->IsEqual(sym, symbol::DimExpr(1));
@@ -360,19 +367,19 @@ ShardableAxesSignature CreateSignatureForReshape(
                  ::common::errors::InvalidArgument(
                      "Shape product should be equal for reshape op."));
 
-  std::vector<std::pair<int, int>> partion_indices = {{-1, -1}};
+  std::vector<std::pair<int, int>> partion_indices = {{0, 0}};
   for (int i = 1, j = 1; i <= input_rank && j <= output_rank;) {
     if (shape_product_equal(i, j)) {
-      partion_indices.emplace_back((i++ - 1), (j++ - 1));
+      partion_indices.emplace_back(i++, j++);
       if (i > input_rank || j > output_rank) {
-        partion_indices.back().first = input_rank - 1;
-        partion_indices.back().second = output_rank - 1;
+        partion_indices.back().first = input_rank;
+        partion_indices.back().second = output_rank;
       }
     } else if (j < output_rank) {
       j++;
     } else if (i < input_rank) {
       i++;
-      j = partion_indices.back().second + 2;
+      j = partion_indices.back().second + 1;
     } else {
       PADDLE_THROW(::common::errors::InvalidArgument(
           "Shape product should be equal with whole shape."));
@@ -381,22 +388,27 @@ ShardableAxesSignature CreateSignatureForReshape(
 
   std::vector<std::string> output_axes;
   for (int i = 1; i < partion_indices.size(); ++i) {
-    const auto& in_start = partion_indices[i - 1].first + 1;
+    const auto& in_start = partion_indices[i - 1].first;
     const auto& in_end = partion_indices[i].first;
-    const auto& out_start = partion_indices[i - 1].second + 1;
+    const auto& out_start = partion_indices[i - 1].second;
     const auto& out_end = partion_indices[i].second;
-    if (in_end == in_start && out_end == out_start) {
-      output_axes.emplace_back(input_axes[in_end]);
+    if (in_end == in_start + 1 && out_end == out_start + 1) {
+      output_axes.emplace_back(input_axes[in_start]);
     } else {
-      for (int i = out_start; i <= out_end; ++i) {
+      for (int i = out_start; i < out_end; ++i) {
         output_axes.emplace_back(ShardableAxesInfoManager::GetUniqueName());
-        for (int j = in_start; j <= in_end; ++j) {
-          if (!axis_equal_one(op->operand_source(0), j) &&
-              !axis_equal_one(op->result(0), i)) {
+        if (axis_equal_one(op->result(0), i)) {
+          continue;
+        }
+        for (int j = in_start; j < in_end; ++j) {
+          if (!axis_equal_one(op->operand_source(0), j) && !axis_equal(j, i)) {
             axes_manager->related_axes_map()[input_axes[j]].insert(
                 output_axes.back());
-            VLOG(4) << "Relate " << input_axes[j] << " to "
-                    << output_axes.back();
+            VLOG(4) << "Relate input axis[" << j << "]: " << input_axes[j]
+                    << " to output axis[" << i << "]: " << output_axes.back();
+          } else if (axis_equal(j, i)) {
+            output_axes.back() = input_axes[j];
+            break;
           }
         }
       }
