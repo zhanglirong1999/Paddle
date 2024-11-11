@@ -4196,10 +4196,10 @@ void SliceRawInferMeta(const MetaTensor& input,
   out->set_dtype(input.dtype());
 }
 
-void TensorSliceInferMeta(const MetaTensor& input,
-                          int64_t begin_idx,
-                          int64_t end_idx,
-                          MetaTensor* out) {
+void ViewSliceInferMeta(const MetaTensor& input,
+                        int64_t begin_idx,
+                        int64_t end_idx,
+                        MetaTensor* out) {
   const auto& in_dims = input.dims();
   PADDLE_ENFORCE_GE(
       begin_idx,
