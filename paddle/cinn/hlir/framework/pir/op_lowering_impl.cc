@@ -49,7 +49,6 @@
 
 PD_DECLARE_bool(cinn_use_cuda_vectorize);
 PD_DECLARE_bool(cinn_bucket_compile);
-PD_DECLARE_bool(cinn_new_group_scheduler);
 PD_DECLARE_bool(cinn_check_tensor_buffer_map);
 const int default_priority = 100;
 
