@@ -1052,6 +1052,8 @@ def complete_chunk_id(dist_program, startup_program, pipeline_strategy):
             if param.dist_attr():
                 startup_param.update_dist_attr(param.dist_attr())
 
+    ReshardPasses.fold_reshard_pass(dist_program)
+
 
 def check_chunk_id(dist_program):
     all_ops = dist_program.global_block().ops
