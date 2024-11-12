@@ -275,6 +275,31 @@ class TestMathOpPatchesPir(unittest.TestCase):
                 np.testing.assert_array_equal(res_np_c, c_np)
                 np.testing.assert_array_equal(res_np_d, d_np)
 
+    def test_positive(self):
+        paddle.disable_static()
+        x_np = np.random.random([10, 1024]).astype('float32')
+        res_np_b = +x_np
+        res_np_c = paddle.positive(paddle.to_tensor(x_np))
+        res_np_d = x_np.__pos__()
+        paddle.enable_static()
+        with paddle.pir_utils.IrGuard():
+            main_program, exe, program_guard = new_program()
+            with program_guard:
+                x = paddle.static.data(
+                    name='x', shape=[10, 1024], dtype='float32'
+                )
+                b = +x
+                c = paddle.positive(x)
+                d = x.__pos__()
+                (b_np, c_np, d_np) = exe.run(
+                    main_program,
+                    feed={"x": x_np},
+                    fetch_list=[b, c, d],
+                )
+                np.testing.assert_allclose(res_np_b, b_np, atol=1e-05)
+                np.testing.assert_allclose(res_np_c, c_np, atol=1e-05)
+                np.testing.assert_allclose(res_np_d, d_np, atol=1e-05)
+
     # for logical compare
     def test_equal_and_nequal(self):
         paddle.disable_static()

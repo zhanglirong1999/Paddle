@@ -141,6 +141,7 @@ from .logic import (  # noqa: F401
     logical_xor_,
     not_equal,
     not_equal_,
+    positive,
 )
 from .manipulation import (  # noqa: F401
     as_complex,
@@ -860,4 +861,5 @@ magic_method_func = [
     ('__or__', 'bitwise_or'),
     ('__xor__', 'bitwise_xor'),
     ('__invert__', 'bitwise_not'),
+    ('__pos__', 'positive'),
 ]
