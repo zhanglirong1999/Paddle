@@ -1041,24 +1041,18 @@ void softmax_grad(const Tensor& out,
                   int axis,
                   Tensor* x_grad) {
   if (x_grad) {
+    if (axis < 0) {
+      axis += out.dims().size();
+    }
+
     if (out_grad.dims().size() > 0) {
-      if (axis >= 0) {
-        auto new_out_grad = out_grad * out;
-        auto tmp_x_grad = new_out_grad -
-                          out * sum<T>(new_out_grad, {axis}, out.dtype(), true);
-        set_output<T>(tmp_x_grad, x_grad);
-      } else {
-        auto new_out_grad = out_grad * out;
-        auto tmp_x_grad =
-            new_out_grad - out * sum<T>(new_out_grad,
-                                        {out.dims().size() + axis},
-                                        out.dtype(),
-                                        true);
-        set_output<T>(tmp_x_grad, x_grad);
-      }
+      auto new_out_grad = out_grad * out;
+      auto tmp_x_grad =
+          new_out_grad - out * sum<T>(new_out_grad, {axis}, out.dtype(), true);
+      set_output<T>(tmp_x_grad, x_grad);
     } else {
-      Tensor zeros = full_scalar<T>(0.0, out.dtype());
-      set_output<T>(out_grad * zeros, x_grad);
+      auto zeros = full<T>(common::vectorize(out.dims()), 0, out.dtype());
+      set_output<T>(zeros, x_grad);
     }
   }
 }
