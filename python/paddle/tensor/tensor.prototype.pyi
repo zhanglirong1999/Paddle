@@ -178,7 +178,8 @@ class AbstractTensor:
     def __rtruediv__(self, y: _typing.TensorLike) -> Tensor: ...  # type: ignore
     def __rmod__(self, y: _typing.TensorLike) -> Tensor: ...  # type: ignore
     def __rpow__(self, y: _typing.TensorLike) -> Tensor: ...  # type: ignore
-    def __rdiv__(self, y: _typing.TensorLike) -> Tensor: ...
+    def __rdiv__(self, y: _typing.TensorLike) -> Tensor: ...  # type: ignore
+    def __rfloordiv__(self, y: _typing.TensorLike) -> Tensor: ...  # type: ignore
 
     # type cast
     def __bool__(self) -> bool: ...

@@ -238,6 +238,7 @@ def monkey_patch_math_tensor():
         '__lt__',
         '__le__',
         '__floordiv__',
+        '__rfloordiv__',
         '__pow__',
         '__rpow__',
         '__eq__',

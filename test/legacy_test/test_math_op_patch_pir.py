@@ -143,6 +143,7 @@ class TestMathOpPatchesPir(unittest.TestCase):
             paddle.to_tensor(x_np), paddle.to_tensor(y_np)
         )
         res_np_d = x_np.__floordiv__(y_np)
+        res_np_e = x_np.__rfloordiv__(y_np)
         paddle.enable_static()
         with paddle.pir_utils.IrGuard():
             main_program, exe, program_guard = new_program()
@@ -156,14 +157,16 @@ class TestMathOpPatchesPir(unittest.TestCase):
                 b = x // y
                 c = x.floor_divide(y)
                 d = x.__floordiv__(y)
-                (b_np, c_np, d_np) = exe.run(
+                e = x.__rfloordiv__(y)
+                (b_np, c_np, d_np, e_np) = exe.run(
                     main_program,
                     feed={"x": x_np, "y": y_np},
-                    fetch_list=[b, c, d],
+                    fetch_list=[b, c, d, e],
                 )
                 np.testing.assert_allclose(res_np_b, b_np, atol=1e-05)
                 np.testing.assert_allclose(res_np_c, c_np, atol=1e-05)
                 np.testing.assert_allclose(res_np_d, d_np, atol=1e-05)
+                np.testing.assert_allclose(res_np_e, e_np, rtol=1e-05)
 
     def test_bitwise_not(self):
         paddle.disable_static()

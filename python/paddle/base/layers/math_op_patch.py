@@ -54,6 +54,7 @@ SUPPORT_PROMOTION_OPS = [
     "__truediv__",
     "__rtruediv__",
     "__floordiv__",
+    "__rfloordiv__",
     "__pow__",
     "__rpow__",
     "__eq__",
@@ -78,6 +79,7 @@ EXPRESSION_MAP = {
     "__pow__": "A ** B",
     "__rpow__": "A **= B",
     "__floordiv__": "A //B",
+    "__rfloordiv__": "A //=B",
     "__mod__": "A % B",
     "__rmod__": "A %= B",
     "__matmul__": "A @ B",
@@ -858,6 +860,12 @@ def monkey_patch_variable():
             '__floordiv__',
             _binary_creator_(
                 '__floordiv__', 'elementwise_floordiv', False, None
+            ),
+        ),
+        (
+            '__rfloordiv__',
+            _binary_creator_(
+                '__rfloordiv__', 'elementwise_floordiv', True, None
             ),
         ),
         (

@@ -484,6 +484,19 @@ class TestDygraphMathOpPatches(unittest.TestCase):
         np.testing.assert_equal(actual_out, expect_out)
         paddle.enable_static()
 
+    def test_dygraph_rfloordiv(self):
+        paddle.disable_static()
+        np_a = np.random.random((2, 3, 4)).astype(np.int32)
+        np_b = np.random.random((2, 3, 4)).astype(np.int32)
+        np_b[np.abs(np_b) < 1] = 2
+        # normal case: nparray // tensor
+        tensor_a = paddle.to_tensor(np_a, dtype="int32")
+        tensor_b = paddle.to_tensor(np_b, dtype="int32")
+        expect_out = np_b // np_a
+        actual_out = tensor_b.__rfloordiv__(np_a)
+        np.testing.assert_equal(actual_out, expect_out)
+        paddle.enable_static()
+
     def test_dygraph_elementwise_pow(self):
         paddle.disable_static()
         self.init_data()

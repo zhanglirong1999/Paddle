@@ -50,6 +50,7 @@ SUPPORT_PROMOTION_OPS = [
     "__truediv__",
     "__rtruediv__",
     "__floordiv__",
+    "__rfloordiv__",
     "__pow__",
     "__rpow__",
     "__eq__",
@@ -1090,6 +1091,12 @@ def monkey_patch_value():
             '__floordiv__',
             _binary_creator_(
                 '__floordiv__', paddle.tensor.floor_divide, False, None
+            ),
+        ),
+        (
+            '__rfloordiv__',
+            _binary_creator_(
+                '__rfloordiv__', paddle.tensor.floor_divide, True, None
             ),
         ),
         (
