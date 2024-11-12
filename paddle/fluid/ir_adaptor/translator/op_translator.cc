@@ -4004,7 +4004,7 @@ OpTranslator::OpTranslator() {
   special_handlers["gather"] = GatherOpTranscriber();
   special_handlers["box_coder"] = BoxCoderOpTranscriber();
 
-  // To adapt LodTensorArray
+  // To adapt DenseTensorArray
   special_handlers["lod_array_length"] = LodArrayLengthOpTranscriber();
   special_handlers["write_to_array"] = WriteArrayOpTranscriber();
   special_handlers["read_from_array"] = ReadArrayOpTranscriber();
