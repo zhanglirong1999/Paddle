@@ -470,7 +470,7 @@ def get_inputs_outputs_in_block(
             for out_var_name in op.output(oname):
                 inner_outputs.add(out_var_name)
 
-    # Step2: Remove LOD_TENSOR_ARRAY created in current control flow block.
+    # Step2: Remove DENSE_TENSOR_ARRAY created in current control flow block.
     remove_inner_inputs = set()
     parent_block = helper.main_program.block(current_block.parent_idx)
 
@@ -482,7 +482,8 @@ def get_inputs_outputs_in_block(
         if (
             not parent_block_var
             and current_block_var
-            and current_block_var.type == core.VarDesc.VarType.LOD_TENSOR_ARRAY
+            and current_block_var.type
+            == core.VarDesc.VarType.DENSE_TENSOR_ARRAY
         ):
             remove_inner_inputs.add(in_var_name)
 
@@ -656,7 +657,7 @@ def assign_skip_lod_tensor_array(input, output):
             output = input
         return
 
-    if input.type == core.VarDesc.VarType.LOD_TENSOR_ARRAY:
+    if input.type == core.VarDesc.VarType.DENSE_TENSOR_ARRAY:
         main_program = input.block.program
         parent_block = main_program.block(
             main_program.current_block().parent_idx
@@ -1939,7 +1940,7 @@ def copy_var_to_parent_block(var, layer_helper):
     parent_block = prog.block(parent_idx)
 
     if (
-        var.type == core.VarDesc.VarType.LOD_TENSOR_ARRAY
+        var.type == core.VarDesc.VarType.DENSE_TENSOR_ARRAY
         and parent_block._find_var_recursive(var.name)
     ):
         parent_block_var = var

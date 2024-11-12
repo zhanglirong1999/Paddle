@@ -395,9 +395,9 @@ def monkey_patch_variable():
                 raise TypeError(
                     f"Required input var should be Variable, but received {type(var)}"
                 )
-        if self.type != core.VarDesc.VarType.LOD_TENSOR_ARRAY:
+        if self.type != core.VarDesc.VarType.DENSE_TENSOR_ARRAY:
             raise TypeError(
-                f"Only Variable with VarType.LOD_TENSOR_ARRAY support `append` method, but received type: {self.type}"
+                f"Only Variable with VarType.DENSE_TENSOR_ARRAY support `append` method, but received type: {self.type}"
             )
         from paddle.tensor.array import array_length, array_write
 
@@ -423,7 +423,7 @@ def monkey_patch_variable():
         This interface is used to simplify dygraph to static graph operations.
 
         Args:
-            self(Variable): The source variable, which must be LOD_TENSOR_ARRAY
+            self(Variable): The source variable, which must be DENSE_TENSOR_ARRAY
             *args: optional, a int means index.
         Returns:
             Variable: self[index]
@@ -432,9 +432,9 @@ def monkey_patch_variable():
         from paddle.static.nn import while_loop
         from paddle.tensor import fill_constant
 
-        if self.type != core.VarDesc.VarType.LOD_TENSOR_ARRAY:
+        if self.type != core.VarDesc.VarType.DENSE_TENSOR_ARRAY:
             raise TypeError(
-                f"Only Variable with VarType.LOD_TENSOR_ARRAY support `pop` method, but received type: {self.type}"
+                f"Only Variable with VarType.DENSE_TENSOR_ARRAY support `pop` method, but received type: {self.type}"
             )
         if len(args) == 0:
             idx = -1

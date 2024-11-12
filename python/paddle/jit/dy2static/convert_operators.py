@@ -624,7 +624,7 @@ def convert_len(var):
             if var.shape[0] > 0 and var.type == core.VarDesc.VarType.LOD_TENSOR:
                 return var.shape[0]
             return paddle.shape(var)[0]
-        elif var.type == core.VarDesc.VarType.LOD_TENSOR_ARRAY:
+        elif var.type == core.VarDesc.VarType.DENSE_TENSOR_ARRAY:
             return paddle.tensor.array_length(var)
         else:
             raise TypeError(

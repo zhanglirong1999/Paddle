@@ -207,7 +207,7 @@ class LoDTensorArray2TensorGradInferVarType
  public:
   void operator()(framework::InferVarTypeContext *ctx) const override {
     ctx->SetOutputType(framework::GradVarName("X"),
-                       framework::proto::VarType::LOD_TENSOR_ARRAY,
+                       framework::proto::VarType::DENSE_TENSOR_ARRAY,
                        framework::ALL_ELEMENTS);
   }
 };

@@ -635,7 +635,7 @@ std::vector<pir::Value> OpTranscriber::GenerateOperationInput(
                                           op_desc.Type(),
                                           legacy_input_vars[0]));
       if (var->GetType() ==
-          paddle::framework::proto::VarType::LOD_TENSOR_ARRAY) {
+          paddle::framework::proto::VarType::DENSE_TENSOR_ARRAY) {
         is_vector = false;
       }
     }
@@ -725,7 +725,7 @@ OpTranscriber::GenerateOperationOutput(pir::IrContext* ctx,
                             op_desc.Type(),
                             legacy_output_vars[0]));
       if (var->GetType() ==
-          paddle::framework::proto::VarType::LOD_TENSOR_ARRAY) {
+          paddle::framework::proto::VarType::DENSE_TENSOR_ARRAY) {
         pir::Type translated_var_type =
             type_translator[var->GetType()](ctx, *var);
         op_output_types.push_back(translated_var_type);
@@ -974,7 +974,7 @@ struct Assign2AssignOpTranscriber : public OpTranscriber {
                           op_desc.Type(),
                           input_vars.size()));
     const auto* input_var = op_desc.Block()->FindVarRecursive(input_vars[0]);
-    if (input_var->GetType() == framework::proto::VarType::LOD_TENSOR_ARRAY) {
+    if (input_var->GetType() == framework::proto::VarType::DENSE_TENSOR_ARRAY) {
       target_op_name = dialect::AssignArray_Op::name();
     } else {
       return OpTranscriber::LookUpOpInfo(ctx, op_desc);
@@ -3579,7 +3579,7 @@ struct SliceOpTranscriber : public OpTranscriber {
                           op_desc.Type(),
                           input_vars.size()));
     const auto* input_var = op_desc.Block()->FindVarRecursive(input_vars[0]);
-    if (input_var->GetType() == framework::proto::VarType::LOD_TENSOR_ARRAY) {
+    if (input_var->GetType() == framework::proto::VarType::DENSE_TENSOR_ARRAY) {
       PADDLE_ENFORCE_EQ(op_desc.HasOutput("Out"),
                         true,
                         common::errors::InvalidArgument(

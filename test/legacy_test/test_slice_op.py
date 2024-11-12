@@ -1017,7 +1017,7 @@ class TestSliceApiWithDenseTensorArray(unittest.TestCase):
 
                 self.assertTrue(
                     self.sliced_arr.type
-                    == core.VarDesc.VarType.LOD_TENSOR_ARRAY
+                    == core.VarDesc.VarType.DENSE_TENSOR_ARRAY
                 )
                 self.assertEqual(self.sliced_arr.shape, self.shape)
                 np.testing.assert_array_equal(
@@ -1040,7 +1040,7 @@ class TestSliceApiWithDenseTensorArray(unittest.TestCase):
 
                 self.assertTrue(
                     self.sliced_arr.type
-                    == core.VarDesc.VarType.LOD_TENSOR_ARRAY
+                    == core.VarDesc.VarType.DENSE_TENSOR_ARRAY
                 )
                 self.assertEqual(self.sliced_arr.shape, self.shape)
                 np.testing.assert_array_equal(
