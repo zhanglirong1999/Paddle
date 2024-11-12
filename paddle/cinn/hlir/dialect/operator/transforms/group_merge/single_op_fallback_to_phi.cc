@@ -129,7 +129,6 @@ class FusionOpPattern : public pir::OpRewritePattern<cinn::dialect::FusionOp> {
   std::optional<pir::Operation*> FallBackOp(
       pir::Operation* op,
       pir::PatternRewriter& rewriter) const {  // NOLINT
-    std::cerr << "fall back op   " << op->name() << std::endl;
     auto it = op_handler_map().find(op->name());
     if (it == op_handler_map().end()) {
       VLOG(4) << "No fallback handler for op: " << op->name();
