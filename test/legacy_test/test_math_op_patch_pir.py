@@ -84,6 +84,7 @@ class TestMathOpPatchesPir(unittest.TestCase):
         res_np_b = x_np % y_np
         res_np_c = paddle.mod(paddle.to_tensor(x_np), paddle.to_tensor(y_np))
         res_np_d = x_np.__mod__(y_np)
+        res_np_e = x_np.__rmod__(y_np)
         paddle.enable_static()
         with paddle.pir_utils.IrGuard():
             main_program, exe, program_guard = new_program()
@@ -97,14 +98,16 @@ class TestMathOpPatchesPir(unittest.TestCase):
                 b = x % y
                 c = x.mod(y)
                 d = x.__mod__(y)
-                (b_np, c_np, d_np) = exe.run(
+                e = x.__rmod__(y)
+                (b_np, c_np, d_np, e_np) = exe.run(
                     main_program,
                     feed={"x": x_np, "y": y_np},
-                    fetch_list=[b, c, d],
+                    fetch_list=[b, c, d, e],
                 )
                 np.testing.assert_allclose(res_np_b, b_np, atol=1e-05)
                 np.testing.assert_allclose(res_np_c, c_np, atol=1e-05)
                 np.testing.assert_allclose(res_np_d, d_np, atol=1e-05)
+                np.testing.assert_allclose(res_np_e, e_np, rtol=1e-05)
 
     def test_matmul(self):
         paddle.disable_static()

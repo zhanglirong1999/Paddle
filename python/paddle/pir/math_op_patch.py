@@ -44,6 +44,7 @@ SUPPORT_PROMOTION_OPS = [
     "__mul__",
     "__rmul__",
     "__mod__",
+    "__rmod__",
     "__div__",
     "__rdiv__",
     "__truediv__",
@@ -1094,6 +1095,10 @@ def monkey_patch_value():
         (
             '__mod__',
             _binary_creator_('__mod__', paddle.tensor.remainder, False, None),
+        ),
+        (
+            '__rmod__',
+            _binary_creator_('__rmod__', paddle.tensor.remainder, True, None),
         ),
         (
             '__matmul__',

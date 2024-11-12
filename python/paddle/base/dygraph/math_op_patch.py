@@ -231,6 +231,7 @@ def monkey_patch_math_tensor():
         '__rdiv__',
         '__rtruediv__',
         '__mod__',
+        '__rmod__',
         '__matmul__',
         '__gt__',
         '__ge__',

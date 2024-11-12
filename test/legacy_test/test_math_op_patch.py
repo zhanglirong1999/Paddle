@@ -444,6 +444,15 @@ class TestDygraphMathOpPatches(unittest.TestCase):
         np.testing.assert_allclose(actual_out, expect_out, rtol=1e-7, atol=1e-7)
         paddle.enable_static()
 
+    def test_dygraph_rmod(self):
+        paddle.disable_static()
+        self.init_data()
+        # normal case: tenor % nparray
+        expect_out = self.np_a % self.np_b
+        actual_out = self.tensor_b.__rmod__(self.tensor_a)
+        np.testing.assert_allclose(actual_out, expect_out, rtol=1e-7, atol=1e-7)
+        paddle.enable_static()
+
     def test_dygraph_less_than(self):
         paddle.disable_static()
         self.init_data()
