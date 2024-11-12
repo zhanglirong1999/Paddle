@@ -636,7 +636,7 @@ support_ret_buildin_type = (bool, float, int)
 
 def assign_skip_lod_tensor_array(input, output):
     """
-    Assign input to output, but skip the process of copying LoDTensorArray unless it's created in while_block.
+    Assign input to output, but skip the process of copying DenseTensorArray unless it's created in while_block.
     """
 
     def has_shape_diff(x_var, y_var):
@@ -764,15 +764,15 @@ def while_loop(cond, body, loop_vars, is_test=False, name=None):
     Args:
         cond(Callable): A callable returning a boolean tensor controlling whether to continue looping. And ``cond`` takes
             as many arguments as ``loop_vars`` .
-        body(Callable): A callable returning a tuple or list of tensors or LoDTensorArrays of the same arity
+        body(Callable): A callable returning a tuple or list of tensors or DenseTensorArrays of the same arity
             (length and structure) and types as ``loops_vars`` . And ``body`` takes as many arguments as ``loop_vars`` .
-        loop_vars(list|tuple): A list or tuple of tensors or LoDTensorArrays that is passed to both ``cond`` and ``body`` .
+        loop_vars(list|tuple): A list or tuple of tensors or DenseTensorArrays that is passed to both ``cond`` and ``body`` .
         is_test(bool, optional): A flag indicating whether execution is in test phase. Default value is False.
         name(str, optional): Normally there is no need for users to set this property. For more information, please
             refer to :ref:`api_guide_Name`. Default is None.
 
     Returns:
-        A list or tuple of Tensors or LoDTensorArrays which returned by ``body`` .
+        A list or tuple of Tensors or DenseTensorArrays which returned by ``body`` .
 
     Examples:
         .. code-block:: python

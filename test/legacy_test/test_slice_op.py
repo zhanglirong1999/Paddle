@@ -915,7 +915,7 @@ class TestSliceApiEager(unittest.TestCase):
             )
 
 
-class TestSliceApiWithLoDTensorArray(unittest.TestCase):
+class TestSliceApiWithDenseTensorArray(unittest.TestCase):
     def setUp(self):
         self.shape = (3, 4)
         self.data = np.random.random(size=self.shape).astype('float32')

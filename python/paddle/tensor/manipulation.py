@@ -67,7 +67,7 @@ def tensor_array_to_tensor(
     name: str | None = None,
 ) -> tuple[Tensor, Tensor]:
     r"""
-    This function concatenates or stacks all tensors in the input LoDTensorArray
+    This function concatenates or stacks all tensors in the input DenseTensorArray
     along the axis mentioned and returns that as the output.
 
     For Example:
@@ -1499,7 +1499,7 @@ def concat(
             # is LOD_TENSOR_ARRAY in some scenarios. And this feature can be used in static graph mode.
 
             assert len(input) == 1, (
-                "If the elements of 'input' in concat are Variable(LoDTensorArray), "
+                "If the elements of 'input' in concat are Variable(DenseTensorArray), "
                 f"number of the elements must be 1, but received {len(input)}."
             )
             out_index = helper.create_variable_for_type_inference(dtype="int32")
@@ -2293,7 +2293,7 @@ def stack(
     if in_pir_mode():
         if x[0].is_dense_tensor_array_type():
             assert len(x) == 1, (
-                "If the elements of 'x' in stack are Variable(LoDTensorArray), "
+                "If the elements of 'x' in stack are Variable(DenseTensorArray), "
                 f"number of the elements must be 1, but received {len(x)}."
             )
             out, _ = _C_ops.array_to_tensor(x, axis, True)
@@ -2306,7 +2306,7 @@ def stack(
     out = helper.create_variable_for_type_inference(x[0].dtype)
     if x[0].desc.type() == core.VarDesc.VarType.LOD_TENSOR_ARRAY:
         assert len(x) == 1, (
-            "If the elements of 'x' in stack are Variable(LoDTensorArray), "
+            "If the elements of 'x' in stack are Variable(DenseTensorArray), "
             f"number of the elements must be 1, but received {len(x)}."
         )
         out_index = helper.create_variable_for_type_inference(dtype="int32")

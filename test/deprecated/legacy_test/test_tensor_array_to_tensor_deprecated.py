@@ -23,7 +23,7 @@ from paddle.base import core
 paddle.enable_static()
 
 
-class TestLoDTensorArrayConcat(unittest.TestCase):
+class TestDenseTensorArrayConcat(unittest.TestCase):
     """Test case for concat mode of tensor_array_to_tensor."""
 
     def setUp(self):
