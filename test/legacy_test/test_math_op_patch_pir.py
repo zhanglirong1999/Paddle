@@ -322,6 +322,7 @@ class TestMathOpPatchesPir(unittest.TestCase):
         res_np_c = paddle.less_than(
             paddle.to_tensor(x_np), paddle.to_tensor(y_np)
         )
+        res_np_c_ = paddle.less(paddle.to_tensor(x_np), paddle.to_tensor(y_np))
         res_np_d = x_np.__lt__(y_np)
         res_np_e = x_np <= y_np
         res_np_f = paddle.less_equal(
@@ -338,18 +339,20 @@ class TestMathOpPatchesPir(unittest.TestCase):
                 z = paddle.static.data(name="z", shape=[-1, 1], dtype='float32')
                 b = x < y
                 c = x.less_than(y)
+                c_ = x.less(y)
                 d = x.__lt__(y)
                 e = x <= y
                 f = x.less_equal(y)
                 g = x.__le__(y)
                 h = x <= z
-                (b_np, c_np, d_np, e_np, f_np, g_np, h_np) = exe.run(
+                (b_np, c_np, c_np_, d_np, e_np, f_np, g_np, h_np) = exe.run(
                     main_program,
                     feed={"x": x_np, "y": y_np, "z": z_np},
-                    fetch_list=[b, c, d, e, f, g, h],
+                    fetch_list=[b, c, c_, d, e, f, g, h],
                 )
                 np.testing.assert_array_equal(res_np_b, b_np)
                 np.testing.assert_array_equal(res_np_c, c_np)
+                np.testing.assert_array_equal(res_np_c_, c_np_)
                 np.testing.assert_array_equal(res_np_d, d_np)
                 np.testing.assert_array_equal(res_np_e, e_np)
                 np.testing.assert_array_equal(res_np_f, f_np)

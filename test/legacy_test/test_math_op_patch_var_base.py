@@ -445,6 +445,17 @@ class TestMathOpPatchesVarBase(unittest.TestCase):
             res = a < b
             np.testing.assert_array_equal(res.numpy(), a_np < b_np)
 
+    def test_less(self):
+        a_np = np.random.random(self.shape).astype(self.dtype)
+        b_np = np.random.random(self.shape).astype(self.dtype)
+        with base.dygraph.guard():
+            a = paddle.to_tensor(a_np)
+            b = paddle.to_tensor(b_np)
+            res_tensor = a.less(b)
+            res_paddle = paddle.less(a, b)
+            np.testing.assert_array_equal(res_tensor.numpy(), a_np < b_np)
+            np.testing.assert_array_equal(res_paddle.numpy(), a_np < b_np)
+
     def test_less_equal(self):
         a_np = np.random.random(self.shape).astype(self.dtype)
         b_np = np.random.random(self.shape).astype(self.dtype)
