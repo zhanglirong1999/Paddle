@@ -3292,6 +3292,7 @@
   kernel :
     func : matrix_rank_tol
   traits : paddle::dialect::ForwardOnlyTrait
+  interfaces : paddle::dialect::InferSymbolicShapeInterface
 
 - op : max
   args : (Tensor x, IntArray axis={}, bool keepdim=false)
