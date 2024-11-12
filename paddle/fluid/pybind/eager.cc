@@ -781,7 +781,7 @@ Tensor is the basic data structure in PaddlePaddle. There are some ways to creat
  * ** dtype: paddle::DataType,
  * ** dims: vector<int>,
  * ** name: std::string,
- * ** type: paddle::framework::proto::VarType::DenseTensor,
+ * ** type: paddle::framework::proto::VarType::LodTensor,
  * ** persistable: bool,
  * ** process_mesh: phi::distributed::ProcessMesh,
  * ** placements: std::vector<Placement>)
