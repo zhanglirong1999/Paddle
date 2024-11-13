@@ -15,11 +15,10 @@
 from collections import OrderedDict
 from enum import Enum
 
-import paddle
 import paddle.distributed as dist
 from paddle.distributed import fleet
 
-from .parallel_base import ParallelModel, ParallelOptimizer
+from .parallel_base import ParallelModel, ParallelOptimizer, is_tensor
 
 
 class SplitPoint(Enum):
@@ -55,6 +54,7 @@ class PipelineParallel(ParallelModel):
             # reshard to next pipeline stage
             if isinstance(output, (dict, OrderedDict)):
                 for key, tensor in output.items():
+                    assert is_tensor(tensor)
                     output[key] = dist.reshard(
                         tensor,
                         self.get_mesh(pipeline_stage_index + 1),
@@ -62,12 +62,13 @@ class PipelineParallel(ParallelModel):
                     )
             elif isinstance(output, (list, tuple)):
                 for i in range(len(output)):
+                    assert is_tensor(output[i])
                     output[i] = dist.reshard(
                         output[i],
                         self.get_mesh(pipeline_stage_index + 1),
                         output[i].placements,
                     )
-            elif isinstance(output, paddle.Tensor):
+            elif is_tensor(output):
                 output = dist.reshard(
                     output,
                     self.get_mesh(pipeline_stage_index + 1),

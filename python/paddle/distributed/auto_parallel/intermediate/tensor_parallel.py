@@ -17,7 +17,7 @@ import re
 import paddle
 import paddle.distributed as dist
 
-from .parallel_base import ParallelModel, ParallelOptimizer
+from .parallel_base import ParallelModel, ParallelOptimizer, is_tensor
 
 
 class PlanBase:
@@ -162,7 +162,7 @@ def sp_split(x, process_mesh, need_transpose):
         target_x = x[0]
     else:
         target_x = x
-    assert isinstance(target_x, paddle.Tensor)
+    assert is_tensor(target_x)
     assert len(target_x.shape) == 3
     if need_transpose:
         target_x = paddle.transpose(target_x, perm=[1, 0, 2])
@@ -187,7 +187,7 @@ def sp_reduce_scatter(x, process_mesh, need_transpose):
         target_x = x[0]
     else:
         target_x = x
-    assert isinstance(target_x, paddle.Tensor)
+    assert is_tensor(target_x)
     assert len(target_x.shape) == 3
     placements = target_x.placements
     if placements is None:
