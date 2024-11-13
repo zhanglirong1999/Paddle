@@ -109,7 +109,7 @@ def data_layer_not_check(name, shape, dtype='float32', lod_level=0):
         name=name,
         shape=shape,
         dtype=dtype,
-        type=core.VarDesc.VarType.LOD_TENSOR,
+        type=core.VarDesc.VarType.DENSE_TENSOR,
         stop_gradient=True,
         lod_level=lod_level,
         is_data=True,
