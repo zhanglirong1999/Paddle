@@ -405,6 +405,8 @@ class TestMathOpPatches(unittest.TestCase):
             int(a)
         with self.assertRaises(TypeError):
             float(a)
+        with self.assertRaises(TypeError):
+            complex(a)
 
 
 class TestDygraphMathOpPatches(unittest.TestCase):

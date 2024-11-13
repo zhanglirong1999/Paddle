@@ -734,6 +734,20 @@ class TestMathOpPatchesPir(unittest.TestCase):
                     float(x)
                 with self.assertRaises(TypeError):
                     bool(x)
+                with self.assertRaises(TypeError):
+                    complex(x)
+
+    def test_builtin_type_conversion_old_ir(self):
+        with paddle.pir_utils.DygraphOldIrGuard():
+            _, _, program_guard = new_program()
+            with program_guard:
+                x = paddle.static.data(name='x', shape=[], dtype="float32")
+                with self.assertRaises(TypeError):
+                    int(x)
+                with self.assertRaises(TypeError):
+                    float(x)
+                with self.assertRaises(TypeError):
+                    complex(x)
 
     def test_math_exists(self):
         with paddle.pir_utils.IrGuard():

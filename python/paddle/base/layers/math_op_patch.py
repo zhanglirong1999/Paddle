@@ -749,6 +749,13 @@ def monkey_patch_variable():
             "2. If you want to run it in full graph mode, you need use Variable directly, and do not use float(Variable)."
         )
 
+    def _complex_(self):
+        raise TypeError(
+            "complex(Variable) is not supported in static graph mode. If you are using @to_static, you can try this:\n"
+            "1. If you want to get the value of Variable, you can switch to non-fullgraph mode by setting @to_static(full_graph=True).\n"
+            "2. If you want to run it in full graph mode, you need use Variable directly, and do not use complex(Variable)."
+        )
+
     def values(var):
         block = current_block(var)
         out = create_new_tmp_var(block, var.dtype)
@@ -889,6 +896,7 @@ def monkey_patch_variable():
         ('__ge__', _binary_creator_('__ge__', 'greater_equal', False, None)),
         ('__float__', _float_),
         ('__int__', _int_),
+        ('__complex__', _complex_),
         ('values', values),
         ('indices', indices),
         ('to_dense', to_dense),

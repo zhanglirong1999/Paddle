@@ -522,6 +522,14 @@ class TestMathOpPatchesVarBase(unittest.TestCase):
         self.assertTrue(int(a) == 999424)
         self.assertTrue(int(a) == 999424)
 
+    def test_complex(self):
+        with base.dygraph.guard():
+            a = paddle.to_tensor(np.array([100.1 + 99.9j]))
+            self.assertTrue(complex(a) == (100.1 + 99.9j))
+
+        a = paddle.to_tensor(1000000.0, dtype='bfloat16')
+        self.assertTrue(complex(a) == (999424 + 0j))
+
     def test_len(self):
         a_np = np.random.uniform(-1, 1, self.shape).astype(self.dtype)
         with base.dygraph.guard():

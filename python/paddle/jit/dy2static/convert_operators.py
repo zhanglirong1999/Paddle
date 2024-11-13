@@ -759,11 +759,13 @@ def convert_var_dtype(var, dtype):
             'bool',
             'int',
             'float',
+            'complex',
         ], f"The casted target dtype is {dtype}, which is not supported in type casting."
         cast_map = {
             'bool': 'bool',
             'int': 'int32',
             'float': 'float32',
+            'complex': 'complex64',
         }
         return paddle.cast(var, dtype=cast_map[dtype])
     else:
@@ -771,6 +773,7 @@ def convert_var_dtype(var, dtype):
             'bool',
             'int',
             'float',
+            'complex',
         ], f"The casted target dtype is {dtype}, which is not supported in type casting."
         return eval(dtype)(var)
 
