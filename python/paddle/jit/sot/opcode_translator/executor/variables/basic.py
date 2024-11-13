@@ -42,6 +42,7 @@ from ....utils import (
     log,
     printable,
 )
+from ....utils.envs import ENV_SOT_BREAK_GRAPH_ON_GET_SYMBOLIC_VALUE
 from ....utils.exceptions import HasNoAttributeError, InnerError
 from ..dispatch_functions import tensor_numel
 from ..guard import (
@@ -785,6 +786,8 @@ class SymbolicVariable(VariableBase):
         )
 
     def get_py_value(self, allow_tensor: bool = False) -> bool | int | float:
+        if ENV_SOT_BREAK_GRAPH_ON_GET_SYMBOLIC_VALUE.get():
+            raise BreakGraphError("get_py_value from SymbolicVariable")
         self.need_guard_value = True
         if isinstance(self.value, SymbolicValue):
             assert isinstance(
