@@ -1468,13 +1468,21 @@ def get_package_data_and_package_dir():
         for xpu_cuda_lib_file in xpu_cuda_lib_list:
             shutil.copy(xpu_cuda_lib_file, libs_path)
             package_data['paddle.libs'] += [os.path.basename(xpu_cuda_lib_file)]
-
-        shutil.copy(env_dict.get("XPU_XBLAS_LIB"), libs_path)
-        package_data['paddle.libs'] += [env_dict.get("XPU_XBLAS_LIB_NAME")]
-        shutil.copy(env_dict.get("XPU_XFA_LIB"), libs_path)
-        package_data['paddle.libs'] += [env_dict.get("XPU_XFA_LIB_NAME")]
-        shutil.copy(env_dict.get("XPU_XPUDNN_LIB"), libs_path)
-        package_data['paddle.libs'] += [env_dict.get("XPU_XPUDNN_LIB_NAME")]
+        if env_dict.get("WITH_XPU_XRE5") == 'ON':
+            xpu_cuda_rt_lib_list = glob.glob(
+                env_dict.get("XPU_CUDA_RT_LIB") + '*'
+            )
+            for xpu_cuda_rt_lib_file in xpu_cuda_rt_lib_list:
+                shutil.copy(xpu_cuda_rt_lib_file, libs_path)
+                package_data['paddle.libs'] += [
+                    os.path.basename(xpu_cuda_rt_lib_file)
+                ]
+            shutil.copy(env_dict.get("XPU_XBLAS_LIB"), libs_path)
+            package_data['paddle.libs'] += [env_dict.get("XPU_XBLAS_LIB_NAME")]
+            shutil.copy(env_dict.get("XPU_XFA_LIB"), libs_path)
+            package_data['paddle.libs'] += [env_dict.get("XPU_XFA_LIB_NAME")]
+            shutil.copy(env_dict.get("XPU_XPUDNN_LIB"), libs_path)
+            package_data['paddle.libs'] += [env_dict.get("XPU_XPUDNN_LIB_NAME")]
 
     if env_dict.get("WITH_XPU_BKCL") == 'ON':
         shutil.copy(env_dict.get("XPU_BKCL_LIB"), libs_path)
@@ -1832,6 +1840,13 @@ def get_headers():
                 recursive=True,
             )
         )  # xdnn api headers
+        headers += list(
+            find_files(
+                '*.hpp',
+                paddle_binary_dir + '/third_party/xpu/src/extern_xpu/xpu',
+                recursive=True,
+            )
+        )  # xre headers with .hpp extension
 
     # pybind headers
     headers += list(find_files('*.h', env_dict.get("PYBIND_INCLUDE_DIR"), True))

@@ -334,7 +334,7 @@ void FusedMultiTransformerInt8XpuKernel(
           PADDLE_ENFORCE_XDNN_SUCCESS(r, "xpu::gather_part");
         } else {
           if (index_type == DataType::INT32) {
-            r = xpu::gather<XPUTypeT, int32_t>(
+            r = xpu::paddle_gather<XPUTypeT, int32_t>(
                 ctx.x_context(),
                 cache_kv_data,
                 gather_index_t->data<int32_t>(),
@@ -344,7 +344,7 @@ void FusedMultiTransformerInt8XpuKernel(
                                                    : gather_index_t->dims()[0],
                 gather_axis);
           } else {
-            r = xpu::gather<XPUTypeT, int64_t>(
+            r = xpu::paddle_gather<XPUTypeT, int64_t>(
                 ctx.x_context(),
                 cache_kv_data,
                 gather_index_t->data<int64_t>(),

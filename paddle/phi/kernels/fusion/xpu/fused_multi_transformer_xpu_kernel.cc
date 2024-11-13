@@ -257,7 +257,7 @@ void FusedMultiTransformerXpuKernel(
       const auto& index_type = gather_index_t->dtype();
       if (cache_kv_gather_dims != cache_kv_dims) {
         if (index_type == DataType::INT32) {
-          r = xpu::gather<XPUTypeT, int32_t>(
+          r = xpu::paddle_gather<XPUTypeT, int32_t>(
               ctx.x_context(),
               cache_kv_data,
               gather_index_t->data<int32_t>(),
@@ -267,7 +267,7 @@ void FusedMultiTransformerXpuKernel(
                                                  : gather_index_t->dims()[0],
               gather_axis);
         } else {
-          r = xpu::gather<XPUTypeT, int64_t>(
+          r = xpu::paddle_gather<XPUTypeT, int64_t>(
               ctx.x_context(),
               cache_kv_data,
               gather_index_t->data<int64_t>(),
@@ -287,7 +287,7 @@ void FusedMultiTransformerXpuKernel(
         PADDLE_ENFORCE_XDNN_SUCCESS(r, "xpu::copy");
       } else {  // inplace gather
         if (index_type == DataType::INT32) {
-          r = xpu::gather<XPUTypeT, int32_t>(
+          r = xpu::paddle_gather<XPUTypeT, int32_t>(
               ctx.x_context(),
               cache_kv_data,
               gather_index_t->data<int32_t>(),
@@ -297,7 +297,7 @@ void FusedMultiTransformerXpuKernel(
                                                  : gather_index_t->dims()[0],
               gather_axis);
         } else {
-          r = xpu::gather<XPUTypeT, int64_t>(
+          r = xpu::paddle_gather<XPUTypeT, int64_t>(
               ctx.x_context(),
               cache_kv_data,
               gather_index_t->data<int64_t>(),

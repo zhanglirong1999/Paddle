@@ -50,14 +50,14 @@ void RepeatInterleaveKernel(const Context& ctx,
   out_shape[dim] = index_size;
   out->Resize(common::make_ddim(out_shape));
   ctx.template Alloc<T>(out);
-  int ret =
-      xpu::gather<XPUType, int>(ctx.x_context(),
-                                reinterpret_cast<const XPUType*>(x.data<T>()),
-                                index.data<int>(),
-                                reinterpret_cast<XPUType*>(out->data<T>()),
-                                xshape,
-                                index_size,
-                                dim);
+  int ret = xpu::paddle_gather<XPUType, int>(
+      ctx.x_context(),
+      reinterpret_cast<const XPUType*>(x.data<T>()),
+      index.data<int>(),
+      reinterpret_cast<XPUType*>(out->data<T>()),
+      xshape,
+      index_size,
+      dim);
   PADDLE_ENFORCE_XDNN_SUCCESS(ret, "gather");
 }
 
@@ -101,7 +101,7 @@ void RepeatInterleaveWithTensorIndexKernel(const Context& ctx,
     out_shape[dim] = index.dims()[0];
     out->Resize(common::make_ddim(out_shape));
     ctx.template Alloc<T>(out);
-    int ret = xpu::gather<XPUType, int64_t>(
+    int ret = xpu::paddle_gather<XPUType, int64_t>(
         ctx.x_context(),
         reinterpret_cast<const XPUType*>(x.data<T>()),
         index.data<int64_t>(),
@@ -116,14 +116,14 @@ void RepeatInterleaveWithTensorIndexKernel(const Context& ctx,
     out_shape[dim] = index.dims()[0];
     out->Resize(common::make_ddim(out_shape));
     ctx.template Alloc<T>(out);
-    int ret =
-        xpu::gather<XPUType, int>(ctx.x_context(),
-                                  reinterpret_cast<const XPUType*>(x.data<T>()),
-                                  index.data<int>(),
-                                  reinterpret_cast<XPUType*>(out->data<T>()),
-                                  xshape,
-                                  index.numel(),
-                                  dim);
+    int ret = xpu::paddle_gather<XPUType, int>(
+        ctx.x_context(),
+        reinterpret_cast<const XPUType*>(x.data<T>()),
+        index.data<int>(),
+        reinterpret_cast<XPUType*>(out->data<T>()),
+        xshape,
+        index.numel(),
+        dim);
     PADDLE_ENFORCE_XDNN_SUCCESS(ret, "gather");
   }
 }

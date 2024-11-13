@@ -65,16 +65,15 @@ void TakeAlongAxisKernel(const Context& dev_ctx,
   int r = XPU_SUCCESS;
 #ifndef PADDLE_WITH_XPU_PLUGIN
   if (index_dtype == DataType::INT32) {
-    r = xpu::gather_element<XPUType, int>(
-        dev_ctx.x_context(),
-        reinterpret_cast<const XPUType*>(x.data<T>()),
-        index.data<int>(),
-        reinterpret_cast<XPUType*>(out->data<T>()),
-        x_shape,
-        index_shape,
-        axis);
+    r = xpu::gather<XPUType, int>(dev_ctx.x_context(),
+                                  reinterpret_cast<const XPUType*>(x.data<T>()),
+                                  index.data<int>(),
+                                  reinterpret_cast<XPUType*>(out->data<T>()),
+                                  x_shape,
+                                  index_shape,
+                                  axis);
   } else {
-    r = xpu::gather_element<XPUType, int64_t>(
+    r = xpu::gather<XPUType, int64_t>(
         dev_ctx.x_context(),
         reinterpret_cast<const XPUType*>(x.data<T>()),
         index.data<int64_t>(),
