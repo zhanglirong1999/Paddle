@@ -366,7 +366,7 @@ void reduce_as_grad(const Tensor& x,
     return;
   }
   if (has_dynamic_shape(x.shape()) || has_dynamic_shape(out_grad.shape())) {
-    auto x_grad_tmp = backend::expand_with_tensor<T>(out_grad, shape<T>(x));
+    auto x_grad_tmp = backend::expand<T>(out_grad, shape<T>(x));
     set_output<T>(x_grad_tmp, x_grad);
   } else {
     std::vector<int64_t> x_dim = common::vectorize<int64_t>(x.dims());
@@ -1903,7 +1903,7 @@ void prod_grad(const Tensor& x,
       std::vector<int> transpose_dim, origin_position;
       std::vector<Tensor> transpose_shape, cumprod_shape;
       if (x_dim_size == 1) {
-        out_grad_tmp = backend::expand_with_tensor<T>(out_grad, x_dim);
+        out_grad_tmp = backend::expand<T>(out_grad, x_dim);
       } else {
         if (!keep_dim) {
           auto axis_ = std::vector<int64_t>();
@@ -1922,9 +1922,9 @@ void prod_grad(const Tensor& x,
           Tensor out_grad_shape =
               get_unsqueeze_dims<T>(shape<T>(out_grad), axis_);
           Tensor out_grad_ = backend::reshape<T>(out_grad, out_grad_shape);
-          out_grad_tmp = backend::expand_with_tensor<T>(out_grad_, x_dim);
+          out_grad_tmp = backend::expand<T>(out_grad_, x_dim);
         } else {
-          out_grad_tmp = backend::expand_with_tensor<T>(out_grad, x_dim);
+          out_grad_tmp = backend::expand<T>(out_grad, x_dim);
         }
       }
       if (reduce_all) {
@@ -2613,7 +2613,7 @@ void dot_grad(const Tensor& x,
     auto out_grad_shape =
         get_unsqueeze_dims<T>(shape<T>(out_grad_), {out_grad_dim_size});
     out_grad_ = backend::reshape<T>(out_grad_, out_grad_shape);
-    out_grad_ = backend::expand_with_tensor<T>(out_grad_, shape<T>(x));
+    out_grad_ = backend::expand<T>(out_grad_, shape<T>(x));
   } else {
     std::vector<int64_t> x_dim = common::vectorize<int64_t>(x.dims());
     auto out_grad_shape = get_unsqueeze_dims(out_grad, {out_grad_dim_size});
