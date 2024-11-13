@@ -697,7 +697,7 @@ def cse_is_enabled():
 
 
 def prim_is_enabled():
-    core.check_and_set_prim_all_enabled()
+    core.check_and_set_prim_all_enabled(True)
     return core._is_bwd_prim_enabled() or core._is_fwd_prim_enabled()
 
 
