@@ -46,6 +46,7 @@ from ....utils.envs import ENV_SOT_BREAK_GRAPH_ON_GET_SYMBOLIC_VALUE
 from ....utils.exceptions import HasNoAttributeError, InnerError
 from ..dispatch_functions import tensor_numel
 from ..guard import (
+    FasterStringifiedExpression,
     StringifiedExpression,
     check_guard,
     object_equal_stringified_guard,
@@ -291,8 +292,9 @@ class TensorDtypeVariable(DataVariable):
                     )
                 ]
             return [
-                StringifiedExpression(
+                FasterStringifiedExpression(
                     f"{{}}.dtype == {dtype_str}",
+                    paddle.framework.core.DtypeMatchGuard(self.value),
                     [tensor_value_tracer],
                     union_free_vars(
                         tensor_value_tracer.free_vars,
@@ -858,11 +860,12 @@ class SymbolicVariable(VariableBase):
         if self.need_guard_value:
             return super().make_stringified_guard()
         return [
-            StringifiedExpression(
+            FasterStringifiedExpression(
                 f"id(type({{}})) == {id(self.get_py_type())}",
+                paddle.core.TypeMatchGuard(self.get_py_type()),
                 [frame_value_tracer],
                 union_free_vars(frame_value_tracer.free_vars),
-            )
+            ),
         ]
 
     @staticmethod
