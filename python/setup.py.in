@@ -934,6 +934,9 @@ if '${WITH_GPU}' == 'ON' or '${WITH_ROCM}' == 'ON':
     if len('${FLASHATTN_LIBRARIES}') > 1:
         package_data['paddle.libs']+=[os.path.basename('${FLASHATTN_LIBRARIES}')]
         shutil.copy('${FLASHATTN_LIBRARIES}', libs_path)
+    if len('${FLASHATTN_V3_LIBRARIES}') > 1:
+        package_data['paddle.libs']+=[os.path.basename('${FLASHATTN_V3_LIBRARIES}')]
+        shutil.copy('${FLASHATTN_V3_LIBRARIES}', libs_path)
 
 if '${WITH_MKL}' == 'ON':
     shutil.copy('${MKLML_SHARED_LIB}', libs_path)
