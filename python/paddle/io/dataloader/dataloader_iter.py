@@ -632,7 +632,7 @@ class _DataLoaderIterMultiProcess(_DataLoaderIterBase):
                             for tensor in batch:
                                 array.append(tensor)
                         else:
-                            # LoDTensor not in shared memory is not
+                            # DenseTensor not in shared memory is not
                             # serializable, cannot be create in workers
                             for slot in batch:
                                 if isinstance(slot, paddle.Tensor):

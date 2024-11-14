@@ -148,7 +148,7 @@ def scope_guard(scope: core._Scope) -> Generator[None, None, None]:
 def as_numpy(tensor, copy=False):
     """
     Convert a Tensor to a numpy.ndarray, its only support Tensor without LoD information.
-    For higher dimensional sequence data, please use LoDTensor directly.
+    For higher dimensional sequence data, please use DenseTensor directly.
 
     Examples:
         .. code-block:: python
@@ -718,7 +718,7 @@ def _get_program_cache_key(feed, fetch_list):
 def _as_lodtensor(data, place, dtype=None):
     """
     Convert numpy.ndarray to Tensor, its only support Tensor without LoD information.
-    For higher dimensional sequence data, please use LoDTensor directly.
+    For higher dimensional sequence data, please use DenseTensor directly.
 
     Examples:
 

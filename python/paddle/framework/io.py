@@ -556,7 +556,7 @@ def _transformed_from_varbase(obj):
 
 
 def _transformed_from_lodtensor(obj):
-    # In paddle2.1 version, LoDTensor is saved as np.array(tensor).
+    # In paddle2.1 version, DenseTensor is saved as np.array(tensor).
     # When executing paddle.load, use this function to determine whether to restore to Tensor/LoDTensor.
     if isinstance(obj, np.ndarray):
         return True

@@ -1340,7 +1340,7 @@ def eye(
         name(str|None, optional): For details, please refer to :ref:`api_guide_Name`. Generally, no setting is required. Default: None.
 
     Returns:
-        Tensor: An identity Tensor or LoDTensor of shape [num_rows, num_columns].
+        Tensor: An identity Tensor or DenseTensor of shape [num_rows, num_columns].
 
     Examples:
         .. code-block:: python

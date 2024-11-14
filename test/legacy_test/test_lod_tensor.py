@@ -65,7 +65,7 @@ class TestLoDTensor(unittest.TestCase):
         self.assertFalse(tensor.has_valid_recursive_sequence_lengths())
 
     def test_create_lod_tensor(self):
-        # Create LoDTensor from a list
+        # Create DenseTensor from a list
         data = [
             [np.int64(1), np.int64(2), np.int64(3)],
             [np.int64(3), np.int64(4)],
@@ -94,7 +94,7 @@ class TestLoDTensor(unittest.TestCase):
             np.array([1, 2, 3, 3, 4]).reshape(tensor.shape()).astype('int64'),
         )
 
-        # Create LoDTensor from numpy array
+        # Create DenseTensor from numpy array
         data = np.random.random([10, 1]).astype('float64')
         recursive_seq_lens = [[2, 1], [3, 3, 4]]
         tensor = create_lod_tensor(data, recursive_seq_lens, base.CPUPlace())
@@ -105,7 +105,7 @@ class TestLoDTensor(unittest.TestCase):
         self.assertEqual(tensor.shape(), [10, 1])
         np.testing.assert_array_equal(np.array(tensor), data)
 
-        # Create LoDTensor from another LoDTensor, they are differnt instances
+        # Create DenseTensor from another DenseTensor, they are differnt instances
         new_recursive_seq_lens = [[2, 2, 1], [1, 2, 2, 3, 2]]
         new_tensor = create_lod_tensor(
             tensor, new_recursive_seq_lens, base.CPUPlace()
