@@ -390,7 +390,7 @@ void BindTensor(pybind11::module &m) {  // NOLINT
         Set the data of Tensor on place with given numpy array.
 
         Args:
-          lod (numpy.ndarray): The data to set.
+          array (numpy.ndarray): The shape where the DenseTensor is to be set.
           place (CPUPlace|CUDAPlace|XPUPlace|IPUPlace|CUDAPinnedPlace): The place where the
           Tensor is to be set.
           zero_copy (bool, optional): Whether to share memory with the input numpy array.
