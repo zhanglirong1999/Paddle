@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import itertools
 from collections import OrderedDict
 from enum import Enum
 
@@ -85,11 +86,38 @@ class PipelineParallel(ParallelModel):
             # TODO(deepllz): support in the future
             return input
 
+        # step1: set every layer's own pipeline_stage_index
         split_layer_names = list(self.split_spec.keys())
-        for index, name in enumerate(split_layer_names):
+        sublayer_names = [name for name, _ in model.named_sublayers()]
+        # Mark which layer is the next pipeline stage
+        pipline_layer_mark = [0 for _ in range(len(sublayer_names))]
+        for split_layer_name in split_layer_names:
+            split_point = self.split_spec[split_layer_name]
+            index = sublayer_names.index(split_layer_name)
+            if split_point == SplitPoint.END:
+                is_valid = False
+                for i in range(index + 1, len(sublayer_names)):
+                    if not sublayer_names[i].startswith(split_layer_name):
+                        pipline_layer_mark[i] = 1
+                        is_valid = True
+                        break
+                assert (
+                    is_valid
+                ), f"the last layer:{split_layer_name} must not be SplitPoint.END, please check the split_spec"
+            else:
+                raise NotImplementedError(
+                    "SplitPoint.BEGINNING is not supported currently"
+                )
+                pipline_layer_mark[index] = 1
+        # the inclusiveSum of pipline_layer_mark is the pipeline stage index
+        pipline_stage_index = list(itertools.accumulate(pipline_layer_mark))
+        for index, (name, layer) in enumerate(model.named_sublayers()):
+            layer.pipeline_stage_index = pipline_stage_index[index]
+
+        # step2: insert reshard
+        for name in split_layer_names:
             layer = get_layer_by_name(name)
             split_point = self.split_spec[name]
-            layer.pipeline_stage_index = index
             layer.split_point = split_point
             if split_point == SplitPoint.END:
                 layer.register_forward_post_hook(forward_post_hook)
@@ -98,6 +126,7 @@ class PipelineParallel(ParallelModel):
                     "SplitPoint.BEGINNING is not supported currently"
                 )
                 layer.register_forward_pre_hook(forward_pre_hook)
+
         return model
 
 
