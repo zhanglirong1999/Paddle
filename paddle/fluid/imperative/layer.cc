@@ -586,7 +586,7 @@ void ClearNoNeedBufferInputs(OpBase* op) {
       PADDLE_ENFORCE_EQ(var.IsType<phi::DenseTensor>(),
                         true,
                         common::errors::PermissionDenied(
-                            "NoNeedBufferVars only support LoDTensor"));
+                            "NoNeedBufferVars only support DenseTensor"));
       auto new_var = new VariableWrapper(each_var->Name());
       auto* new_tensor = new_var->MutableVar()->GetMutable<phi::DenseTensor>();
       auto& old_tensor = var.Get<phi::DenseTensor>();

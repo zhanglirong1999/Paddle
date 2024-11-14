@@ -163,7 +163,7 @@ void ThrowWarnInternal(const std::string& message);
 
 /*
  * Summary: This macro is used to get Variable or internal type
- *   data (such as LoDTensor or SelectedRows) of the Input and
+ *   data (such as DenseTensor or SelectedRows) of the Input and
  *   Output in op, generally used when call scope.FindVar(Input/
  *   Output("Name")) or ctx.Input<LoDTensor>().
  *   Firstly this macro check whether the obtained pointer is null,

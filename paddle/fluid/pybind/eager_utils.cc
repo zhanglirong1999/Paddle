@@ -726,7 +726,7 @@ std::vector<phi::DenseTensor> CastPyArg2VectorOfTensorBase(PyObject* obj,
       } else {
         PADDLE_THROW(common::errors::InvalidType(
             "argument (position %d) must be "
-            "list of LoDTensor, but got %s at pos %d",
+            "list of DenseTensor, but got %s at pos %d",
             arg_pos + 1,
             reinterpret_cast<PyTypeObject*>(item->ob_type)->tp_name,
             i));
@@ -742,7 +742,7 @@ std::vector<phi::DenseTensor> CastPyArg2VectorOfTensorBase(PyObject* obj,
       } else {
         PADDLE_THROW(common::errors::InvalidType(
             "argument (position %d) must be "
-            "list of LoDTensor, but got %s at pos %d",
+            "list of DenseTensor, but got %s at pos %d",
             arg_pos + 1,
             reinterpret_cast<PyTypeObject*>(item->ob_type)->tp_name,
             i));

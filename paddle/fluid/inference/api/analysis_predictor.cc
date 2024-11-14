@@ -279,8 +279,8 @@ bool PaddleTensorToDenseTensor(const PaddleTensor &pt,
   if (!has_zero_dim) {
     PADDLE_ENFORCE_NOT_NULL(
         input_ptr,
-        common::errors::Fatal(
-            "Cannot convert to LoDTensor because LoDTensor creation failed."));
+        common::errors::Fatal("Cannot convert to DenseTensor because "
+                              "DenseTensor creation failed."));
     PADDLE_ENFORCE_NOT_NULL(
         pt.data.data(),
         common::errors::InvalidArgument(
@@ -293,7 +293,7 @@ bool PaddleTensorToDenseTensor(const PaddleTensor &pt,
   }
 
   if (phi::is_cpu_place(place)) {
-    // TODO(panyx0718): Init LoDTensor from existing memcpy to save a copy.
+    // TODO(panyx0718): Init DenseTensor from existing memcpy to save a copy.
     if (input_ptr != nullptr) {
       std::memcpy(
           static_cast<void *>(input_ptr), pt.data.data(), pt.data.length());
