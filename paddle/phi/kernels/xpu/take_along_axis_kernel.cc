@@ -82,7 +82,7 @@ void TakeAlongAxisKernel(const Context& dev_ctx,
         index_shape,
         axis);
   }
-  PADDLE_ENFORCE_XDNN_SUCCESS(r, "gather_element");
+  PADDLE_ENFORCE_XDNN_SUCCESS(r, "gather");
 #else
   if (index_dtype == DataType::INT32) {
     r = xpu::plugin::take_along_axis<XPUType, int>(

@@ -77,11 +77,7 @@ void GatherKernel(const Context& dev_ctx,
         index.dims().size() == 0 ? 1 : index.dims()[0],
         axis_v);
   }
-  PADDLE_ENFORCE_EQ(
-      r,
-      xpu::Error_t::SUCCESS,
-      common::errors::External(
-          "XPU gather kernel return wrong value[%d %s]", r, XPUAPIErrorMsg[r]));
+  PADDLE_ENFORCE_XDNN_SUCCESS(r, "paddle_gather");
 }
 
 }  // namespace phi

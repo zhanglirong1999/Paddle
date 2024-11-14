@@ -354,7 +354,7 @@ void FusedMultiTransformerInt8XpuKernel(
                                                    : gather_index_t->dims()[0],
                 gather_axis);
           }
-          PADDLE_ENFORCE_XDNN_SUCCESS(r, "xpu::gather");
+          PADDLE_ENFORCE_XDNN_SUCCESS(r, "xpu::paddle_gather");
           r = xpu::copy<XPUTypeT>(
               ctx.x_context(),
               reinterpret_cast<XPUTypeT*>(cache_kv_gather_tensor.data<T>()),

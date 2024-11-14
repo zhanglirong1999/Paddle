@@ -83,7 +83,7 @@ void GetSinCosByPassValue(const Context& dev_ctx,
         {seq_len, head_dim},
         batch_size * seq_len,
         0);
-    PADDLE_ENFORCE_XDNN_SUCCESS(ret, "gather");
+    PADDLE_ENFORCE_XDNN_SUCCESS(ret, "paddle_gather");
     ret = xpu::paddle_gather<XPUSCType, int64_t>(
         dev_ctx.x_context(),
         reinterpret_cast<const XPUSCType*>(cos->data()),
@@ -92,7 +92,7 @@ void GetSinCosByPassValue(const Context& dev_ctx,
         {seq_len, head_dim},
         batch_size * seq_len,
         0);
-    PADDLE_ENFORCE_XDNN_SUCCESS(ret, "gather");
+    PADDLE_ENFORCE_XDNN_SUCCESS(ret, "paddle_gather");
   } else {
     int sin_cos_batch_size = (dims_size) == 4 ? sin_cos_dims[0] : 1;
     ret = xpu::broadcast<XPUSCType>(

@@ -158,7 +158,7 @@ void DistributeFpnProposalsKernel(
           fpn_rois_shape,
           sub_idx.numel(),
           0);
-      PADDLE_ENFORCE_XDNN_SUCCESS(r1, "gather");
+      PADDLE_ENFORCE_XDNN_SUCCESS(r1, "paddle_gather");
     } else {
       multi_fpn_rois[i]->Resize({sub_rois_num, funcs::kBoxDim});
       dev_ctx.template Alloc<T>(multi_fpn_rois[i]);

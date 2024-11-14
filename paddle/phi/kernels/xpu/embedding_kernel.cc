@@ -107,7 +107,7 @@ void EmbeddingKernel(const Context &ctx,
         padding_idx);
 #endif
   }
-  PADDLE_ENFORCE_XDNN_SUCCESS(r, "embedding");
+  PADDLE_ENFORCE_XDNN_SUCCESS(r, "paddle_embedding");
 }
 
 }  // namespace phi

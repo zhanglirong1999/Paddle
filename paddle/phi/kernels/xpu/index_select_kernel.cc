@@ -89,7 +89,7 @@ void IndexSelectKernel(const Context& ctx,
         index_len,
         dim);
   }
-  PADDLE_ENFORCE_XDNN_SUCCESS(r, "gather");
+  PADDLE_ENFORCE_XDNN_SUCCESS(r, "paddle_gather");
 }
 
 }  // namespace phi

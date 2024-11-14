@@ -61,7 +61,7 @@ void IndexSampleKernel(const Context& ctx,
                                       {batch_size, input_length},
                                       {batch_size, index_length},
                                       1);
-    PADDLE_ENFORCE_XDNN_SUCCESS(r, "gather_element");
+    PADDLE_ENFORCE_XDNN_SUCCESS(r, "gather");
   } else if (index_type == DataType::INT32) {
     const int* index_data = index.data<int>();
     int r =
@@ -72,7 +72,7 @@ void IndexSampleKernel(const Context& ctx,
                                       {batch_size, input_length},
                                       {batch_size, index_length},
                                       1);
-    PADDLE_ENFORCE_XDNN_SUCCESS(r, "gather_element");
+    PADDLE_ENFORCE_XDNN_SUCCESS(r, "gather");
   }
 }
 

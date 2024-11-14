@@ -58,7 +58,7 @@ void RepeatInterleaveKernel(const Context& ctx,
       xshape,
       index_size,
       dim);
-  PADDLE_ENFORCE_XDNN_SUCCESS(ret, "gather");
+  PADDLE_ENFORCE_XDNN_SUCCESS(ret, "paddle_gather");
 }
 
 template <typename T, typename Context>
@@ -109,7 +109,7 @@ void RepeatInterleaveWithTensorIndexKernel(const Context& ctx,
         xshape,
         index.numel(),
         dim);
-    PADDLE_ENFORCE_XDNN_SUCCESS(ret, "gather");
+    PADDLE_ENFORCE_XDNN_SUCCESS(ret, "paddle_gather");
   } else {
     phi::funcs::RepeatsTensor2IndexTensor<Context, int>(
         ctx, repeats_tensor, &index);
@@ -124,7 +124,7 @@ void RepeatInterleaveWithTensorIndexKernel(const Context& ctx,
         xshape,
         index.numel(),
         dim);
-    PADDLE_ENFORCE_XDNN_SUCCESS(ret, "gather");
+    PADDLE_ENFORCE_XDNN_SUCCESS(ret, "paddle_gather");
   }
 }
 }  // namespace phi

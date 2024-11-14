@@ -170,7 +170,7 @@ void XPUDimUniqueKernelImpl(const Context& dev_ctx,
                                             {x.numel() - i},
                                             axis_len,
                                             0);
-    PADDLE_ENFORCE_XDNN_SUCCESS(r, "gather");
+    PADDLE_ENFORCE_XDNN_SUCCESS(r, "paddle_gather");
     r = xpu::stable_sort<XPUType, IndexT>(dev_ctx.x_context(),
                                           sort_in_tmp,
                                           sort_out_tmp,
@@ -186,7 +186,7 @@ void XPUDimUniqueKernelImpl(const Context& dev_ctx,
                                             x_trans_flat_dims_vec,
                                             axis_len,
                                             0);
-    PADDLE_ENFORCE_XDNN_SUCCESS(r, "gather");
+    PADDLE_ENFORCE_XDNN_SUCCESS(r, "paddle_gather");
     std::swap(x_trans_data, x_trans_tmp);
 
     r = xpu::paddle_gather<IndexT, IndexT>(dev_ctx.x_context(),
@@ -196,7 +196,7 @@ void XPUDimUniqueKernelImpl(const Context& dev_ctx,
                                            {axis_len},
                                            axis_len,
                                            0);
-    PADDLE_ENFORCE_XDNN_SUCCESS(r, "gather");
+    PADDLE_ENFORCE_XDNN_SUCCESS(r, "paddle_gather");
     std::swap(ori_idx_xpu, ori_idx_xpu_tmp);
   }
 
@@ -281,7 +281,7 @@ void XPUDimUniqueKernelImpl(const Context& dev_ctx,
                                           x_trans_flat_dims_vec,
                                           unique_len,
                                           0);
-  PADDLE_ENFORCE_XDNN_SUCCESS(r, "gather");
+  PADDLE_ENFORCE_XDNN_SUCCESS(r, "paddle_gather");
   DDim out_trans_dims = x_trans_dims;
   out_trans_dims[0] = unique_len;
   auto out_trans_dims_vec = common::vectorize<int>(out_trans_dims);

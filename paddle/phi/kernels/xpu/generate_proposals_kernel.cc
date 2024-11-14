@@ -107,7 +107,7 @@ std::pair<DenseTensor, DenseTensor> ProposalForOneImage(
                                 {static_cast<int>(scores_slice.numel()), 1},
                                 index_sort.numel(),
                                 0);
-  PADDLE_ENFORCE_XDNN_SUCCESS(r, "gather");
+  PADDLE_ENFORCE_XDNN_SUCCESS(r, "paddle_gather");
 
   r = xpu::paddle_gather<T>(
       dev_ctx.x_context(),
@@ -117,7 +117,7 @@ std::pair<DenseTensor, DenseTensor> ProposalForOneImage(
       {static_cast<int>(bbox_deltas_slice.numel()) / 4, 4},
       index_sort.numel(),
       0);
-  PADDLE_ENFORCE_XDNN_SUCCESS(r, "gather");
+  PADDLE_ENFORCE_XDNN_SUCCESS(r, "paddle_gather");
 
   r = xpu::paddle_gather<T>(dev_ctx.x_context(),
                             anchors.data<T>(),
@@ -126,7 +126,7 @@ std::pair<DenseTensor, DenseTensor> ProposalForOneImage(
                             {static_cast<int>(anchors.numel()) / 4, 4},
                             index_sort.numel(),
                             0);
-  PADDLE_ENFORCE_XDNN_SUCCESS(r, "gather");
+  PADDLE_ENFORCE_XDNN_SUCCESS(r, "paddle_gather");
 
   r = xpu::paddle_gather<T>(dev_ctx.x_context(),
                             variances.data<T>(),
@@ -135,7 +135,7 @@ std::pair<DenseTensor, DenseTensor> ProposalForOneImage(
                             {static_cast<int>(variances.numel()) / 4, 4},
                             index_sort.numel(),
                             0);
-  PADDLE_ENFORCE_XDNN_SUCCESS(r, "gather");
+  PADDLE_ENFORCE_XDNN_SUCCESS(r, "paddle_gather");
 
   int num = scores_slice.numel();
   int pre_nms_num = (pre_nms_top_n <= 0 || pre_nms_top_n > num)
@@ -211,7 +211,7 @@ std::pair<DenseTensor, DenseTensor> ProposalForOneImage(
                             {pre_nms_num, 4},
                             keep_num,
                             0);
-  PADDLE_ENFORCE_XDNN_SUCCESS(r, "gather");
+  PADDLE_ENFORCE_XDNN_SUCCESS(r, "paddle_gather");
 
   r = xpu::paddle_gather<T>(dev_ctx.x_context(),
                             scores_sel.data<T>(),
@@ -220,7 +220,7 @@ std::pair<DenseTensor, DenseTensor> ProposalForOneImage(
                             {pre_nms_num, 1},
                             keep_num,
                             0);
-  PADDLE_ENFORCE_XDNN_SUCCESS(r, "gather");
+  PADDLE_ENFORCE_XDNN_SUCCESS(r, "paddle_gather");
 
   if (nms_thresh <= 0) {
     if (dev_ctx.x_context()->xpu_stream) {
@@ -257,7 +257,7 @@ std::pair<DenseTensor, DenseTensor> ProposalForOneImage(
                             {keep_num, 4},
                             keep_index.numel(),
                             0);
-  PADDLE_ENFORCE_XDNN_SUCCESS(r, "gather");
+  PADDLE_ENFORCE_XDNN_SUCCESS(r, "paddle_gather");
   r = xpu::paddle_gather<T>(dev_ctx.x_context(),
                             scores_filter.data<T>(),
                             keep_index.data<int>(),
@@ -265,7 +265,7 @@ std::pair<DenseTensor, DenseTensor> ProposalForOneImage(
                             {keep_num, 1},
                             keep_index.numel(),
                             0);
-  PADDLE_ENFORCE_XDNN_SUCCESS(r, "gather");
+  PADDLE_ENFORCE_XDNN_SUCCESS(r, "paddle_gather");
   if (dev_ctx.x_context()->xpu_stream) {
     dev_ctx.Wait();
   }

@@ -277,7 +277,7 @@ void FusedMultiTransformerXpuKernel(
                                                  : gather_index_t->dims()[0],
               gather_axis);
         }
-        PADDLE_ENFORCE_XDNN_SUCCESS(r, "xpu::gather");
+        PADDLE_ENFORCE_XDNN_SUCCESS(r, "xpu::paddle_gather");
         cache_kv_out[i]->ResizeAndAllocate(cache_kv_gather_dims);
         r = xpu::copy<XPUTypeT>(
             ctx.x_context(),
@@ -307,7 +307,7 @@ void FusedMultiTransformerXpuKernel(
                                                  : gather_index_t->dims()[0],
               gather_axis);
         }
-        PADDLE_ENFORCE_XDNN_SUCCESS(r, "xpu::gather_inplace");
+        PADDLE_ENFORCE_XDNN_SUCCESS(r, "xpu::paddle_gather_inplace");
       }
     }
 
