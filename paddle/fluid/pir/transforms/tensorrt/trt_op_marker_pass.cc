@@ -1490,13 +1490,14 @@ class StackOpPattern : public pir::OpRewritePattern<paddle::dialect::StackOp> {
   }
 };
 
-class TanhOpPattern : public pir::OpRewritePattern<paddle::dialect::TanhOp> {
+template <typename OpType>
+class ActOpPattern : public pir::OpRewritePattern<OpType> {
  public:
-  using pir::OpRewritePattern<paddle::dialect::TanhOp>::OpRewritePattern;
-  bool MatchAndRewrite(paddle::dialect::TanhOp op,
+  using pir::OpRewritePattern<OpType>::OpRewritePattern;
+  bool MatchAndRewrite(OpType op,
                        pir::PatternRewriter &rewriter) const override {
     if (op->HasAttribute(kCanRunTrtAttr) &&
-        op.attribute<pir::BoolAttribute>(kCanRunTrtAttr).data()) {
+        op->template attribute<pir::BoolAttribute>(kCanRunTrtAttr).data()) {
       return false;
     }
 #if IS_TRT_VERSION_LT(8600)
@@ -1514,6 +1515,8 @@ class TanhOpPattern : public pir::OpRewritePattern<paddle::dialect::TanhOp> {
     return true;
   }
 };
+using TanhOpPattern = ActOpPattern<paddle::dialect::TanhOp>;
+using SoftplusOpPatten = ActOpPattern<paddle::dialect::SoftplusOp>;
 
 class WherePattern : public pir::OpRewritePattern<paddle::dialect::WhereOp> {
  public:
@@ -1821,6 +1824,7 @@ class TrtOpMarkerPass : public pir::PatternRewritePass {
     ps.Add(std::make_unique<FullWithTensorPattern>(context));
     ps.Add(std::make_unique<StridedSliceOpPattern>(context));
     ps.Add(std::make_unique<TopkOpPattern>(context));
+    ps.Add(std::make_unique<SoftplusOpPatten>(context));
     ps.Add(std::make_unique<EqualOpPattern>(context));
     ps.Add(std::make_unique<NotEqualOpPattern>(context));
     return ps;
