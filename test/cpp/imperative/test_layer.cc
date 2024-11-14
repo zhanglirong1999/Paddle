@@ -233,7 +233,7 @@ TEST(test_layer, test_debug_string) {
   // 5. test init lod tensor
   tensor_l->mutable_data<float>(place);
   std::string res_lod_t = test_func(lod_tensor);
-  ASSERT_TRUE(res_lod_t.find("LoDTensor") != std::string::npos);
+  ASSERT_TRUE(res_lod_t.find("DenseTensor") != std::string::npos);
 
   // 6. test uninit selected rows
   std::shared_ptr<imperative::VarBase> selected_rows(
