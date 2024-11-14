@@ -819,9 +819,9 @@ void layer_norm_grad(const Tensor& x,
   LayerNormDecompHelper decomp_help(x, scale, bias, begin_norm_axis);
 
   std::vector<int64_t> normlized_axis;
-  std::vector<int64_t> unsqueeze_axis;
+  std::vector<int64_t> mean_var_new_shape(mean.dims().size(), 0);
   for (int i = begin_norm_axis; i < x_dims.size(); ++i) {
-    unsqueeze_axis.push_back(-1);
+    mean_var_new_shape.push_back(1);
     normlized_axis.push_back(i);
   }
 
@@ -830,8 +830,8 @@ void layer_norm_grad(const Tensor& x,
     un_normlized_axis.push_back(i);
   }
 
-  auto mean_ = unsqueeze<T>(mean, unsqueeze_axis);
-  auto variance_ = unsqueeze<T>(variance, unsqueeze_axis);
+  auto mean_ = reshape<T>(mean, mean_var_new_shape);
+  auto variance_ = reshape<T>(variance, mean_var_new_shape);
 
   auto x_cast = ConverToMT<T>(x);
   Tensor scale_cast;
