@@ -542,7 +542,7 @@ def GenBuildOutputs(
                                   .attribute("value")
                                   .dyn_cast<paddle::dialect::ScalarAttribute>()
                                   .data()
-                                  .to<int>());
+                                  .to<{dtype}>());
   }}
   else {{
     {name} = phi::Scalar(-1);
