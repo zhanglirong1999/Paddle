@@ -1362,8 +1362,11 @@ void instance_norm_grad(const Tensor& x,
                         Tensor* bias_grad) {
   const int n = x.dims()[0];
   const int c = x.dims()[1];
-  const int h = x.dims()[2];
-  const int w = x.dims()[3];
+  InstanceNormDecompHelper<T> decomp_helper(x);
+
+  std::vector<int64_t> reduce_axes = decomp_helper.GetReduceAxis();
+  std::vector<int64_t> n_reduce_axes = decomp_helper.GetNPlusReduceAxis();
+  Tensor hw = decomp_helper.GetHW(x);
 
   auto promoted_y_grad = ConverToMT<T>(y_grad);
 
@@ -1373,41 +1376,42 @@ void instance_norm_grad(const Tensor& x,
     auto promoted_x = ConverToMT<T>(x);
     auto promoted_saved_mean = ConverToMT<T>(saved_mean);
     auto promoted_saved_var = ConverToMT<T>(saved_variance);
-    auto mean = reshape<T>(promoted_saved_mean, IntArray({n, c, 1, 1}))
-                    .tile(IntArray({1, 1, h, w}));
-    std_inv = reshape<T>(promoted_saved_var, IntArray({n, c, 1, 1}))
-                  .tile(IntArray({1, 1, h, w}));
+
+    std::vector<int64_t> mean_new_shape{n, c};
+    for (size_t i = 0; i < reduce_axes.size(); ++i) {
+      mean_new_shape.push_back(1);
+    }
+    auto mean = reshape<T>(promoted_saved_mean, mean_new_shape);
+    std_inv = reshape<T>(promoted_saved_var, mean_new_shape);
     x_hat = (promoted_x - mean) * std_inv;
   }
 
   // x_grad = scale * inv_var * (y_grad - y_grad.mean(2,3) - x_hat * (y_grad *
   // x_hat).mean((h,w)))
   if (x_grad) {
-    auto scale_data =
-        reshape<T>(scale.get_ptr() ? scale.get()
-                                   : full<T>(IntArray({c}), 1., x.dtype()),
-                   IntArray({1, c, 1, 1}))
-            .tile(IntArray({n, 1, h, w}));
+    Tensor scale_data_tensor =
+        scale.get_ptr() ? scale.get() : full<T>(IntArray({c}), 1., x.dtype());
+    auto unsqueeze_shape = get_unsqueeze_dims(scale_data_tensor, n_reduce_axes);
+    auto scale_data = reshape<T>(scale_data_tensor, unsqueeze_shape);
     auto promoted_scale = ConverToMT<T>(scale_data);
     auto result =
         (promoted_scale * std_inv) *
         (promoted_y_grad -
-         promoted_y_grad.sum(IntArray({2, 3}), promoted_y_grad.dtype(), true) /
-             (h * w) -
+         promoted_y_grad.sum(reduce_axes, promoted_y_grad.dtype(), true) / hw -
          (x_hat * ((promoted_y_grad * x_hat)
-                       .sum(IntArray({2, 3}), promoted_y_grad.dtype(), true) /
-                   (h * w))));
+                       .sum(reduce_axes, promoted_y_grad.dtype(), true) /
+                   hw)));
     set_output<T>(ConverToOrig<T>(result, x.dtype()), x_grad);
   }
   // scale_grad = x_hat * y_grad.sum(n, h, w)
   if (scale_grad) {
-    auto result = (promoted_y_grad * x_hat).sum(IntArray({0, 2, 3}));
+    auto result = (promoted_y_grad * x_hat).sum(n_reduce_axes);
     auto scale_dtype = scale.get_ptr() ? scale.get().dtype() : x.dtype();
     set_output<T>(ConverToOrig<T>(result, scale_dtype), scale_grad);
   }
   // d_bias = y_grad.sum(n, h, w)
   if (bias_grad) {
-    auto result = promoted_y_grad.sum(IntArray({0, 2, 3}));
+    auto result = promoted_y_grad.sum(n_reduce_axes);
     auto scale_dtype = scale.get_ptr() ? scale.get().dtype() : x.dtype();
     set_output<T>(ConverToOrig<T>(result, scale_dtype), bias_grad);
   }
