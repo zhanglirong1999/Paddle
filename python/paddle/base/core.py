@@ -275,7 +275,8 @@ try:
         )
 
     # assign tensor alias
-    libpaddle.LoDTensor = libpaddle.Tensor
+    libpaddle.LoDTensor = libpaddle.DenseTensor
+    libpaddle.Tensor = libpaddle.DenseTensor
 
     from .libpaddle import *  # noqa: F403
     from .libpaddle import (  # noqa: F401

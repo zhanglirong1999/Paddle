@@ -199,7 +199,7 @@ static void TensorCopyFrom(phi::DenseTensor *dst,
 void BindTensor(pybind11::module &m) {  // NOLINT
   using namespace paddle::framework;    // NOLINT
   py::class_<phi::DenseTensor> framework_tensor(
-      m, "Tensor", py::buffer_protocol());
+      m, "DenseTensor", py::buffer_protocol());
   g_framework_tensor_pytype =
       reinterpret_cast<PyTypeObject *>(framework_tensor.ptr());
   framework_tensor
