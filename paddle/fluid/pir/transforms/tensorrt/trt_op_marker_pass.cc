@@ -1497,6 +1497,32 @@ class NearestInterV2Pattern
   }
 };
 
+class ClipPattern : public pir::OpRewritePattern<paddle::dialect::ClipOp> {
+ public:
+  using pir::OpRewritePattern<paddle::dialect::ClipOp>::OpRewritePattern;
+  bool MatchAndRewrite(paddle::dialect::ClipOp op,
+                       pir::PatternRewriter &rewriter) const override {
+    pir::Value x = op.operand_source(0);
+    auto x_shape = pir::GetShapeFromValue(x);
+    if (x_shape.size() == 0) {
+      VLOG(3) << " clip op does not support input's dim is 0 in tensorrt.";
+      return false;
+    }
+    auto min_tensor = op.operand_source(1);
+    if (!min_tensor) {
+      VLOG(3) << "clip op does not have input min tensor";
+      return false;
+    }
+    auto max_tensor = op.operand_source(2);
+    if (!max_tensor) {
+      VLOG(3) << "clip op does not have input max tensor";
+      return false;
+    }
+    op->set_attribute(kCanRunTrtAttr, rewriter.bool_attr(true));
+    return true;
+  }
+};
+
 class GridSampleOpPattern
     : public pir::OpRewritePattern<paddle::dialect::GridSampleOp> {
  public:
@@ -1528,7 +1554,6 @@ class GridSampleOpPattern
       return false;
     }
 #endif
-
     op->set_attribute(kCanRunTrtAttr, rewriter.bool_attr(true));
     return true;
   }
@@ -1899,6 +1924,7 @@ class TrtOpMarkerPass : public pir::PatternRewritePass {
     ps.Add(std::make_unique<SumOpPattern>(context));
     ps.Add(std::make_unique<BilinearInterpV2Pattern>(context));
     ps.Add(std::make_unique<NearestInterV2Pattern>(context));
+    ps.Add(std::make_unique<ClipPattern>(context));
     ps.Add(std::make_unique<GridSampleOpPattern>(context));
     ps.Add(std::make_unique<StackOpPattern>(context));
     ps.Add(std::make_unique<TanhOpPattern>(context));
