@@ -221,6 +221,10 @@ from .manipulation import (  # noqa: F401
     vstack,
 )
 from .math import (  # noqa: F401
+    __lshift__,
+    __rlshift__,
+    __rrshift__,
+    __rshift__,
     abs,
     abs_,
     acos,
@@ -862,4 +866,8 @@ magic_method_func = [
     ('__xor__', 'bitwise_xor'),
     ('__invert__', 'bitwise_not'),
     ('__pos__', 'positive'),
+    ('__lshift__', '__lshift__'),
+    ('__rshift__', '__rshift__'),
+    ('__rlshift__', '__rlshift__'),
+    ('__rrshift__', '__rrshift__'),
 ]
