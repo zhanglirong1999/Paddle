@@ -249,6 +249,7 @@ def monkey_patch_math_tensor():
         '__mod__',
         '__rmod__',
         '__matmul__',
+        '__rmatmul__',
         '__gt__',
         '__ge__',
         '__lt__',

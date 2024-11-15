@@ -83,6 +83,7 @@ EXPRESSION_MAP = {
     "__mod__": "A % B",
     "__rmod__": "A %= B",
     "__matmul__": "A @ B",
+    "__rmatmul__": "A @= B",
     "__eq__": "A == B",
     "__ne__": "A != B",
     "__lt__": "A < B",
@@ -890,6 +891,10 @@ def monkey_patch_variable():
         (
             '__matmul__',
             _binary_creator_('__matmul__', "matmul_v2", False, None),
+        ),
+        (
+            '__rmatmul__',
+            _binary_creator_('__rmatmul', "matmul_v2", True, None),
         ),
         #  for logical compare
         ('__eq__', _binary_creator_('__eq__', 'equal', False, None)),
