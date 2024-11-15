@@ -285,6 +285,10 @@ class TestMathOpPatches(unittest.TestCase):
         if not paddle.framework.use_pir_api():
             a.desc.set_need_check_feed(False)
         b = a.astype('float64')
+
+        c = a.astype(a.dtype)
+        self.assertTrue(c.is_same(a))
+
         place = base.CPUPlace()
         exe = base.Executor(place)
         a_np = np.random.uniform(-1, 1, size=[10, 1]).astype('float64')

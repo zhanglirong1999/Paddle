@@ -320,7 +320,8 @@ def monkey_patch_variable():
         **Notes**:
             **The variable must be a** :ref:`api_paddle_Tensor`
 
-        Cast a variable to a specified data type.
+        Cast a variable to a specified data type if it differs from the current dtype;
+        otherwise, return the original variable.
 
         Args:
 
@@ -366,6 +367,9 @@ def monkey_patch_variable():
                 original var's dtype is: paddle.float32, numpy dtype is float32
                 new var's dtype is: paddle.int64, numpy dtype is int64
         """
+        if self.dtype == dtype:
+            return self
+
         block = current_block(self)
         out = create_new_tmp_var(block, dtype)
         block.append_op(

@@ -285,7 +285,8 @@ def monkey_patch_value():
         """
         **Notes**:
 
-        Cast a Value to a specified data type.
+        Convert a value to a specified data type if it differs from the current dtype;
+        otherwise, return the original value.
 
         Args:
 
@@ -316,6 +317,10 @@ def monkey_patch_value():
 
         if not isinstance(dtype, DataType):
             dtype = paddle.pir.core.convert_np_dtype_to_dtype_(dtype)
+
+        if self.dtype == dtype:
+            return self
+
         return _C_ops.cast(self, dtype)
 
     def _scalar_add_(var, value):
