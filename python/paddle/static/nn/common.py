@@ -3097,14 +3097,14 @@ class PyFuncRegistry:
 
         ret = []
         for each_ret in func_ret:
-            if each_ret is None or isinstance(each_ret, core.LoDTensor):
+            if each_ret is None or isinstance(each_ret, core.DenseTensor):
                 ret.append(each_ret)
                 continue
 
             if not isinstance(each_ret, np.ndarray):
                 each_ret = np.array(each_ret)
 
-            tensor = core.LoDTensor()
+            tensor = core.DenseTensor()
             tensor.set(each_ret, core.CPUPlace())
             ret.append(tensor)
 

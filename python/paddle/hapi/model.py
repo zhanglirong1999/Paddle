@@ -529,7 +529,7 @@ class StaticPIRGraphAdapter:
             if inputs[idx] is not None:
                 feed[n] = inputs[idx]
             if self._amp_level == 'O2' and input_dtypes[idx] == paddle.float16:
-                if isinstance(feed[n], core.LoDTensor):
+                if isinstance(feed[n], core.DenseTensor):
                     feed[n] = feed[n]._as_type(paddle.pir.core.DataType.FLOAT16)
                 elif isinstance(feed[n], np.ndarray):
                     feed[n] = feed[n].astype('float16')
@@ -962,7 +962,7 @@ class StaticGraphAdapter:
             if inputs[idx] is not None:
                 feed[n] = inputs[idx]
             if self._amp_level == 'O2' and input_dtypes[idx] == paddle.float16:
-                if isinstance(feed[n], core.LoDTensor):
+                if isinstance(feed[n], core.DenseTensor):
                     feed[n] = feed[n]._as_type(core.VarDesc.VarType.FP16)
                 elif isinstance(feed[n], np.array):
                     feed[n] = feed[n].astype('float16')

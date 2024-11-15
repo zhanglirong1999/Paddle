@@ -136,7 +136,7 @@ if TYPE_CHECKING:
 
 
 def _to_lodtensor(tensor: paddle.Tensor):
-    lodtensor = core.LoDTensor()
+    lodtensor = core.DenseTensor()
     if tensor.is_dist():
         if tensor._is_initialized():
             lodtensor._share_data_with(tensor._local_value().get_tensor())
@@ -2517,7 +2517,7 @@ class DistModel:
         for feed_item in list(args):
             if isinstance(feed_item, (list, tuple)):
                 feed_list += list(feed_item)
-            elif isinstance(feed_item, (paddle.Tensor, core.LoDTensor)):
+            elif isinstance(feed_item, (paddle.Tensor, core.DenseTensor)):
                 feed_list += [feed_item]
             else:
                 raise TypeError(

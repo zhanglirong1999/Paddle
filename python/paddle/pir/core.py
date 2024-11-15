@@ -574,7 +574,7 @@ def set_state_dict(program, state_dict, scope=None):
         clear_state_dict = state_dict
 
     for name, value in clear_state_dict.items():
-        if isinstance(value, paddle.base.libpaddle.Tensor):
+        if isinstance(value, paddle.base.libpaddle.DenseTensor):
             continue
         elif isinstance(value, np.ndarray):
             clear_state_dict[name] = paddle.to_tensor(value)

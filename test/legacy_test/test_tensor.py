@@ -24,7 +24,7 @@ from paddle.base import core
 
 class TestTensorPtr(unittest.TestCase):
     def test_tensor_ptr(self):
-        t = core.Tensor()
+        t = core.DenseTensor()
         np_arr = np.zeros([2, 3])
         t.set(np_arr, core.CPUPlace())
         self.assertGreater(t._ptr(), 0)
@@ -210,7 +210,7 @@ class TestTensor(unittest.TestCase):
     def test_lod_tensor_init(self):
         place = core.CPUPlace()
         lod_py = [[2, 1], [1, 2, 2]]
-        lod_tensor = core.LoDTensor()
+        lod_tensor = core.DenseTensor()
 
         lod_tensor._set_dims([5, 2, 3, 4])
         lod_tensor.set_recursive_sequence_lengths(lod_py)
@@ -230,7 +230,7 @@ class TestTensor(unittest.TestCase):
             return
         place = core.CUDAPlace(0)
         lod_py = [[2, 1], [1, 2, 2]]
-        lod_tensor = core.LoDTensor()
+        lod_tensor = core.DenseTensor()
 
         lod_tensor._set_dims([5, 2, 3, 4])
         lod_tensor.set_recursive_sequence_lengths(lod_py)

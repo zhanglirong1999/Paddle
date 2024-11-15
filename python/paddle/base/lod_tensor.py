@@ -67,7 +67,7 @@ def create_lod_tensor(data, recursive_seq_lens, place):
 
             >>> t = base.create_lod_tensor(np.ndarray([5, 30]), [[2, 3]], base.CPUPlace())
     """
-    if isinstance(data, core.LoDTensor):
+    if isinstance(data, core.DenseTensor):
         return create_lod_tensor(np.array(data), recursive_seq_lens, place)
     elif isinstance(data, list):
         # dtype and shape are not important here,
@@ -94,12 +94,12 @@ def create_lod_tensor(data, recursive_seq_lens, place):
         # 1 to the shape. Maybe it is not a right way? Currently, we only
         # follow the previous logic
         arr = arr.reshape((*arr.shape, 1))
-        tensor = core.LoDTensor()
+        tensor = core.DenseTensor()
         tensor.set(arr, place)
         tensor.set_recursive_sequence_lengths(recursive_seq_lens)
         return tensor
     elif isinstance(data, np.ndarray):
-        tensor = core.LoDTensor()
+        tensor = core.DenseTensor()
         tensor.set(data, place)
         tensor.set_recursive_sequence_lengths(recursive_seq_lens)
         assert (

@@ -173,7 +173,7 @@ def as_numpy(tensor, copy=False):
         return [as_numpy(t, copy) for t in tensor]
     if isinstance(tensor, list):
         return [as_numpy(t, copy) for t in tensor]
-    assert isinstance(tensor, core.LoDTensor)
+    assert isinstance(tensor, core.DenseTensor)
     lod = tensor.lod()
     if len(lod) > 0:
         raise RuntimeError(
@@ -762,7 +762,7 @@ def _as_lodtensor(data, place, dtype=None):
             )
 
     # convert numpy.ndarray to tensor
-    tensor = core.LoDTensor()
+    tensor = core.DenseTensor()
     tensor.set(data, place)
     return tensor
 
@@ -1404,7 +1404,7 @@ class Executor:
                 cur_feed = feed[feed_target_name]
                 var = global_block.var(feed_target_name)
                 if var.dtype != core.VarDesc.VarType.STRINGS:
-                    if not isinstance(cur_feed, core.LoDTensor):
+                    if not isinstance(cur_feed, core.DenseTensor):
                         cur_feed = _as_lodtensor(
                             cur_feed, self.place, var.dtype
                         )
@@ -1465,7 +1465,7 @@ class Executor:
                 # and don't need feed data.
                 continue
             cur_feed = feed[feed_target_name]
-            if not isinstance(cur_feed, core.LoDTensor):
+            if not isinstance(cur_feed, core.DenseTensor):
                 cur_feed = _as_lodtensor(cur_feed, self.place, var_type)
             pir_check_feed_shape_type(
                 cur_feed, feed_target_name, var_shape, var_type

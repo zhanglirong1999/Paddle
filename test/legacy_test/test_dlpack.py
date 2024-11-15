@@ -69,8 +69,12 @@ class TestDLPack(unittest.TestCase):
             out_from_dlpack_v1 = paddle.utils.dlpack.from_dlpack(dlpack_v1)
             dlpack_v2 = paddle.to_dlpack(tensor)
             out_from_dlpack_v2 = paddle.from_dlpack(dlpack_v2)
-            self.assertTrue(isinstance(out_from_dlpack_v1, base.core.Tensor))
-            self.assertTrue(isinstance(out_from_dlpack_v2, base.core.Tensor))
+            self.assertTrue(
+                isinstance(out_from_dlpack_v1, base.core.DenseTensor)
+            )
+            self.assertTrue(
+                isinstance(out_from_dlpack_v2, base.core.DenseTensor)
+            )
             np.testing.assert_array_equal(
                 np.array(out_from_dlpack_v1),
                 np.array([[1], [2], [3], [4]]).astype("int"),
@@ -94,10 +98,10 @@ class TestDLPack(unittest.TestCase):
                 )
                 gout_from_dlpack_v2 = paddle.from_dlpack(gdlpack_v2)
                 self.assertTrue(
-                    isinstance(gout_from_dlpack_v1, base.core.Tensor)
+                    isinstance(gout_from_dlpack_v1, base.core.DenseTensor)
                 )
                 self.assertTrue(
-                    isinstance(gout_from_dlpack_v2, base.core.Tensor)
+                    isinstance(gout_from_dlpack_v2, base.core.DenseTensor)
                 )
                 np.testing.assert_array_equal(
                     np.array(gout_from_dlpack_v1),

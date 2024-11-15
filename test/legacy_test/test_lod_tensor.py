@@ -27,7 +27,7 @@ from paddle.base.lod_tensor import (
 
 class TestLoDTensor(unittest.TestCase):
     def test_pybind_recursive_seq_lens(self):
-        tensor = base.LoDTensor()
+        tensor = base.DenseTensor()
         recursive_seq_lens = []
         tensor.set_recursive_sequence_lengths(recursive_seq_lens)
         recursive_seq_lens = [[], [1], [3]]
@@ -159,7 +159,7 @@ class TestLoDTensor(unittest.TestCase):
         )
         dltensor = tensor._to_dlpack()
         tensor_from_dlpack = base.core.from_dlpack(dltensor)
-        self.assertTrue(isinstance(tensor_from_dlpack, base.core.Tensor))
+        self.assertTrue(isinstance(tensor_from_dlpack, base.core.DenseTensor))
         np.testing.assert_array_equal(
             np.array(tensor_from_dlpack),
             np.array([[1], [2], [3], [4]]).astype('int'),
@@ -173,7 +173,9 @@ class TestLoDTensor(unittest.TestCase):
             )
             gdltensor = gtensor._to_dlpack()
             gtensor_from_dlpack = base.core.from_dlpack(gdltensor)
-            self.assertTrue(isinstance(gtensor_from_dlpack, base.core.Tensor))
+            self.assertTrue(
+                isinstance(gtensor_from_dlpack, base.core.DenseTensor)
+            )
             np.testing.assert_array_equal(
                 np.array(gtensor_from_dlpack),
                 np.array([[1], [2], [3], [4]]).astype('int'),
