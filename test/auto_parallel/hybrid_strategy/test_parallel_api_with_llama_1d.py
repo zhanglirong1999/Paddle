@@ -33,15 +33,9 @@ class TestShardingParallelAPI(test_base.CommunicationTestDistBase):
             "backend": ["gpu"],
             "amp": ["true"],
             "amp_level": ["O2"],
-            "amp_dtype": [
-                "bfloat16",
-            ],
-            "amp_master_grad": [
-                "False",
-            ],
-            "sharding_stage": [
-                "1",
-            ],
+            "amp_dtype": ["bfloat16"],
+            "amp_master_grad": ["False"],
+            "sharding_stage": ["0", "1"],
         }
 
     def test_simple_net_dp2(self):
@@ -73,12 +67,9 @@ class TestPipelineParallelAPI(test_base.CommunicationTestDistBase):
             "backend": ["gpu"],
             "amp": ["true"],
             "amp_level": ["O2"],
-            "amp_dtype": [
-                "bfloat16",
-            ],
-            "amp_master_grad": [
-                "False",
-            ],
+            "amp_dtype": ["bfloat16"],
+            "amp_master_grad": ["False"],
+            "num_hidden_layers": ["2", "4"],
         }
 
     def test_simple_net_pp2(self):

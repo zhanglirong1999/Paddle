@@ -1055,6 +1055,7 @@ class _ShardOptimizer(Optimizer):
             'dp' in self._shard_fn._mesh.dim_names
         ):
             self._sharding_degree = self._shard_fn._mesh.get_dim_size('dp')
+            self._sharding_mesh_axis = 0
         else:
             param_list = self._inner_opt._parameter_list
             for param in param_list:

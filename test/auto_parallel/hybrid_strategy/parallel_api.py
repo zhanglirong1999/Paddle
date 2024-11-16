@@ -14,7 +14,6 @@
 import logging
 import os
 import random
-from collections import OrderedDict
 from functools import reduce
 
 import numpy as np
@@ -25,9 +24,6 @@ import paddle.distributed as dist
 from paddle import LazyGuard
 from paddle.distributed.auto_parallel.intermediate.parallelize import (
     parallelize,
-)
-from paddle.distributed.auto_parallel.intermediate.pipeline_parallel import (
-    SplitPoint,
 )
 from paddle.distributed.auto_parallel.intermediate.tensor_parallel import (
     ColWiseParallel,
@@ -145,6 +141,10 @@ class TestParallelAPI:
         if os.getenv("prepare_input_output") == "true":
             self.sequence_parallel = True
 
+        num_hidden_layers = os.getenv("num_hidden_layers")
+        if num_hidden_layers:
+            self.config.num_hidden_layers = int(num_hidden_layers)
+
         seed = int(os.getenv("seed", 2024))
         np.random.seed(seed)
         random.seed(seed)
@@ -204,17 +204,12 @@ class TestParallelAPI:
         mp_config = None
         pp_config = None
         if self.pp > 1:
-            decoders_per_rank = self.config.num_hidden_layers // self.pp
-            split_spec = OrderedDict(
-                [
-                    (
-                        f"llama.layers.{i * decoders_per_rank - 1}",
-                        SplitPoint.END,
-                    )
-                    for i in range(1, self.pp)
-                ]
-            )
-            pp_config = {'split_spec': split_spec}
+            # decoders_per_rank = self.config.num_hidden_layers // self.pp
+            # split_spec = {
+            #     f"llama.layers.{i * decoders_per_rank - 1}": SplitPoint.END
+            #     for i in range(1, self.pp)
+            # }
+            pp_config = {'split_spec': "llama.layers"}
         if self.dp > 1:
             dp_config = {'sharding_level': self.level}
         if self.mp > 1:
