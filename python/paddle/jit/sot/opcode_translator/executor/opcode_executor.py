@@ -370,7 +370,7 @@ class OpcodeExecutorBase:
         self.guard_fn = None
         self._name = "Executor"
         self._call_shape: tuple[str, ...] | None = (
-            None  # store kwnames for Python 3.11+
+            None  # store kwnames for Python 3.11 and 3.12
         )
         self._prepare_virtual_env()
         self.stop_state = None
@@ -1158,12 +1158,15 @@ class OpcodeExecutorBase:
         assert isinstance(instr.arg, int)
         self._call_shape = self._co_consts[instr.arg].get_py_value()
 
-    def call(self, instr: Instruction):
-        assert isinstance(instr.arg, int)
-        assert instr.arg + 2 <= len(self.stack)
-        is_method = not isinstance(self.stack.peek[instr.arg + 2], NullVariable)
-        total_args = instr.arg + int(is_method)
-        kwnames = self._call_shape if self._call_shape is not None else []
+    def call_impl(
+        self,
+        num_args: int,
+        kwnames_getter: Callable[[OpcodeExecutor], tuple[str, ...]],
+    ):
+        kwnames = kwnames_getter(self)
+        assert num_args + 2 <= len(self.stack)
+        is_method = not isinstance(self.stack.peek[num_args + 2], NullVariable)
+        total_args = num_args + int(is_method)
         n_kwargs = len(kwnames)
         n_positional_args = total_args - n_kwargs
         kwargs_list = self.stack.pop_n(n_kwargs)
@@ -1176,11 +1179,32 @@ class OpcodeExecutorBase:
         self.stack.push(fn(*args, **kwargs))
         self._call_shape = None
 
+    def call(self, instr: Instruction):
+        assert isinstance(instr.arg, int)
+        self.call_impl(
+            instr.arg,
+            lambda exe: (
+                exe._call_shape if exe._call_shape is not None else ()
+            ),
+        )
+
     CALL = (
         call_break_graph_decorator(push_n=1)(call)
         if sys.version_info >= (3, 12)
         else call
     )
+
+    @call_break_graph_decorator(push_n=1)
+    def CALL_KW(self, instr: Instruction):
+        assert isinstance(instr.arg, int)
+
+        def get_kwnames(exe: OpcodeExecutor):
+            kwnames_var = exe.stack.pop()
+            assert isinstance(kwnames_var, TupleVariable)
+            kwnames = kwnames_var.get_py_value()
+            return kwnames
+
+        self.call_impl(instr.arg, get_kwnames)
 
     @call_break_graph_decorator(push_n=1)
     def CALL_FUNCTION(self, instr: Instruction):
@@ -2018,7 +2042,7 @@ class OpcodeExecutor(OpcodeExecutorBase):
             var_loader.load(stack_arg)
 
         # 5. run the break CALL with origin python
-        # NOTE(SigureMo): In Python 3.11，we need generate KW_NAMES if the call shape is not None.
+        # NOTE(SigureMo): In Python 3.11 and 3.12，we need generate KW_NAMES if the call shape is not None.
         self._graph.pycode_gen.gen_kw_names(self._call_shape)
         self._graph.pycode_gen.extend_instrs(
             self._instructions[cur_index:next_index]

@@ -821,8 +821,10 @@ class PyCodeGen:
     def gen_kw_names(self, kw_names: tuple[str, ...] | None):
         if kw_names is None:
             return
-        if sys.version_info < (3, 11):
-            raise InnerError("gen_kw_names is not supported before python3.11")
+        if sys.version_info < (3, 11) or sys.version_info >= (3, 13):
+            raise InnerError(
+                "gen_kw_names is only supported in Python 3.11 and 3.12"
+            )
         if kw_names not in self._code_options["co_consts"]:
             self._code_options["co_consts"].append(kw_names)
         idx = self._code_options["co_consts"].index(kw_names)
