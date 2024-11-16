@@ -681,6 +681,11 @@ class PyCodeGen:
         null_var = self.global_null_variable
         return self.gen_load_object(null_var, "___null_var", push_null=False)
 
+    def gen_push_null(self):
+        if sys.version_info < (3, 11):
+            raise InnerError("gen_push_null is only supported in Python 3.11+")
+        return self.add_instr("PUSH_NULL")
+
     def gen_load_fast(self, name):
         """
         Generate the bytecode for loading a local variable.
