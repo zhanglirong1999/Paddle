@@ -43,12 +43,12 @@ from ..instruction_utils import (
     apply_instr_pass,
     calc_stack_effect,
     gen_instr,
+    get_instruction_size,
     instrs_info,
     modify_instrs,
     modify_vars,
 )
 from ..instruction_utils.opcode_info import (
-    PYOPCODE_CACHE_SIZE,
     UNCONDITIONAL_JUMP,
     JumpDirection,
     PopJumpCond,
@@ -215,13 +215,6 @@ def to_byte(num):
     if num < 0:
         num += 256
     return num
-
-
-def get_instruction_size(instr: Instruction) -> int:
-    cache_size = 0
-    if sys.version_info >= (3, 11):
-        cache_size = PYOPCODE_CACHE_SIZE.get(instr.opname, 0)
-    return 2 * (cache_size + 1)
 
 
 def create_linetable_calculator(firstlineno: int):
@@ -933,6 +926,11 @@ class PyCodeGen:
         direction: JumpDirection = JumpDirection.FORWARD,
         suffix: PopJumpCond = PopJumpCond.NONE,
     ) -> Instruction:
+        if sys.version_info >= (3, 13) and suffix in [
+            PopJumpCond.TRUE,
+            PopJumpCond.FALSE,
+        ]:
+            self.add_instr("TO_BOOL")
         if sys.version_info >= (3, 11) and sys.version_info < (3, 12):
             return self.add_instr(
                 f"POP_JUMP_{direction.value}_IF_{suffix.value}", jump_to=jump_to

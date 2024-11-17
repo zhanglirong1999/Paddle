@@ -1809,7 +1809,12 @@ class OpcodeExecutor(OpcodeExecutorBase):
             self._lasti = self.indexof(instr.jump_to)
             if sys.version_info >= (3, 12):
                 assert self._instructions[self._lasti].opname == "END_FOR"
-                self._lasti += 1
+                # NOTE(SigureMo): From Python 3.12, END_FOR indicates the end of the for loop.
+                # But it's never executed, so we need to skip it.
+                # In Python 3.12, it equivalent to POP_TOP + POP_TOP (in one instruction)
+                # In Python 3.13, it equivalent to POP_TOP, and it common with other POP_TOP
+                skip_n_instrs = 2 if sys.version_info >= (3, 13) else 1
+                self._lasti += skip_n_instrs
         except BreakGraphError as e:
             log(3, f"[BreakGraph] FOR_ITER sim for loop failed for: {e}\n")
             if backup_iter_idx:
@@ -2241,7 +2246,8 @@ class OpcodeExecutor(OpcodeExecutorBase):
             # skip resume END_FOR in python3.12
             if sys.version_info >= (3, 12):
                 assert origin_instrs[loop_body_end_idx].opname == "END_FOR"
-                resume_fn_end_idx += 1
+                skip_n_instrs = 2 if sys.version_info >= (3, 13) else 1
+                resume_fn_end_idx += skip_n_instrs
 
             resume_fn_creator.set_inputs(
                 after_loop_fn_inputs, stack_size=len(self.stack) - 1
@@ -2322,6 +2328,8 @@ class OpcodeExecutor(OpcodeExecutorBase):
 
         if sys.version_info >= (3, 12):
             end_for = self._graph.pycode_gen.add_instr("END_FOR")
+            if sys.version_info >= (3, 13):
+                self._graph.pycode_gen.gen_pop_top()
 
         nop = self._graph.pycode_gen.add_instr("NOP")
 
@@ -2411,6 +2419,8 @@ class OpcodeExecutor(OpcodeExecutorBase):
 
             if sys.version_info >= (3, 12):
                 end_for = pycode_gen.add_instr("END_FOR")
+                if sys.version_info >= (3, 13):
+                    self._graph.pycode_gen.gen_pop_top()
             nop_for_break = pycode_gen.add_instr("NOP")
 
             # 2.4. relocate jumps
