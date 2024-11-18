@@ -2360,6 +2360,9 @@ All parameter, weight, gradient are variables in Paddle.
       .def("ir_program", &framework::interpreter::Plan::IrProgram)
       .def("program", &framework::interpreter::Plan::Program);
 
+  m.def("get_no_need_buffer_values",
+        framework::interpreter::GetNoNeedBufferValues);
+
   m.def("init_gflags", framework::InitGflags);
   m.def("init_glog", framework::InitGLOG);
   m.def("init_memory_method", framework::InitMemoryMethod);
