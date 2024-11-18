@@ -249,8 +249,6 @@ bool Expr::is_var() const { return As<_Var_>(); }
 
 bool Expr::is_index() const {
   switch (node_type()) {
-    case ir::IrNodeTy::Cast:
-      [[fallthrough]];
     case ir::IrNodeTy::_Var_:
       [[fallthrough]];
     case ir::IrNodeTy::IntImm: {
