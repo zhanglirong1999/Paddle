@@ -66,6 +66,7 @@ from paddle.io.dataloader.batch_sampler import (
 from paddle.optimizer import Optimizer
 
 from .moe_utils import (
+    _cal_local_shape,
     _dist_reshape,
     _NdMeshAlltoAll,
     _reshard_mesh_shape,
@@ -459,14 +460,24 @@ def moe_global_mesh_tensor(
     )
     process_ids = np.array(mesh.process_ids).reshape(mesh.shape)
     local_coord = np.where(process_ids == dist.get_rank())
-    local_tensor_idx = local_coord[local_mesh_dim][0]
-    # local_tensor_idx = mesh.process_ids.index(dist.get_rank())
+    # when rank is not in current mesh, local_coord is empty, so we should calculate the
+    # local tensor's shape.
+    if local_coord[0].size == 0:
+        local_tensor_idx = 0
+    else:
+        local_tensor_idx = local_coord[local_mesh_dim][0]
     local_tensor = local_tensor_list[local_tensor_idx]
 
     if paddle.in_dynamic_mode():
-        global_dims = _cal_global_shape(
-            local_tensor._local_value().shape, mesh, placements
-        )
+        if local_coord[0].size == 0:
+            local_tensor_shape = _cal_local_shape(
+                local_tensor_list[0].shape, local_mesh_list[0], local_placements
+            )
+        else:
+            local_tensor_shape = (
+                local_tensor_list[local_tensor_idx]._local_value().shape
+            )
+        global_dims = _cal_global_shape(local_tensor_shape, mesh, placements)
         resharded_local_tensor_list = []
         for i, tensor in enumerate(local_tensor_list):
             tensor.get_tensor()._unsafe_set_skip_check_mesh(True)
@@ -547,7 +558,9 @@ class _moe_sub_mesh_tensors(PyLayer):
             assert check_placements_equal(
                 global_placements, dist_tensor.placements
             ), f"the global_placements ({global_placements}) is not equal to dist_tensor's placements ({dist_tensor.placements})."
-            local_shape = dist_tensor._local_value().shape
+            local_shape = _cal_local_shape(
+                dist_tensor.shape, global_mesh, global_placements
+            )
             for idx, placement in enumerate(local_placements):
                 if placement.is_shard():
                     shard_dim = placement.get_dim()
@@ -579,7 +592,10 @@ class _moe_sub_mesh_tensors(PyLayer):
         mesh = ctx.global_mesh
         process_ids = np.array(mesh.process_ids).reshape(mesh.shape)
         local_coord = np.where(process_ids == dist.get_rank())
-        local_tensor_idx = local_coord[ctx.local_mesh_dim][0]
+        if local_coord[0].size == 0:
+            local_tensor_idx = 0
+        else:
+            local_tensor_idx = local_coord[ctx.local_mesh_dim][0]
         local_grad = grad_tensor[local_tensor_idx]
         global_tensor = paddle.Tensor(
             local_grad._local_value(),
