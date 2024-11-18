@@ -125,8 +125,10 @@ class ShardingOptimizerStage1(Optimizer):
         grads_dict = {}
         has_dist_param = False
         has_not_dist_param = False
-
+        new_params_grads = []
         for param, grad in params_grads:
+            if grad is None:
+                continue
             param_dist_attr = param.dist_attr()
             grad_dist_attr = grad.dist_attr()
             assert (
@@ -138,9 +140,6 @@ class ShardingOptimizerStage1(Optimizer):
             assert (
                 param_dist_attr.process_mesh == grad_dist_attr.process_mesh
             ), f"Parameter and grad should have same process_mesh. but received name:{param.name}, parameter:{param}, grad: {grad}."
-            assert (
-                self._sharding_mesh_axis in grad_dist_attr.partial_dims
-            ), f"gradient should partial in sharding mesh axis. but received parameter name:{param.name}, sharding_mesh_axis:{self._sharding_mesh_axis}, grad: {grad}."
 
             assert (
                 param_dist_attr.process_mesh in self.pp_meshes
@@ -175,6 +174,19 @@ class ShardingOptimizerStage1(Optimizer):
                 param._local_shape == grad._local_shape
             ), f"Parameter and grad should have same local shape. but received name:{param.name}, parameter:{param}, grad: {grad}."
 
+            if self._sharding_mesh_axis not in grad_dist_attr.partial_dims:
+                new_params_grads.append((param, grad))
+                if param.optimize_attr is None:
+                    param.optimize_attr = {'no_fusion': True}
+                else:
+                    param.optimize_attr["no_fusion"] = True
+                continue
+            else:
+                if param.optimize_attr is None:
+                    param.optimize_attr = {'no_fusion': False}
+                else:
+                    param.optimize_attr["no_fusion"] = False
+
             if (
                 self._mp_degree > 1
                 and self._mp_mesh_axis in param_dist_attr.dims_mapping
@@ -195,7 +207,6 @@ class ShardingOptimizerStage1(Optimizer):
         last_op = target_block.ops[-1]
 
         group_size = comm_buffer_size_MB * 1024 * 1024
-        new_params_grads = []
         for mesh, parameters in parameters_dict.items():
             grads = grads_dict[mesh]
             var_groups = OrderedDict()
