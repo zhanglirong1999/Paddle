@@ -11,6 +11,7 @@ gather_srcs(
   unroll_loops.cc
   transform_polyfor_to_for.cc
   eliminate_broadcast_in_forloop.cc
+  eliminate_invariant_loop.cc
   fold_cinn_call_arguments.cc
   call_arg_list_to_pod_value.cc
   insert_debug_log_callee.cc

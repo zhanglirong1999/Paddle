@@ -20,6 +20,7 @@
 #include "paddle/cinn/optim/call_arg_list_to_pod_value.h"
 #include "paddle/cinn/optim/cast_bool_to_int8.h"
 #include "paddle/cinn/optim/eliminate_broadcast_in_forloop.h"
+#include "paddle/cinn/optim/eliminate_invariant_loop.h"
 #include "paddle/cinn/optim/extern_call_process.h"
 #include "paddle/cinn/optim/fold_cinn_call_arguments.h"
 #include "paddle/cinn/optim/if_fusion.h"
@@ -57,6 +58,8 @@ ir::LoweredFunc Optimize(ir::LoweredFunc fn,
   ReplaceConstParamToInteger(&copied->body);
   // Simplify already contains CastSimplify
   Simplify(&copied->body);
+  EliminateInvariantLoop(&copied->body);
+  VLOG(4) << "After Optimize EliminateInvariantLoop:" << copied;
   ReplaceCrossThreadReduction(copied);
   VLOG(4) << "After Optimize ReplaceCrossThreadReduction:" << copied;
   ReplaceCrossBlockReduction(copied);
