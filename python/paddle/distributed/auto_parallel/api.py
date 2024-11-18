@@ -2244,13 +2244,14 @@ class DistModel:
             )
             dist.fleet.init(is_collective=True)
 
-        if isinstance(optimizer, _ShardOptimizer) and use_pir_api():
-            shard_fn = optimizer._shard_fn
-            optimizer = optimizer._inner_opt
-            if isinstance(optimizer._shard_fn, ShardingStage1):
-                optimizer = ShardingOptimizerStage1(
-                    optimizer, shard_fn, self._inner_strategy
-                )
+        if os.environ.get('FLAGS_enable_sharding_stage1_tensor_fusion', False):
+            if isinstance(optimizer, _ShardOptimizer) and use_pir_api():
+                shard_fn = optimizer._shard_fn
+                optimizer = optimizer._inner_opt
+                if isinstance(optimizer._shard_fn, ShardingStage1):
+                    optimizer = ShardingOptimizerStage1(
+                        optimizer, shard_fn, self._inner_strategy
+                    )
 
         self._engine = Engine(
             layer, loss, optimizer, metrics, strategy=self._inner_strategy
