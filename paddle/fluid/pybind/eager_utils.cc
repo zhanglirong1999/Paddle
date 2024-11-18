@@ -70,7 +70,7 @@ extern PyTypeObject* g_xpuplace_pytype;
 extern PyTypeObject* g_cudapinnedplace_pytype;
 extern PyTypeObject* g_customplace_pytype;
 extern PyTypeObject* g_framework_tensor_pytype;
-extern PyTypeObject* g_framework_lodtensorarray_pytype;
+extern PyTypeObject* g_framework_densetensorarray_pytype;
 extern PyTypeObject* g_jit_function_pytype;
 extern PyTypeObject* g_tensor_dist_attr_pytype;
 extern PyTypeObject* g_process_mesh_pytype;
@@ -748,8 +748,9 @@ std::vector<phi::DenseTensor> CastPyArg2VectorOfTensorBase(PyObject* obj,
             i));
       }
     }
-  } else if (PyObject_TypeCheck(obj,
-                                g_framework_lodtensorarray_pytype)) {  // NOLINT
+  } else if (PyObject_TypeCheck(
+                 obj,
+                 g_framework_densetensorarray_pytype)) {  // NOLINT
     for (auto& tensor : (::pybind11::handle(obj).cast<phi::TensorArray>())) {
       result.emplace_back(tensor);
     }

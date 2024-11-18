@@ -287,7 +287,7 @@ std::shared_ptr<VarBase> VarBase::NewVarBase(const phi::Place& dst_place,
       true,
       common::errors::InvalidArgument(
           "Variable is not initialized or Variable's type is not "
-          "LoDTensor or SelectedRows when getting numpy tensor"));
+          "DenseTensor or SelectedRows when getting numpy tensor"));
 
   if (Var().IsType<phi::DenseTensor>()) {
     auto& src_tensor = Var().Get<phi::DenseTensor>();
