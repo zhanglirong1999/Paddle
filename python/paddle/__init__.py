@@ -279,7 +279,6 @@ from .tensor.logic import (
     logical_xor_,  # noqa: F401
     not_equal,
     not_equal_,  # noqa: F401
-    positive,
 )
 from .tensor.manipulation import (
     as_complex,
@@ -500,6 +499,7 @@ from .tensor.math import (  # noqa: F401
     outer,
     polygamma,
     polygamma_,
+    positive,
     pow,
     pow_,
     prod,
