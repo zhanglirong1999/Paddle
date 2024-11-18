@@ -30,7 +30,6 @@ class TestDenseTensorArray(unittest.TestCase):
         for i in range(10):
             t = core.DenseTensor()
             t.set(np.array([i], dtype='float32'), cpu)
-            t.set_recursive_sequence_lengths([[1]])
             tensor_array.append(t)
 
         self.assertEqual(10, len(tensor_array))
@@ -38,15 +37,12 @@ class TestDenseTensorArray(unittest.TestCase):
         for i in range(10):
             t = tensor_array[i]
             self.assertEqual(np.array(t), np.array([i], dtype='float32'))
-            self.assertEqual([[1]], t.recursive_sequence_lengths())
 
             t = core.DenseTensor()
             t.set(np.array([i + 10], dtype='float32'), cpu)
-            t.set_recursive_sequence_lengths([[1]])
             tensor_array[i] = t
             t = tensor_array[i]
             self.assertEqual(np.array(t), np.array([i + 10], dtype='float32'))
-            self.assertEqual([[1]], t.recursive_sequence_lengths())
 
 
 class TestCreateArray(unittest.TestCase):

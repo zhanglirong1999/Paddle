@@ -35,10 +35,6 @@ class TestFeedFetch(unittest.TestCase):
         output.append(input_tensor)
         output_tensor = core.get_fetch_variable(scope, "fetch", 0)
 
-        output_lod = output_tensor.recursive_sequence_lengths()
-        self.assertEqual(2, output_lod[0][0])
-        self.assertEqual(2, output_lod[0][1])
-
         output_array = np.array(output_tensor)
         self.assertEqual(3, output_array[0, 0, 0])
         self.assertEqual(10, output_array[3, 3, 5])

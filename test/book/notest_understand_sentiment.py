@@ -191,7 +191,6 @@ def infer(word_dict, use_cuda, save_dirname=None):
             fetch_list=fetch_targets,
             return_numpy=False,
         )
-        print(results[0].recursive_sequence_lengths())
         np_data = np.array(results[0])
         print("Inference Shape: ", np_data.shape)
         print("Inference results: ", np_data)
