@@ -3256,8 +3256,8 @@ bool SlogdetOpInferSymbolicShape(
   infer_context->AddEqualCstr(x_shape[x_shape_size - 1],
                               x_shape[x_shape_size - 2]);
   std::vector<symbol::DimExpr> out_shape = {2};
-  size_t addtional_dims = x_shape.size() - 2;
-  for (size_t i = 0; i < addtional_dims; i++) {
+  size_t additional_dims = x_shape.size() - 2;
+  for (size_t i = 0; i < additional_dims; i++) {
     out_shape.push_back(x_shape[i]);
   }
   infer_context->SetShapeOrDataForValue(
