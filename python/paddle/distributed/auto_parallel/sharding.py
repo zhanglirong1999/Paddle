@@ -125,6 +125,9 @@ class ShardingOptimizerStage1(Optimizer):
         self._place.set_place(place)
 
         comm_buffer_size_MB = self._strategy.sharding.comm_buffer_size_MB
+        if comm_buffer_size_MB < 0:
+            comm_buffer_size_MB = 256
+
         parameters_dict = {}
         grads_dict = {}
         has_dist_param = False

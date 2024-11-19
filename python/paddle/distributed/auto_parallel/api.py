@@ -2254,7 +2254,7 @@ class DistModel:
             )
             dist.fleet.init(is_collective=True)
 
-        if os.environ.get('FLAGS_enable_sharding_stage1_tensor_fusion', False):
+        if int(os.environ.get('FLAGS_enable_sharding_stage1_tensor_fusion', 0)):
             if isinstance(optimizer, _ShardOptimizer) and use_pir_api():
                 shard_fn = optimizer._shard_fn
                 optimizer = optimizer._inner_opt
