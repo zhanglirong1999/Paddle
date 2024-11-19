@@ -106,8 +106,8 @@ class ShardingOptimizerStage1(Optimizer):
         else:
             self.pp_meshes.add(mesh)
 
-        self._sharding_mesh_axis = mesh._dim_names.index("dp")
-        self._sharding_degree = mesh._shape[self._sharding_mesh_axis]
+        self._sharding_axis = mesh._dim_names.index("dp")
+        self._sharding_degree = mesh._shape[self._sharding_axis]
         self._mp_mesh_axis = -1
         self._mp_degree = 1
         if "mp" in mesh._dim_names:
@@ -151,7 +151,7 @@ class ShardingOptimizerStage1(Optimizer):
 
             if dist.get_rank() in param_dist_attr.process_mesh.process_ids:
                 sub_mesh = get_1D_sub_process_mesh(
-                    param_dist_attr.process_mesh, self._sharding_mesh_axis
+                    param_dist_attr.process_mesh, self._sharding_axis
                 )
                 assert (
                     sorted(sub_mesh.process_ids) == self._sharding_group.ranks
@@ -178,7 +178,7 @@ class ShardingOptimizerStage1(Optimizer):
                 param._local_shape == grad._local_shape
             ), f"Parameter and grad should have same local shape. but received name:{param.name}, parameter:{param}, grad: {grad}."
 
-            if self._sharding_mesh_axis not in grad_dist_attr.partial_dims:
+            if self._sharding_axis not in grad_dist_attr.partial_dims:
                 new_params_grads.append((param, grad))
                 if param.optimize_attr is None:
                     param.optimize_attr = {'no_fusion': True}
@@ -361,7 +361,7 @@ class ShardingOptimizerStage1(Optimizer):
                     partail_status = (
                         group_grad_list[index].dist_attr().partial_status
                     )
-                    partail_status.pop(self._sharding_mesh_axis)
+                    partail_status.pop(self._sharding_axis)
                     slice_grad_dist_attr = pir.create_tensor_dist_attribute(
                         slice_grad.process_mesh, [-1], partail_status
                     )
