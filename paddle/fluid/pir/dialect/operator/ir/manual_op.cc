@@ -3125,6 +3125,15 @@ OpInfoTuple AssignArray_Op::GetOpInfo() {
   return std::make_tuple(
       inputs, attributes, outputs, run_time_info, "assign_array");
 }
+bool AssignArrayOp::InferSymbolicShape(
+    pir::InferSymbolicShapeContext *infer_context) {
+  const auto &x_shape_or_data =
+      infer_context->GetShapeOrDataForValue(x())
+          .dyn_cast<symbol::RankedTensorArrayShapeOrDataDimExprs>();
+  infer_context->SetShapeOrDataForValue(
+      out(), symbol::ShapeOrDataDimExprs{x_shape_or_data});
+  return true;
+}
 
 void AssignArray_Op::VerifySig() {
   VLOG(4)
@@ -3221,6 +3230,16 @@ phi::DataType AssignArray_Op::GetKernelTypeForVar(
   VLOG(4) << "Get KernelType for Var of op: AssignArray_Op";
 
   return expected_kernel_dtype;
+}
+
+bool AssignArray_Op::InferSymbolicShape(
+    pir::InferSymbolicShapeContext *infer_context) {
+  const auto &x_shape_or_data =
+      infer_context->GetShapeOrDataForValue(x())
+          .dyn_cast<symbol::RankedTensorArrayShapeOrDataDimExprs>();
+  infer_context->SetShapeOrDataForValue(
+      out(), symbol::ShapeOrDataDimExprs{x_shape_or_data});
+  return true;
 }
 
 OpInfoTuple ExpandOp::GetOpInfo() {
