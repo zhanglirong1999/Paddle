@@ -202,6 +202,7 @@ class TEST_API CreateArrayLikeOp
     : public pir::Op<CreateArrayLikeOp,
                      OpYamlInfoInterface,
                      InferMetaInterface,
+                     InferSymbolicShapeInterface,
                      paddle::dialect::ForwardOnlyTrait> {
  public:
   using Op::Op;
@@ -220,6 +221,7 @@ class TEST_API CreateArrayLikeOp
   static std::vector<pir::Type> InferMeta(
       const std::vector<pir::Value> &input_values,
       pir::AttributeMap *p_attributes);
+  bool InferSymbolicShape(pir::InferSymbolicShapeContext *infer_context);
 };
 
 class TEST_API ArrayLengthOp
