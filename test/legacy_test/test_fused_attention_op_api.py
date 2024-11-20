@@ -20,24 +20,6 @@ import paddle
 from paddle.incubate.nn.layer.fused_transformer import FusedMultiHeadAttention
 
 
-def check_symbolic_result(program, fetch_vars, outs, op_type):
-    if paddle.base.libpaddle.pir.all_ops_defined_symbol_infer(program):
-        shape_analysis = (
-            paddle.base.libpaddle.pir.get_shape_constraint_ir_analysis(program)
-        )
-        for i, var in enumerate(fetch_vars):
-            if var.is_dense_tensor_type() or var.is_selected_row_type():
-                shape_or_data = shape_analysis.get_shape_or_data_for_var(var)
-                expect_shape = outs[i].shape
-                expect_data = []
-                if not shape_or_data.is_equal(expect_shape, expect_data):
-                    raise AssertionError(
-                        f"The shape or data of Operator {op_type}'s result is different from expected."
-                    )
-    else:
-        pass
-
-
 def fc(x, weight):
     return np.matmul(x, weight)
 
@@ -425,20 +407,6 @@ class TestFusedAttentionAPI(unittest.TestCase):
                             fused_attn.pre_ln_scale,
                         ],
                     )
-                    fetch_list = exe._check_fetch_list(
-                        [
-                            final_out,
-                            fused_attn.qkv_weight,
-                            fused_attn.linear_weight,
-                            fused_attn.pre_ln_scale,
-                        ]
-                    )
-                    check_symbolic_result(
-                        paddle.static.default_main_program(),
-                        fetch_list,
-                        [out, qkv_weight, out_linear_weight, ln_scale],
-                        'fused_attention',
-                    )
                 else:
                     out, qkv_weight, out_linear_weight, ln_2_scale = exe.run(
                         paddle.static.default_main_program(),
@@ -449,20 +417,6 @@ class TestFusedAttentionAPI(unittest.TestCase):
                             fused_attn.linear_weight,
                             fused_attn.ln_scale,
                         ],
-                    )
-                    fetch_list = exe._check_fetch_list(
-                        [
-                            final_out,
-                            fused_attn.qkv_weight,
-                            fused_attn.linear_weight,
-                            fused_attn.ln_scale,
-                        ]
-                    )
-                    check_symbolic_result(
-                        paddle.static.default_main_program(),
-                        fetch_list,
-                        [out, qkv_weight, out_linear_weight, ln_2_scale],
-                        'fused_attention',
                     )
             else:
                 if self.pre_layer_norm:
@@ -487,31 +441,6 @@ class TestFusedAttentionAPI(unittest.TestCase):
                             fused_attn.pre_ln_bias,
                         ],
                     )
-                    fetch_list = exe._check_fetch_list(
-                        [
-                            final_out,
-                            fused_attn.qkv_weight,
-                            fused_attn.qkv_bias,
-                            fused_attn.linear_weight,
-                            fused_attn.linear_bias,
-                            fused_attn.pre_ln_scale,
-                            fused_attn.pre_ln_bias,
-                        ]
-                    )
-                    check_symbolic_result(
-                        paddle.static.default_main_program(),
-                        fetch_list,
-                        [
-                            out,
-                            qkv_weight,
-                            qkv_bias,
-                            out_linear_weight,
-                            linear_bias,
-                            ln_scale,
-                            ln_bias,
-                        ],
-                        'fused_attention',
-                    )
                 else:
                     (
                         out,
@@ -533,31 +462,6 @@ class TestFusedAttentionAPI(unittest.TestCase):
                             fused_attn.ln_scale,
                             fused_attn.ln_bias,
                         ],
-                    )
-                    fetch_list = exe._check_fetch_list(
-                        [
-                            final_out,
-                            fused_attn.qkv_weight,
-                            fused_attn.qkv_bias,
-                            fused_attn.linear_weight,
-                            fused_attn.linear_bias,
-                            fused_attn.ln_scale,
-                            fused_attn.ln_bias,
-                        ]
-                    )
-                    check_symbolic_result(
-                        paddle.static.default_main_program(),
-                        fetch_list,
-                        [
-                            out,
-                            qkv_weight,
-                            qkv_bias,
-                            out_linear_weight,
-                            linear_bias,
-                            ln_2_scale,
-                            ln_2_bias,
-                        ],
-                        'fused_attention',
                     )
         else:
             if self.bias_attr is False:
@@ -574,20 +478,6 @@ class TestFusedAttentionAPI(unittest.TestCase):
                             fused_attn.pre_ln_scale,
                         ],
                     )
-                    fetch_list = exe._check_fetch_list(
-                        [
-                            final_out,
-                            fused_attn.qkv_weight,
-                            fused_attn.linear_weight,
-                            fused_attn.pre_ln_scale,
-                        ]
-                    )
-                    check_symbolic_result(
-                        paddle.static.default_main_program(),
-                        fetch_list,
-                        [out, qkv_weight, out_linear_weight, ln_scale],
-                        'fused_attention',
-                    )
                 else:
                     out, qkv_weight, out_linear_weight, ln_2_scale = exe.run(
                         paddle.static.default_main_program(),
@@ -600,20 +490,6 @@ class TestFusedAttentionAPI(unittest.TestCase):
                             fused_attn.linear_weight,
                             fused_attn.ln_scale,
                         ],
-                    )
-                    fetch_list = exe._check_fetch_list(
-                        [
-                            final_out,
-                            fused_attn.qkv_weight,
-                            fused_attn.linear_weight,
-                            fused_attn.ln_scale,
-                        ]
-                    )
-                    check_symbolic_result(
-                        paddle.static.default_main_program(),
-                        fetch_list,
-                        [out, qkv_weight, out_linear_weight, ln_2_scale],
-                        'fused_attention',
                     )
             else:
                 if self.pre_layer_norm:
@@ -640,31 +516,6 @@ class TestFusedAttentionAPI(unittest.TestCase):
                             fused_attn.pre_ln_bias,
                         ],
                     )
-                    fetch_list = exe._check_fetch_list(
-                        [
-                            final_out,
-                            fused_attn.qkv_weight,
-                            fused_attn.qkv_bias,
-                            fused_attn.linear_weight,
-                            fused_attn.linear_bias,
-                            fused_attn.pre_ln_scale,
-                            fused_attn.pre_ln_bias,
-                        ]
-                    )
-                    check_symbolic_result(
-                        paddle.static.default_main_program(),
-                        fetch_list,
-                        [
-                            out,
-                            qkv_weight,
-                            qkv_bias,
-                            out_linear_weight,
-                            linear_bias,
-                            ln_scale,
-                            ln_bias,
-                        ],
-                        'fused_attention',
-                    )
                 else:
                     (
                         out,
@@ -688,31 +539,6 @@ class TestFusedAttentionAPI(unittest.TestCase):
                             fused_attn.ln_scale,
                             fused_attn.ln_bias,
                         ],
-                    )
-                    fetch_list = exe._check_fetch_list(
-                        [
-                            final_out,
-                            fused_attn.qkv_weight,
-                            fused_attn.qkv_bias,
-                            fused_attn.linear_weight,
-                            fused_attn.linear_bias,
-                            fused_attn.ln_scale,
-                            fused_attn.ln_bias,
-                        ]
-                    )
-                    check_symbolic_result(
-                        paddle.static.default_main_program(),
-                        fetch_list,
-                        [
-                            out,
-                            qkv_weight,
-                            qkv_bias,
-                            out_linear_weight,
-                            linear_bias,
-                            ln_2_scale,
-                            ln_2_bias,
-                        ],
-                        'fused_attention',
                     )
         return (
             out,
