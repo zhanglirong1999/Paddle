@@ -277,6 +277,12 @@ try:
     # assign tensor alias
     libpaddle.LoDTensor = libpaddle.DenseTensor
     libpaddle.Tensor = libpaddle.DenseTensor
+    libpaddle.VarDesc.VarType.LOD_TENSOR = (
+        libpaddle.VarDesc.VarType.DENSE_TENSOR
+    )
+    libpaddle.VarDesc.VarType.LOD_TENSOR_ARRAY = (
+        libpaddle.VarDesc.VarType.DENSE_TENSOR_ARRAY
+    )
 
     from .libpaddle import *  # noqa: F403
     from .libpaddle import (  # noqa: F401
