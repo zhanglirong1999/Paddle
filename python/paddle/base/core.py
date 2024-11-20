@@ -274,6 +274,10 @@ try:
             "to get better performance.\n"
         )
 
+    # assign tensor alias
+    libpaddle.LoDTensor = libpaddle.DenseTensor
+    libpaddle.Tensor = libpaddle.DenseTensor
+
     from .libpaddle import *  # noqa: F403
     from .libpaddle import (  # noqa: F401
         __doc__,
