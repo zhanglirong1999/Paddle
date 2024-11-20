@@ -1,3 +1,9 @@
+[files]
+# The following files will be excluded from spell check during commits
+extend-exclude = [
+    "test/dataset/imikolov_test.py"
+]
+
 [default.extend-words]
 # PaddlePaddle specific words
 lod = "lod"
@@ -153,7 +159,6 @@ CACH = 'CACH'
 endianess = 'endianess'
 VAILD = 'VAILD'
 ues = 'ues'
-aer = 'aer'
 elemenents = 'elemenents'
 CANN = 'CANN'
 pathes = 'pathes'
