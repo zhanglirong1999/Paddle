@@ -1952,6 +1952,22 @@ std::vector<pir::Type> ArrayReadOp::InferMeta(
   return argument_outputs;
 }
 
+bool ArrayReadOp::InferSymbolicShape(
+    pir::InferSymbolicShapeContext *infer_context) {
+  const auto &array_shape =
+      infer_context->GetShapeOrDataForValue(array())
+          .dyn_cast<symbol::RankedTensorArrayShapeOrDataDimExprs>();
+  auto output_shape = array_shape.GetShapeHint();
+  for (size_t i = 0; i < output_shape.size(); ++i) {
+    output_shape[i] = infer_context->GetNextSymName();
+  }
+  infer_context->SetShapeOrDataForValue(
+      out(),
+      symbol::ShapeOrDataDimExprs{
+          symbol::TensorShapeOrDataDimExprs(output_shape)});
+  return true;
+}
+
 OpInfoTuple ArrayWrite_Op::GetOpInfo() {
   std::vector<paddle::dialect::OpInputInfo> inputs = {
       OpInputInfo("array",

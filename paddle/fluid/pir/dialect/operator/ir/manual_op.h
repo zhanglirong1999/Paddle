@@ -253,6 +253,7 @@ class TEST_API ArrayReadOp : public pir::Op<ArrayReadOp,
                                             OpYamlInfoInterface,
                                             paddle::dialect::VjpInterface,
                                             InferMetaInterface,
+                                            InferSymbolicShapeInterface,
                                             paddle::dialect::ForwardOnlyTrait> {
  public:
   using Op::Op;
@@ -282,6 +283,7 @@ class TEST_API ArrayReadOp : public pir::Op<ArrayReadOp,
       const std::vector<std::vector<pir::Value>> &outputs,
       const std::vector<std::vector<pir::Value>> &out_grads,
       const std::vector<std::vector<bool>> &stop_gradients);
+  bool InferSymbolicShape(pir::InferSymbolicShapeContext *infer_context);
 };
 
 class TEST_API FetchOp
