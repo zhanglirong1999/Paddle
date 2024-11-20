@@ -1635,15 +1635,16 @@ class ProgramCache:
             )
 
         backend = cache_key.kwargs['backend']
-        if (
-            prim_or_cinn_is_enabled(cache_key.kwargs['build_strategy'], backend)
-            and not use_pir_api()
-        ):
-            for var in concrete_program.main_program.list_vars():
-                if var.type not in NO_SHAPE_VAR_TYPE and -1 in var.shape:
-                    warnings.warn(
-                        f"Now prim and cinn do not support -1 shape, but the shape of var {var.name} is {var.shape}"
-                    )
+        if not use_pir_api():
+            # decrease prim_is_enable() call to decrease print log
+            if prim_or_cinn_is_enabled(
+                cache_key.kwargs['build_strategy'], backend
+            ):
+                for var in concrete_program.main_program.list_vars():
+                    if var.type not in NO_SHAPE_VAR_TYPE and -1 in var.shape:
+                        warnings.warn(
+                            f"Now prim and cinn do not support -1 shape, but the shape of var {var.name} is {var.shape}"
+                        )
 
         if use_pir_api():
             from .pir_partial_program import partial_program_from
