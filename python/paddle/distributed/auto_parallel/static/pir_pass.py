@@ -50,6 +50,16 @@ _logger = get_logger(
 
 register_reshard_funcs()
 
+partition_skip_op_list = [
+    "builtin.combine",
+    "builtin.split",
+    "pd_op.pylayer",
+    "cf.yield",
+    "cf.tuple_push",
+    "cf.tuple_pop",
+    "cf.stack_create",
+]
+
 amp_ops = ["pd_op.check_finite_and_unscale_", "pd_op.update_loss_scaling_"]
 
 
@@ -105,8 +115,12 @@ def apply_partition_pass(program, block=None):
     for op in block.ops:
         for sub_block in op.blocks():
             apply_partition_pass(program, block=sub_block)
+
         if op.dist_attr is None:
             continue
+        if op.name() in partition_skip_op_list:
+            continue
+
         assert len(op.operands()) == len(
             op.dist_attr.operands()
         ), f"The number of operands and the number of op_dist_attr's operands are not equal in op: {op}"
@@ -394,23 +408,17 @@ class RemovePasses:
             if op.name() == "dist_op.moe_sub_mesh_tensors":
                 replace_moe_sub_mesh_tensors(op)
                 continue
-            if op.name() == "dist_op.moe_global_mesh_tensor":
+            elif op.name() == "dist_op.moe_global_mesh_tensor":
                 replace_moe_global_mesh_tensor(op)
                 continue
-            if op.name() == "cf.tuple_push":
+            elif op.name() == "cf.tuple_push":
                 stack_create_op = op.operand_source(0).get_defining_op()
                 if stack_create_op.result(2).use_empty():
                     op.erase()
                 continue
-            if op.name() == "cf.yield":
+            elif op.name() == "cf.yield":
                 continue
-            if op.name() in [
-                "builtin.combine",
-                "builtin.split",
-                "pd_op.pylayer",
-                "cf.tuple_pop",
-                "cf.stack_create",
-            ]:
+            elif op.name() in partition_skip_op_list:
                 can_delete = True
                 for val in op.results():
                     if not val.use_empty():
@@ -418,6 +426,7 @@ class RemovePasses:
                 if can_delete:
                     op.erase()
                 continue
+
             if cur_rank not in op.dist_attr.process_mesh.process_ids:
                 op.erase()
             elif op.name() == "dist_op.reshard":
