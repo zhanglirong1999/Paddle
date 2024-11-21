@@ -2534,7 +2534,7 @@ bool PixelShuffleOpInferSymbolicShape(
 
   const bool channel_last = (data_format == "NHWC");
 
-  // the number of channles shoule be able to be divided by the upscale_factor
+  // the number of channels shoule be able to be divided by the upscale_factor
   // ^ 2.
   // TODO(Lans1ot, Buaa): add constrain for the channel number and
   // upscale_factor

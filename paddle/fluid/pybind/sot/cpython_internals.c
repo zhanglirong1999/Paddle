@@ -311,7 +311,7 @@ static void Internal_frame_init_get_vars(_PyInterpreterFrame *frame) {
     PyObject *o = PyTuple_GET_ITEM(closure, i);
     frame->localsplus[offset + i] = Py_NewRef(o);
   }
-  // COPY_FREE_VARS doesn't have inline CACHEs, either:
+  // COPY_FREE_VARS doesn't have inline caches, either:
   frame->prev_instr = _PyCode_CODE(frame->f_code);
 }
 
@@ -534,7 +534,7 @@ int Internal_PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame) {
       Py_INCREF(o);
       frame->localsplus[offset + i] = o;
     }
-    // COPY_FREE_VARS doesn't have inline CACHEs, either:
+    // COPY_FREE_VARS doesn't have inline caches, either:
     frame->prev_instr = _PyCode_CODE(frame->f_code);
   }
   for (int i = 0; i < co->co_nlocalsplus; i++) {

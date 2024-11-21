@@ -270,7 +270,7 @@ class DistUTPortManager:
                         break
                 name = lines[k - 1].strip()
 
-                # matcg right tets name format, the name must start with 'test_' follwed bu at least one cahr of
+                # matcg right tets name format, the name must start with 'test_' follwed bu at least one char of
                 # '0-9'. 'a-z'. 'A-Z' or '_'
                 assert re.compile("^test_[0-9a-zA-Z_]+").search(
                     name
