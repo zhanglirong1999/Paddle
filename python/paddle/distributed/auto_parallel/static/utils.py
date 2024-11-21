@@ -547,7 +547,7 @@ def _check_param_dict(param_dict):
                 )
             if not isinstance(value, paddle.base.DenseTensor):
                 raise TypeError(
-                    "The type of value of 'param_dict' should be 'LoDTensor', "
+                    "The type of value of 'param_dict' should be 'DenseTensor', "
                     f"but got '{type(value)}'."
                 )
         return param_dict

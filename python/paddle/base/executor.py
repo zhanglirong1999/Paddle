@@ -180,7 +180,7 @@ def as_numpy(tensor, copy=False):
             "Some of your fetched tensors hold LoD information. \
             They can not be completely cast to Python ndarray. \
             Please set the parameter 'return_numpy' as 'False' to \
-            return LoDTensor itself directly."
+            return DenseTensor itself directly."
         )
     if tensor._is_initialized():
         if copy:
