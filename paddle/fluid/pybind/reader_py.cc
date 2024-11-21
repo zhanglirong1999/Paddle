@@ -370,7 +370,7 @@ void BindMultiDeviceReader(py::module *module, const char *reader_name) {
             auto &tensor_list = result_list[0];
             std::vector<std::shared_ptr<imperative::VarBase>> var_list;
             var_list.reserve(tensor_list.size());
-            auto func = [](phi::DenseTensor &lod_tensor) {
+            auto func = [](phi::DenseTensor &dense_tensor) {
               std::string act_name =
                   imperative::GetCurrentTracer()->GenerateUniqueName(
                       "generated_var");
@@ -378,10 +378,10 @@ void BindMultiDeviceReader(py::module *module, const char *reader_name) {
               new_var->SetPersistable(false);
               new_var->SetType(framework::proto::VarType::DENSE_TENSOR);
               new_var->SetDataType(
-                  framework::TransToProtoVarType(lod_tensor.dtype()));
+                  framework::TransToProtoVarType(dense_tensor.dtype()));
               auto *tensor =
                   new_var->MutableVar()->GetMutable<phi::DenseTensor>();
-              *tensor = std::move(lod_tensor);
+              *tensor = std::move(dense_tensor);
               return new_var;
             };
             for (auto &tensor : tensor_list) {
@@ -453,8 +453,8 @@ void BindReader(py::module *module) {
       .def(
           "push",
           [](reader::LoDTensorBlockingQueue &self,
-             const phi::TensorArray &lod_tensor_vec) {
-            return self.Push(lod_tensor_vec);
+             const phi::TensorArray &dense_tensor_vec) {
+            return self.Push(dense_tensor_vec);
           },
           py::call_guard<py::gil_scoped_release>())
       .def("size", &reader::LoDTensorBlockingQueue::Size)
@@ -471,8 +471,8 @@ void BindReader(py::module *module) {
       .def(
           "push",
           [](reader::OrderedMultiDeviceLoDTensorBlockingQueue &self,
-             const phi::TensorArray &lod_tensor_vec) {
-            return self.Push(lod_tensor_vec);
+             const phi::TensorArray &dense_tensor_vec) {
+            return self.Push(dense_tensor_vec);
           },
           py::call_guard<py::gil_scoped_release>())
       .def("size", &reader::OrderedMultiDeviceLoDTensorBlockingQueue::Size)
