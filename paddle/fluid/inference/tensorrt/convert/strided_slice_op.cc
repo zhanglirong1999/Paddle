@@ -46,7 +46,9 @@ class StridedSliceOpConverter : public OpConverter {
     auto nchw_input_dims = input->getDimensions();
     nvinfer1::Dims trt_start_dims;
     trt_start_dims.nbDims = nchw_input_dims.nbDims;
-    memset(trt_start_dims.d, 0, sizeof(int32_t) * nchw_input_dims.nbDims);
+    memset(trt_start_dims.d,
+           0,
+           sizeof(trt_start_dims.d[0]) * nvinfer1::Dims::MAX_DIMS);
     nvinfer1::Dims trt_size_dims = trt_start_dims;
     nvinfer1::Dims trt_end_dims = trt_start_dims;
     nvinfer1::Dims trt_step_dims = trt_start_dims;

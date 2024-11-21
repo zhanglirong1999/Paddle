@@ -47,7 +47,9 @@ class SliceOpConverter : public OpConverter {
     auto* shape_tensor = Shape(input);
     nvinfer1::Dims trt_start_dims;
     trt_start_dims.nbDims = input_dims.nbDims;
-    memset(trt_start_dims.d, 0, sizeof(int32_t) * input_dims.nbDims);
+    memset(trt_start_dims.d,
+           0,
+           sizeof(trt_start_dims.d[0]) * nvinfer1::Dims::MAX_DIMS);
     nvinfer1::Dims trt_size_dims = trt_start_dims;
     nvinfer1::Dims trt_step_dims = trt_start_dims;
     for (int i = 0; i < trt_step_dims.nbDims; i++) trt_step_dims.d[i] = 1;
