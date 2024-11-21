@@ -2469,7 +2469,7 @@ class OpcodeExecutor(OpcodeExecutorBase):
             if sys.version_info >= (3, 12):
                 end_for = pycode_gen.add_instr("END_FOR")
                 if sys.version_info >= (3, 13):
-                    self._graph.pycode_gen.gen_pop_top()
+                    pycode_gen.gen_pop_top()
             nop_for_break = pycode_gen.add_instr("NOP")
 
             # 2.4. relocate jumps
