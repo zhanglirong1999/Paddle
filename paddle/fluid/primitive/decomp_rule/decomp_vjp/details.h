@@ -734,15 +734,19 @@ void pow_grad(const Tensor& x,
               const Scalar& y,
               Tensor* x_grad) {
   if (x_grad) {
-    if (has_dynamic_shape(x.shape())) {
-      Tensor y_tensor =
-          backend::full_with_tensor<T>(shape<T>(x), y, x.dtype(), x.place());
-      Tensor one_tensor = full_scalar<T>(1.0, x.dtype());
-      auto dx_res = y_tensor * elementwise_pow<T>(x, y - one_tensor) * out_grad;
-      set_output<T>(dx_res, x_grad);
+    if (!y.FromTensor()) {
+      float pow_val = y.to<float>();
+
+      if (pow_val == 1.0f) {
+        set_output<T>(out_grad, x_grad);
+      } else {
+        auto dx_res =
+            x.pow(pow_val - 1) * full_scalar<T>(pow_val, x.dtype()) * out_grad;
+        set_output<T>(dx_res, x_grad);
+      }
     } else {
-      auto y_value = y.to<float>();
-      auto dx_res = y_value * x.pow(y_value - 1) * out_grad;
+      Tensor one_tensor = full_scalar<T>(1.0, x.dtype());
+      auto dx_res = y * elementwise_pow<T>(x, y - one_tensor) * out_grad;
       set_output<T>(dx_res, x_grad);
     }
   }
