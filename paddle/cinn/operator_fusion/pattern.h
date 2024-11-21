@@ -25,6 +25,16 @@
 
 namespace cinn::fusion {
 
+enum class PatternType {
+  Trivial = 0,
+  Reduce,
+  ReduceTree,
+  ReduceTreePlusTrivial,
+  ItersPermutation,
+  Horizontal,
+  Unsupport,
+};
+
 struct PatternContent {
   explicit PatternContent(pir::Operation* op) : op(op) {}
   pir::Operation* op;
@@ -43,6 +53,7 @@ struct TrivialPattern {
   std::vector<pir::Operation*> ops() const { return ops_; }
   pir::Operation* sink_op() const { return sink_op_; }
 
+  static PatternType type() { return PatternType::Trivial; }
   static std::string name() { return "Trivial"; }
 
   static std::string UniqueId() {
@@ -67,6 +78,7 @@ struct ReducePattern {
   std::vector<pir::Operation*> ops() const { return ops_; }
   pir::Operation* GetReduceOp() const { return ops_.back(); }
 
+  static PatternType type() { return PatternType::Reduce; }
   static std::string name() { return "Reduce"; }
 
   static std::string UniqueId() {
@@ -108,6 +120,7 @@ struct ReduceTreePattern {
     return result;
   }
 
+  static PatternType type() { return PatternType::ReduceTree; }
   static std::string name() { return "ReduceTree"; }
 
   static std::string UniqueId() {
@@ -174,6 +187,7 @@ struct ReduceTreePlusTrivialPattern {
   }
   std::vector<size_t> fake_reduce_iter_idx;
 
+  static PatternType type() { return PatternType::ReduceTreePlusTrivial; }
   static std::string name() { return "ReduceTreePlusTrivial"; }
 
   static std::string UniqueId() {
@@ -219,6 +233,7 @@ struct ItersPermutationPattern {
   std::vector<pir::Operation*> ops_;
   std::vector<pir::Operation*> ops() const { return ops_; }
 
+  static PatternType type() { return PatternType::ItersPermutation; }
   static std::string name() { return "ItersPermutation"; }
   static std::string UniqueId() {
     static std::atomic<int64_t> counter = 0;
@@ -246,6 +261,7 @@ struct HorizontalFusionPattern {
   std::vector<PaddingStmtPattern> padding_patterns_;
   inline std::vector<pir::Operation*> ops() const;
 
+  static PatternType type() { return PatternType::Horizontal; }
   static std::string name() { return "Horizontal"; }
 
   static std::string UniqueId() {
@@ -268,6 +284,7 @@ struct UnsupportPattern {
   std::vector<pir::Operation*> ops_;
   std::vector<pir::Operation*> ops() const { return ops_; }
 
+  static PatternType type() { return PatternType::Unsupport; }
   static std::string name() { return "Unsupport"; }
 
   static std::string UniqueId() {
@@ -330,6 +347,10 @@ static std::string StmtPatternDebugStr(const StmtPattern& stmt) {
   ss << "StmtPattern, size " << all_ops.size() << " :\n";
   ss << OpsDebugStr(all_ops);
   return ss.str();
+}
+
+static PatternType GetPatternType(const StmtPattern& s) {
+  return std::visit([](const auto& impl) { return impl.type(); }, s);
 }
 
 static std::string GetPatternName(const StmtPattern& s) {
