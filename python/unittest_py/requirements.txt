@@ -2,7 +2,6 @@ PyGithub
 coverage==5.5
 mock
 gymnasium>=1.0.0a1
-pygame==2.5.2
 hypothesis
 opencv-python>= 4.10.0.84
 visualdl==2.5.3
