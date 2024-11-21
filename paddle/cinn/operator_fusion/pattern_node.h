@@ -66,6 +66,9 @@ struct PatternNode {
   }
 
   pir::Operation* sink_op() const { return sink_op_; }
+  std::vector<pir::Operation*> ops() const {
+    return GetOpsInPattern(stmt_pattern_);
+  }
   const StmtPattern& stmt_pattern() const { return stmt_pattern_; }
   void set_stmt_pattern(const StmtPattern& pattern) { stmt_pattern_ = pattern; }
   const std::vector<PatternNodePtr>& upstream() const { return upstream_; }
