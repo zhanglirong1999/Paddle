@@ -94,21 +94,32 @@ class NestSequence:
             variable_list.append(value)
         return variable_map, variable_list
 
-    def restore(self, value_list):
+    def restore(self, tensor_result_list):
         """
-        Restores the nested sequence from value list.
+        Restores the nested sequence from tenosr list.
         """
-        assert len(self._var_list) == len(value_list)
+        assert len(self._var_list) == len(tensor_result_list)
 
-        def to_value(x):
+        def to_tensor_result(x):
             if isinstance(x, Value):
-                return value_list[self._var_map[x]]
+                return tensor_result_list[self._var_map[x]]
             return x
 
         return paddle.utils.pack_sequence_as(
             self._raw_input,
-            list(map(to_value, paddle.utils.flatten(self._raw_input))),
+            list(map(to_tensor_result, paddle.utils.flatten(self._raw_input))),
         )
+
+    @cached_property
+    def quick_index_map(self):
+        raw_inputs = self._raw_input
+        if len(raw_inputs) == 1:
+            raw_inputs = raw_inputs[0]
+        assert all(isinstance(v, Value) for v in raw_inputs)
+        return [self._var_map[v] for v in raw_inputs]
+
+    def quick_restore(self, tensor_list):
+        return [tensor_list[idx] for idx in self.quick_index_map]
 
     def __getitem__(self, item):
         return self._var_list[item]
@@ -623,8 +634,7 @@ class PartialProgramLayer:
             self._cuda_graph_vec,
             *attrs,
         )
-        restored_nest_out = self._restore_out(out_vars)
-        return restored_nest_out
+        return self._outputs.quick_restore(out_vars)
 
     @cached_property
     def origin_runnable_program(self) -> RunnableProgram:
