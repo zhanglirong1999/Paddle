@@ -3558,6 +3558,12 @@ std::vector<pir::Type> ExpandOp::InferMeta(
       pir::Value inputs = shape.defining_op()->operand_source(0);
       vec_shape = common::vectorize(
           inputs.type().dyn_cast<paddle::dialect::DenseTensorType>().dims());
+      // change -1 to -2 which represents real dynamic shape
+      for (size_t i = 0; i < vec_shape.size(); ++i) {
+        if (vec_shape[i] == -1) {
+          vec_shape[i] = -2;
+        }
+      }
     } else if (shape.type().isa<pir::VectorType>()) {
       size_t shape_size = shape.type().dyn_cast<pir::VectorType>().size();
       vec_shape = std::vector<int64_t>(shape_size, -2);
