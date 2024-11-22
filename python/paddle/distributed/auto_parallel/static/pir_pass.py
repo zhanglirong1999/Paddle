@@ -42,6 +42,7 @@ from .utils import (
     get_pp_stage_by_pp_degree,
     get_pp_stage_by_process_mesh,
     get_sub_process_mesh_by_program,
+    partition_skip_op_list,
 )
 
 _logger = get_logger(
@@ -49,16 +50,6 @@ _logger = get_logger(
 )
 
 register_reshard_funcs()
-
-partition_skip_op_list = [
-    "builtin.combine",
-    "builtin.split",
-    "pd_op.pylayer",
-    "cf.yield",
-    "cf.tuple_push",
-    "cf.tuple_pop",
-    "cf.stack_create",
-]
 
 amp_ops = ["pd_op.check_finite_and_unscale_", "pd_op.update_loss_scaling_"]
 
