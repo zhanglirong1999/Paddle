@@ -640,7 +640,9 @@ class AutoMixedPrecisionPass : public pir::Pass {
         auto in_phi_dtype = input_defs[i].dtype;
         if (!IsOperandHasDenseTensorType(operand)) continue;
         auto operand_phi_dtype = GetPhiDataTypeFromOpOperand(operand);
-        if (IsPhiDataTypeFloat(operand_phi_dtype) &&
+
+        if (!InputVarsNotConvert(op, i) &&
+            IsPhiDataTypeFloat(operand_phi_dtype) &&
             operand_phi_dtype != in_phi_dtype) {
           DoInsertCastOp(op, operand, in_phi_dtype, builder);
         }
@@ -682,7 +684,10 @@ class AutoMixedPrecisionPass : public pir::Pass {
         if (!IsPhiDataTypeFloat(out_phi_dtype))
           continue;  // here handle op like "unequal", which has bool result
                      // type
-        SetResultDataType(result, out_phi_dtype, builder.ir_context());
+
+        if (!OutputVarsNotConvert(op, i)) {
+          SetResultDataType(result, out_phi_dtype, builder.ir_context());
+        }
       }
     } else {
       // current op doesn't support low precision
@@ -742,6 +747,68 @@ class AutoMixedPrecisionPass : public pir::Pass {
     for (auto& op : *block) {
       SubOpRun(&op);
     }
+  }
+
+  bool InputVarsNotConvert(pir::Operation* op, size_t index) {
+    const std::unordered_map<std::string,
+                             std::vector<std::pair<size_t, std::string>>>
+        op_input_indices = {
+            {"pd_op.batch_norm",
+             {{1, "mean"}, {2, "variance"}, {3, "scale"}, {4, "bias"}}},
+            {"pd_op.instance_norm", {{1, "scale"}, {2, "bias"}}},
+            {"pd_op.layer_norm", {{1, "scale"}, {2, "bias"}}},
+            {"pd_op.fused_multi_transformer",
+             {{1, "ln_scales"},
+              {2, "ln_biases"},
+              {14, "ffn_ln_scales"},
+              {15, "ffn_ln_biases"}}},
+            {"pd_op.fused_bias_dropout_residual_layer_norm",
+             {{3, "ln_scale"}, {4, "ln_bias"}}},
+            {"pd_op.quantize_linear", {{1, "scale"}, {2, "zero_point"}}},
+            {"pd_op.dequantize_linear", {{1, "scale"}, {2, "zero_point"}}}};
+
+    auto it = op_input_indices.find(op->name());
+    if (it != op_input_indices.end()) {
+      const auto& index_pairs = it->second;
+      for (const auto& [idx, param_name] : index_pairs) {
+        if (idx == index) {
+          VLOG(5) << "Skipping input conversion for operation: " << op->name()
+                  << ", parameter index: " << index
+                  << ", parameter name: " << param_name;
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  bool OutputVarsNotConvert(pir::Operation* op, size_t index) {
+    const std::unordered_map<std::string,
+                             std::vector<std::pair<size_t, std::string>>>
+        op_output_indices = {
+            {"pd_op.batch_norm",
+             {{1, "mean_out"},
+              {2, "variance_out"},
+              {3, "saved_mean"},
+              {4, "saved_variance"}}},
+            {"pd_op.layer_norm", {{1, "mean"}, {2, "variance"}}},
+            {"pd_op.instance_norm", {{1, "mean"}, {2, "variance"}}}};
+
+    auto it = op_output_indices.find(op->name());
+    if (it != op_output_indices.end()) {
+      const auto& index_pairs = it->second;
+      for (const auto& [idx, param_name] : index_pairs) {
+        if (idx == index) {
+          VLOG(5) << "Skipping output conversion for operation: " << op->name()
+                  << ", parameter index: " << index
+                  << ", parameter name: " << param_name;
+          return true;
+        }
+      }
+    }
+
+    return false;
   }
 };
 }  // namespace
