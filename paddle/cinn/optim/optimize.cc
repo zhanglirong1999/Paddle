@@ -102,8 +102,9 @@ ir::LoweredFunc Optimize(ir::LoweredFunc fn,
   Simplify(&copied->body);
   VLOG(10) << "After Optimize Simplify:" << copied;
 
-  IfFusion(&copied->body);
-  VLOG(10) << "After Optimize IfFusion" << copied;
+  // TODO(liangshuhao): this pass may unexpectedly remove schedule blocks, and
+  // it actually doesn't contribute to performance, so temporarily disabled.
+  // IfFusion(&copied->body);
 
   VectorizeForTrans(&copied->body);
   VLOG(10) << "After Optimize vectorize" << copied;
