@@ -299,21 +299,23 @@ class TestMathOpPatches(unittest.TestCase):
         np.testing.assert_allclose(a_np.astype('float32'), b_np, rtol=1e-05)
 
     def test_bitwise_and(self):
+        temp = 2
         x_np = np.random.randint(-100, 100, [2, 3, 5]).astype("int32")
         y_np = np.random.randint(-100, 100, [2, 3, 5]).astype("int32")
         out_np = x_np & y_np
-
+        e_np = temp & x_np
         x = paddle.static.data(name="x", shape=[2, 3, 5], dtype="int32")
         y = paddle.static.data(name="y", shape=[2, 3, 5], dtype="int32")
         z = x & y
-
+        e = temp & x
         exe = base.Executor()
-        out = exe.run(
+        (out, e_out) = exe.run(
             base.default_main_program(),
             feed={"x": x_np, "y": y_np},
-            fetch_list=[z],
+            fetch_list=[z, e],
         )
-        np.testing.assert_array_equal(out[0], out_np)
+        np.testing.assert_array_equal(out, out_np)
+        np.testing.assert_array_equal(e_out, e_np)
 
     @prog_scope()
     def test_bitwise_or(self):
