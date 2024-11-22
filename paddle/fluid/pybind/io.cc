@@ -45,7 +45,7 @@ void Load(const std::string &file_path,
   pir::LoadFunction(file_path, seek, shape, load_as_fp16, out, place);
 }
 void BindIO(pybind11::module *m) {
-  m->def("save_lod_tensor",
+  m->def("save_dense_tensor",
          [](const phi::DenseTensor &tensor, const std::string &str_file_name) {
            std::ofstream fout(str_file_name, std::ios::binary);
            PADDLE_ENFORCE_EQ(
@@ -60,7 +60,7 @@ void BindIO(pybind11::module *m) {
            return tellp;
          });
 
-  m->def("load_lod_tensor",
+  m->def("load_dense_tensor",
          [](phi::DenseTensor &tensor, const std::string &str_file_name) {
            std::ifstream fin(str_file_name, std::ios::binary);
            PADDLE_ENFORCE_EQ(
@@ -107,14 +107,14 @@ void BindIO(pybind11::module *m) {
         return tellg;
       });
 
-  m->def("save_lod_tensor_to_memory",
+  m->def("save_dense_tensor_to_memory",
          [](const phi::DenseTensor &tensor) -> py::bytes {
            std::ostringstream ss;
            paddle::framework::SerializeToStream(ss, tensor);
            return ss.str();
          });
 
-  m->def("load_lod_tensor_from_memory",
+  m->def("load_dense_tensor_from_memory",
          [](phi::DenseTensor &tensor, const std::string &tensor_bytes) {
            std::istringstream fin(tensor_bytes,
                                   std::ios::in | std::ios::binary);
