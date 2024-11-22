@@ -529,7 +529,7 @@ if(WITH_DISTRIBUTE)
            ps_gpu_wrapper
            box_wrapper
            metrics
-           lodtensor_printer
+           densetensor_printer
            lod_rank_table
            feed_fetch_method
            feed_hook
@@ -558,7 +558,7 @@ if(WITH_DISTRIBUTE)
     #         pull_dense_worker.cc section_worker.cc heter_section_worker.cc device_worker_factory.cc data_set.cc DEPS op_registry
     #         device_context scope framework_proto data_feed_proto heter_service_proto trainer_desc_proto glog
     #         index_sampler index_wrapper sampler index_dataset_proto
-    #         lod_rank_table framework_io fleet_wrapper heter_wrapper box_wrapper metrics lodtensor_printer feed_fetch_method feed_hook
+    #         lod_rank_table framework_io fleet_wrapper heter_wrapper box_wrapper metrics densetensor_printer feed_fetch_method feed_hook
     #         graph_to_program_pass variable_helper
     #         heter_service_proto fleet heter_server brpc fleet_executor
     #         graph_gpu_wrapper)
@@ -600,7 +600,7 @@ if(WITH_DISTRIBUTE)
            heter_wrapper
            box_wrapper
            metrics
-           lodtensor_printer
+           densetensor_printer
            feed_fetch_method
            feed_hook
            graph_to_program_pass
@@ -666,7 +666,7 @@ if(WITH_DISTRIBUTE)
            ps_gpu_wrapper
            box_wrapper
            metrics
-           lodtensor_printer
+           densetensor_printer
            feed_fetch_method
            feed_hook
            graph_to_program_pass
@@ -718,7 +718,7 @@ elseif(WITH_PSLIB)
          heter_wrapper
          ps_gpu_wrapper
          box_wrapper
-         lodtensor_printer
+         densetensor_printer
          feed_fetch_method
          feed_hook
          graph_to_program_pass
@@ -758,7 +758,7 @@ else()
          heter_wrapper
          ps_gpu_wrapper
          box_wrapper
-         lodtensor_printer
+         densetensor_printer
          feed_fetch_method
          feed_hook
          graph_to_program_pass
