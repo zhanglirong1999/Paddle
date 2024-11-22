@@ -365,7 +365,7 @@ class TestEagerTensor(unittest.TestCase):
                 np.testing.assert_array_equal(a_np, a.numpy())
                 self.assertTrue(a.place.__repr__(), "Place(cpu)")
 
-    def test_to_tensor_attribtes(self):
+    def test_to_tensor_attributes(self):
         var = paddle.to_tensor(self.array)
         np.testing.assert_array_equal(var.numpy(), self.array)
         # default value
