@@ -59,6 +59,7 @@ for element in "${target_lists_for_dygraph_ci[@]}";do
 done
 
 case_list[${#case_list[*]}]=llama_auto
+case_list[${#case_list[*]}]=gpt-3_auto
 case_list[${#case_list[*]}]="llama_auto_unit_test"
 case_list[${#case_list[*]}]=gpt-3_dygraph
 }
@@ -109,6 +110,10 @@ if [[ ${#case_list[*]} -ne 0 ]];then
         elif [[ ${case} == "auto_unit_test" ]];then
             bash /workspace/Paddle/tools/auto_parallel/ci_case_unit.sh auto_unit_test
             print_info $? `ls -lt ${log_path} | grep "test" | head -n 1 | awk '{print $9}'` ${case}
+            let case_num++
+        elif [[ ${case} == "gpt-3_auto" ]];then
+            bash /workspace/PaddleNLP/scripts/distribute/ci_case_auto.sh llm_gpt_case_list_auto $FLAGS_install_deps $FLAGS_download_data
+            print_info $? `ls -lt ${log_path} | grep "llm_gpt_dygraph_auto_" | head -n 1 | awk '{print $9}'` ${case}
             let case_num++
         elif [[ ${case} == "gpt-3_dygraph" ]];then
             bash /workspace/PaddleNLP/scripts/distribute/ci_case_dy.sh llm_gpt_case_list_dygraph $FLAGS_install_deps $FLAGS_download_data
