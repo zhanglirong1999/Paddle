@@ -463,7 +463,7 @@ void EmbSeqPool(const T* table,
 // sparse SGD: out[rows[i]][:] = param[rows[i]][:] - lr[0] * grad[i][:]
 //
 // Note: when use sparse SGD, and if out != param,
-// the out rows which are not selected have not beed changed, which maybe empty
+// the out rows which are not selected have not been changed, which maybe empty
 template <typename T>
 void Sgd(const T* lr,
          const T* param,
