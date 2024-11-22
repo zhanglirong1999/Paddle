@@ -328,7 +328,8 @@ bool CanRunOnCpuKernel(const std::vector<::pir::Value>& vec_inputs,
 
     if (out.type().isa<DenseTensorType>()) {
       auto type = out.type().dyn_cast<DenseTensorType>();
-      if (phi::product(type.dims()) > 4) {
+      if (::common::contain_unknown_dim(type.dims()) ||
+          phi::product(type.dims()) > 4) {
         can_run_cpu = false;
         break;
       }
