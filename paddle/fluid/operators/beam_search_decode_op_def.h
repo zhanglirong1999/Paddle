@@ -17,8 +17,8 @@ limitations under the License. */
 #include <memory>
 #include <vector>
 
+#include "paddle/fluid/framework/dense_tensor_array.h"
 #include "paddle/fluid/framework/lod_tensor.h"
-#include "paddle/fluid/framework/lod_tensor_array.h"
 #include "paddle/fluid/platform/enforce.h"
 
 namespace paddle {

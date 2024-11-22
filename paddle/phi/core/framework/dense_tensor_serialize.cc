@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "paddle/phi/core/framework/lod_tensor_serialize.h"
+#include "paddle/phi/core/framework/dense_tensor_serialize.h"
 #include <cstdint>
 #include "paddle/phi/core/framework/convert_utils.h"
 

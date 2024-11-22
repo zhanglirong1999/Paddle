@@ -21,8 +21,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "paddle/fluid/framework/dense_tensor_array.h"
 #include "paddle/fluid/framework/feed_fetch_type.h"
-#include "paddle/fluid/framework/lod_tensor_array.h"
 #include "paddle/fluid/framework/tensor_ref_array.h"
 #include "paddle/phi/common/place.h"
 #include "paddle/phi/core/raw_tensor.h"
