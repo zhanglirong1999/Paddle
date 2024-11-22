@@ -191,7 +191,7 @@ static Counts &counts() {
 #define ROBIN_HOOD_UNLIKELY(condition) __builtin_expect(condition, 0)
 #endif
 
-// detect if native wchar_t type is availiable in MSVC
+// detect if native wchar_t type is available in MSVC
 #ifdef _MSC_VER
 #ifdef _NATIVE_WCHAR_T_DEFINED
 #define ROBIN_HOOD_PRIVATE_DEFINITION_HAS_NATIVE_WCHART() 1
