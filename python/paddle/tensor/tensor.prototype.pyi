@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # The `Tensor` template `tensor.prototype.pyi` for `tools/gen_tensor_stub.py` to generate the stub file `tensor.pyi`.
-# Add docstring, attributes, methods and alias with type annotaions for `Tensor` in `tensor.prototype.pyi`
+# Add docstring, attributes, methods and alias with type annotations for `Tensor` in `tensor.prototype.pyi`
 # if not conveniently coding in original place (like c++ source file).
 
 # Import common typings for generated methods
