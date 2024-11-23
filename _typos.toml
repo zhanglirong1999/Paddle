@@ -1,6 +1,9 @@
 [files]
 # The following files will be excluded from spell check during commits
 extend-exclude = [
+    "third_party",
+    "patches",
+    "build",
     "test/dataset/imikolov_test.py"
 ]
 
@@ -18,7 +21,6 @@ ot = 'ot'
 pash = 'pash'
 astroid = 'astroid'
 eles = 'eles'
-builer = 'builer'
 anc = 'anc'
 
 # These words need to be fixed
