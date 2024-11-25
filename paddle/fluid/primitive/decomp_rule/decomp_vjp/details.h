@@ -1412,19 +1412,23 @@ void instance_norm_grad(const Tensor& x,
   // x_grad = scale * inv_var * (y_grad - y_grad.mean(2,3) - x_hat * (y_grad *
   // x_hat).mean((h,w)))
   if (x_grad) {
+    bool is_reduce_empty = reduce_axes.empty();
     Tensor scale_data_tensor =
         scale.get_ptr() ? scale.get()
                         : full<T>(IntArray({c}), 1., x.dtype(), x.place());
     auto unsqueeze_shape = get_unsqueeze_dims(scale_data_tensor, n_reduce_axes);
     auto scale_data = reshape<T>(scale_data_tensor, unsqueeze_shape);
     auto promoted_scale = ConverToMT<T>(scale_data);
-    auto result =
-        (promoted_scale * std_inv) *
-        (promoted_y_grad -
-         promoted_y_grad.sum(reduce_axes, promoted_y_grad.dtype(), true) / hw -
-         (x_hat * ((promoted_y_grad * x_hat)
-                       .sum(reduce_axes, promoted_y_grad.dtype(), true) /
-                   hw)));
+    auto tmp1 =
+        is_reduce_empty
+            ? promoted_y_grad
+            : promoted_y_grad.sum(reduce_axes, promoted_y_grad.dtype(), true);
+    auto tmp2 = is_reduce_empty
+                    ? (promoted_y_grad * x_hat)
+                    : (promoted_y_grad * x_hat)
+                          .sum(reduce_axes, promoted_y_grad.dtype(), true);
+    auto result = (promoted_scale * std_inv) *
+                  (promoted_y_grad - tmp1 / hw - (x_hat * tmp2 / hw));
     set_output<T>(ConverToOrig<T>(result, x.dtype()), x_grad);
   }
   // scale_grad = x_hat * y_grad.sum(n, h, w)
