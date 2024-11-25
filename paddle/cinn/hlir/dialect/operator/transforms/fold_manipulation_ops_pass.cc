@@ -66,14 +66,6 @@ bool RemoveOp(pir::Operation* op,
     }
     return GetDims(input) == GetDims(output);
   };
-  const auto& UsedByShadowOutput = [&](const pir::Value& value) -> bool {
-    for (auto it = value.use_begin(); it != value.use_end(); ++it) {
-      if (it->owner()->isa<pir::ShadowOutputOp>()) {
-        return true;
-      }
-    }
-    return false;
-  };
 
   const auto& IsSameDataType = [&]() -> bool {
     return paddle::dialect::TransToPhiDataType(
@@ -89,7 +81,6 @@ bool RemoveOp(pir::Operation* op,
   const auto CanRemove = [&]() -> bool {
     if (!IsSameShape()) return false;
     if (check_dtype && !IsSameDataType()) return false;
-    if (UsedByShadowOutput(input) && UsedByShadowOutput(output)) return false;
     return true;
   };
 
