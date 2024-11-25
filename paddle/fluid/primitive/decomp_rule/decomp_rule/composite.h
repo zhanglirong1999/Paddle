@@ -588,7 +588,7 @@ Tensor full_like_decomp(const Tensor& x,
                         const Place& place) {
   std::vector<int64_t> x_shape = x.shape();
   if (has_dynamic_shape(x_shape)) {
-    return backend::full_with_tensor<T>(shape<T>(x), value, x.dtype());
+    return backend::full_with_tensor<T>(shape<T>(x), value, dtype);
   } else {
     return full<T>(x_shape, value, dtype, place);
   }
