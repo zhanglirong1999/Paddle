@@ -1078,7 +1078,9 @@ void squeeze_grad(const Tensor& x,
                   const IntArray& axis,
                   Tensor* x_grad) {
   if (x_grad) {
-    auto x_grad_out = unsqueeze<T>(out_grad, axis);
+    auto x_grad_out = out_grad.dims().size() == x.dims().size()
+                          ? out_grad
+                          : unsqueeze<T>(out_grad, axis);
     set_output<T>(x_grad_out, x_grad);
   }
 }
