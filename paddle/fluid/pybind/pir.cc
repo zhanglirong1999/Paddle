@@ -1372,7 +1372,7 @@ void BindValue(py::module *m) {
                }
              }
              PADDLE_THROW(common::errors::InvalidArgument(
-                 "only support accesss index from op_result or positional "
+                 "only support accessing index from op_result or positional "
                  "block arg."));
            })
       .def("is_dense_tensor_type",
