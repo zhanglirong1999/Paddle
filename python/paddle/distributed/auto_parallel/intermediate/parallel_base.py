@@ -152,39 +152,30 @@ class ParallelModel:
         def shard_layer_param(layer):
             if self.pp_parallelizer is not None:
                 assert hasattr(layer, "pipeline_stage_index")
-            layer_attrs = dir(layer)
-            for layer_attr in layer_attrs:
-                if getattr(layer, layer_attr) is not None and is_tensor(
-                    getattr(layer, layer_attr)
-                ):
-                    layer_tensor = getattr(layer, layer_attr)
-                    if not layer_tensor.is_dist():
-                        tensor_name = layer_tensor.name
-                        if tensor_name in param_name_to_shard_param:
-                            setattr(
-                                layer,
-                                layer_attr,
-                                param_name_to_shard_param[tensor_name],
-                            )
-                        else:
-                            ipp = (
-                                layer.pipeline_stage_index
-                                if hasattr(layer, "pipeline_stage_index")
-                                else 0
-                            )
-                            mesh = self.get_mesh(ipp)
-                            layer_tensor = dist.shard_tensor(
-                                layer_tensor,
-                                mesh,
-                                [
-                                    dist.Replicate()
-                                    for _ in range(len(mesh._shape))
-                                ],
-                            )
-                            param_name_to_shard_param[tensor_name] = (
-                                layer_tensor
-                            )
-                            setattr(layer, layer_attr, layer_tensor)
+            for param_name in list(layer._parameters.keys()):
+                param = getattr(layer, param_name)
+                if param is not None and not param.is_dist():
+                    param_full_name = param.name
+                    if param_full_name in param_name_to_shard_param:
+                        setattr(
+                            layer,
+                            param_name,
+                            param_name_to_shard_param[param_full_name],
+                        )
+                    else:
+                        ipp = (
+                            layer.pipeline_stage_index
+                            if hasattr(layer, "pipeline_stage_index")
+                            else 0
+                        )
+                        mesh = self.get_mesh(ipp)
+                        param = dist.shard_tensor(
+                            param,
+                            mesh,
+                            [dist.Replicate() for _ in range(len(mesh._shape))],
+                        )
+                        param_name_to_shard_param[param_full_name] = param
+                        setattr(layer, param_name, param)
 
         for name, layer in model.named_sublayers():
             shard_layer_param(layer)
