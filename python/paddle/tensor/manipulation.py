@@ -2214,6 +2214,12 @@ def stack(
                 Out.shape = [0, 2, 1, 2]
                 Out.data = []
 
+    The image below demonstrates the Case 1: three 2-dimensional tensors with shape [1, 2] are stacked in the dimension of axis=0 to form a 3-dimensional tensor with shape [3, 1, 2] .
+
+    .. figure:: https://githubraw.cdn.bcebos.com/PaddlePaddle/docs/develop/docs/images/api_legend/stack/stack-0.png
+       :width: 1000
+       :alt: Legend 1
+       :align: center
 
     Args:
         x (list[Tensor]|tuple[Tensor]): Input ``x`` can be a ``list`` or ``tuple`` of tensors, the Tensors in ``x``
