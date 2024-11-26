@@ -778,6 +778,7 @@ newaxis: None = None
 inf = math.inf
 nan = math.nan
 pi = math.pi
+e = math.e
 
 __all__ = [
     'block_diag',
@@ -1216,4 +1217,5 @@ __all__ = [
     'newaxis',
     'nan',
     'pi',
+    'e',
 ]
