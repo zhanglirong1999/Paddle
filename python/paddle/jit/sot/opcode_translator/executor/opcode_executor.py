@@ -2400,7 +2400,9 @@ class OpcodeExecutor(OpcodeExecutorBase):
                 self._graph.pycode_gen.gen_store(name, self._code)
 
         # 5. compile sub graph before for-loop
-        update_names = list(loop_body_read_names | after_loop_read_names)
+        update_names = list(
+            OrderedSet(loop_body_inputs[:-1]) | after_loop_read_names
+        )
         extra_store_vars = (
             [iterator]
             if isinstance(iterator, IterVariable)
