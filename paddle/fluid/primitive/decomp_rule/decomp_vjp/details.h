@@ -3247,11 +3247,13 @@ void take_along_axis_grad(const Tensor& arr,
 
     Tensor zero_tensor;
     if (has_dynamic_shape(arr_cast.shape())) {
-      zero_tensor =
-          backend::full_with_tensor<T>(shape<T>(arr_cast), 0, arr_cast.dtype());
+      zero_tensor = backend::full_with_tensor<T>(
+          shape<T>(arr_cast), 0, arr_cast.dtype(), arr_cast.place());
     } else {
-      zero_tensor =
-          full<T>(common::vectorize(arr_cast.dims()), 0, arr_cast.dtype());
+      zero_tensor = full<T>(common::vectorize(arr_cast.dims()),
+                            0,
+                            arr_cast.dtype(),
+                            arr_cast.place());
     }
     auto arr_grad_tmp =
         put_along_axis<T>(zero_tensor, indices, out_grad_cast, axis);
