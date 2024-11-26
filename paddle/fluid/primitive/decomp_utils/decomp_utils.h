@@ -447,7 +447,7 @@ class BatchNormDecompHelper {
     } else {
       auto x_shape = shape<T>(x);
       auto nhw = get_slice<T>(x_shape, 0);
-      for (int64_t i = 0; i < x_rank_; ++i) {
+      for (int64_t i = 1; i < x_rank_; ++i) {
         if (i == channel_axis_) {
           continue;
         }
