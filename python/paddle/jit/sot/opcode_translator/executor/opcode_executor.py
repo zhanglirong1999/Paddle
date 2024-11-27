@@ -2045,9 +2045,12 @@ class OpcodeExecutor(OpcodeExecutorBase):
         true_fn_start_index = cur_index + 1
         false_fn_start_index = self.indexof(instr.jump_to)
         stack_size_after_if = len(self.stack) - 1
+        null_indices = self._calc_null_indices(1)
 
         # 2. create true_fn and false_fn
-        def create_if_branch_fn(start_idx, input_var_names, is_pop_jump_branch):
+        def create_if_branch_fn(
+            start_idx, input_var_names, is_pop_jump_branch, null_indices
+        ):
             # JUMP_IF_* maybe jump to the RETURN_VALUE, we should skip this case
             # We shouldn't skip POP_JUMP_* case, because it will cause the stack size to be incorrect
             if (
@@ -2064,7 +2067,9 @@ class OpcodeExecutor(OpcodeExecutorBase):
             pycode_gen = resume_fn_creator.codegen
             origin_instrs = get_instructions(pycode_gen._origin_code)
             resume_fn_creator.set_inputs(
-                input_var_names, stack_size=stack_size_after_if
+                input_var_names,
+                stack_size=stack_size_after_if,
+                null_indices=null_indices,
             )
             pycode_gen.extend_instrs(origin_instrs[start_idx:])
             # the resume_fn contains return code, so we don't need set output here
@@ -2083,6 +2088,7 @@ class OpcodeExecutor(OpcodeExecutorBase):
             start_idx=true_fn_start_index,
             input_var_names=true_fn_input_var_names,
             is_pop_jump_branch=False,
+            null_indices=null_indices,
         )
 
         false_fn_read_names, _ = analysis_used_names(
@@ -2096,6 +2102,7 @@ class OpcodeExecutor(OpcodeExecutorBase):
             start_idx=false_fn_start_index,
             input_var_names=false_fn_input_var_names,
             is_pop_jump_branch=instr.opname.startswith("POP_JUMP"),
+            null_indices=null_indices,
         )
 
         # 4. setup vars which is created in loop as Undefind
@@ -2128,7 +2135,9 @@ class OpcodeExecutor(OpcodeExecutorBase):
         self._graph.pycode_gen.gen_load_object(
             true_fn, true_fn.__code__.co_name
         )
-        for stack_arg in list(self.stack)[:-1]:
+        for i, stack_arg in enumerate(list(self.stack)[:-1]):
+            if i in null_indices:
+                continue
             var_loader.load(stack_arg)
 
         for name in true_fn_input_var_names:
@@ -2143,7 +2152,10 @@ class OpcodeExecutor(OpcodeExecutorBase):
             false_start_code = self._graph.pycode_gen.gen_load_object(
                 false_fn, false_fn.__code__.co_name
             )
-            for stack_arg in list(self.stack)[:-1]:
+            null_indices = []
+            for i, stack_arg in enumerate(list(self.stack)[:-1]):
+                if i in null_indices:
+                    continue
                 var_loader.load(stack_arg)
             for name in false_fn_input_var_names:
                 var_loader.load(self.get_var(name, allow_undefined=True))
@@ -2191,6 +2203,7 @@ class OpcodeExecutor(OpcodeExecutorBase):
         stack_effect = calc_stack_effect(call_instr)
         pop_n = push_n - stack_effect
         stack_size_after_call = len(self.stack) - pop_n + push_n
+        null_indices = self._calc_null_indices(pop_n)
 
         # 2. create resume function
         read_names, _ = analysis_used_names(self._instructions, next_index)
@@ -2199,7 +2212,7 @@ class OpcodeExecutor(OpcodeExecutorBase):
             read_names, (Space.locals, Space.cells)
         )
 
-        def create_resume_fn():
+        def create_resume_fn(null_indices):
             if self._instructions[next_index].opname == "RETURN_VALUE":
                 return None
             cache_key = (ResumeFunctionType.CALL_RESUME, self._code, next_index)
@@ -2211,7 +2224,9 @@ class OpcodeExecutor(OpcodeExecutorBase):
             pycode_gen = resume_fn_creator.codegen
             origin_instrs = get_instructions(pycode_gen._origin_code)
             resume_fn_creator.set_inputs(
-                input_var_names, stack_size=stack_size_after_call
+                input_var_names,
+                stack_size=stack_size_after_call,
+                null_indices=null_indices,
             )
             pycode_gen.extend_instrs(origin_instrs[next_index:])
             # the resume_fn contains return code, so we don't need set output here
@@ -2219,7 +2234,7 @@ class OpcodeExecutor(OpcodeExecutorBase):
             resume_fn = resume_fn_creator.generate(cache_key=cache_key)
             return resume_fn
 
-        resume_fn = create_resume_fn()
+        resume_fn = create_resume_fn(null_indices=null_indices)
 
         # 3. compile sub graph before call
         var_loader = self.get_compute_fn_and_update_changed_vars(
@@ -2227,7 +2242,9 @@ class OpcodeExecutor(OpcodeExecutorBase):
         )
 
         # 4. recover stack
-        for stack_arg in self.stack:
+        for i, stack_arg in enumerate(self.stack):
+            if i in null_indices:
+                continue
             var_loader.load(stack_arg)
 
         # 5. run the break CALL with origin python
@@ -2250,7 +2267,7 @@ class OpcodeExecutor(OpcodeExecutorBase):
             # In Python 3.11+, NULL + resume_fn should be shifted together.
             shift_n = 2 if sys.version_info >= (3, 11) else 1
             self._graph.pycode_gen.gen_shift_n(
-                shift_n, stack_size_after_call + shift_n
+                shift_n, stack_size_after_call - len(null_indices) + shift_n
             )
             for name in input_var_names:
                 var_loader.load(self.get_var(name, allow_undefined=True))
@@ -2617,3 +2634,14 @@ class OpcodeExecutor(OpcodeExecutorBase):
 
         for name, var in zip(output_var_names[:-1], ret[slice_variable]):
             self.set_var(name, var)
+
+    def _calc_null_indices(self, pop_n):
+        return [
+            i
+            for i, stack_arg in enumerate(self.stack)
+            if (
+                i < len(self.stack) - pop_n
+                and isinstance(stack_arg, NullVariable)
+                and CALL_METHOD_LAYOUT_NULL_AFTER_VALUE
+            )
+        ]
