@@ -1,5 +1,3 @@
-
-
 // Copyright (c) 2024 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -85,6 +83,7 @@ DEFINE_GENERAL_PATTERN(Swish, paddle::dialect::SwishOp)
 DEFINE_GENERAL_PATTERN(Log, paddle::dialect::LogOp)
 DEFINE_GENERAL_PATTERN(Floor, paddle::dialect::FloorOp)
 DEFINE_GENERAL_PATTERN(Roll, paddle::dialect::RollOp)
+DEFINE_GENERAL_PATTERN(Softplus, paddle::dialect::SoftplusOp)
 DEFINE_GENERAL_PATTERN(ThresholdedRelu, paddle::dialect::ThresholdedReluOp)
 
 #undef DEFINE_GENERAL_PATTERN
@@ -229,6 +228,35 @@ using FloorDivideOpPattern =
     ElementwiseCommonOpPattern<paddle::dialect::FloorDivideOp>;
 using RemainderOpPattern =
     ElementwiseCommonOpPattern<paddle::dialect::RemainderOp>;
+
+template <typename OpType>
+class ActOpPattern : public pir::OpRewritePattern<OpType> {
+ public:
+  using pir::OpRewritePattern<OpType>::OpRewritePattern;
+  bool MatchAndRewrite(OpType op,
+                       pir::PatternRewriter &rewriter) const override {
+    if (op->HasAttribute(kCanRunTrtAttr) &&
+        op->template attribute<pir::BoolAttribute>(kCanRunTrtAttr).data()) {
+      return false;
+    }
+#if IS_TRT_VERSION_LT(8600)
+    pir::Value x = op.operand_source(0);
+    auto x_type = x.type().dyn_cast<paddle::dialect::DenseTensorType>();
+    auto x_shape = x_type.dims();
+    int dims = x_shape.size();
+    if (dims < 1) {
+      VLOG(3) << op->name()
+              << " op does not support 0 dim input when TensorRT < 8.6.";
+      return false;
+    }
+#endif
+
+    op->set_attribute(kCanRunTrtAttr, rewriter.bool_attr(true));
+    return true;
+  }
+};
+using TanhOpPattern = ActOpPattern<paddle::dialect::TanhOp>;
+using CeluOpPattern = ActOpPattern<paddle::dialect::CeluOp>;
 
 class Pool2dOpPattern
     : public pir::OpRewritePattern<paddle::dialect::Pool2dOp> {
@@ -1596,34 +1624,6 @@ class StackOpPattern : public pir::OpRewritePattern<paddle::dialect::StackOp> {
   }
 };
 
-template <typename OpType>
-class ActOpPattern : public pir::OpRewritePattern<OpType> {
- public:
-  using pir::OpRewritePattern<OpType>::OpRewritePattern;
-  bool MatchAndRewrite(OpType op,
-                       pir::PatternRewriter &rewriter) const override {
-    if (op->HasAttribute(kCanRunTrtAttr) &&
-        op->template attribute<pir::BoolAttribute>(kCanRunTrtAttr).data()) {
-      return false;
-    }
-#if IS_TRT_VERSION_LT(8600)
-    pir::Value x = op.operand_source(0);
-    auto x_type = x.type().dyn_cast<paddle::dialect::DenseTensorType>();
-    auto x_shape = x_type.dims();
-    int dims = x_shape.size();
-    if (dims < 1) {
-      VLOG(3) << "Tanh op does not support 0 dim input when TensorRT < 8.6.";
-      return false;
-    }
-#endif
-
-    op->set_attribute(kCanRunTrtAttr, rewriter.bool_attr(true));
-    return true;
-  }
-};
-using TanhOpPattern = ActOpPattern<paddle::dialect::TanhOp>;
-using SoftplusOpPatten = ActOpPattern<paddle::dialect::SoftplusOp>;
-
 class WherePattern : public pir::OpRewritePattern<paddle::dialect::WhereOp> {
  public:
   using pir::OpRewritePattern<paddle::dialect::WhereOp>::OpRewritePattern;
@@ -2136,6 +2136,7 @@ class TrtOpMarkerPass : public pir::PatternRewritePass {
     ADD_PATTERN(Log)
     ADD_PATTERN(Floor)
     ADD_PATTERN(Roll)
+    ADD_PATTERN(Softplus)
     ADD_PATTERN(ThresholdedRelu)
 #if IS_TRT_VERSION_GE(8600)
     ADD_PATTERN(Layer_norm)
@@ -2188,7 +2189,6 @@ class TrtOpMarkerPass : public pir::PatternRewritePass {
     ps.Add(std::make_unique<ClipPattern>(context));
     ps.Add(std::make_unique<GridSampleOpPattern>(context));
     ps.Add(std::make_unique<StackOpPattern>(context));
-    ps.Add(std::make_unique<TanhOpPattern>(context));
     ps.Add(std::make_unique<WherePattern>(context));
     ps.Add(std::make_unique<FullLikeOpPattern>(context));
     ps.Add(std::make_unique<FullWithTensorPattern>(context));
@@ -2198,9 +2198,10 @@ class TrtOpMarkerPass : public pir::PatternRewritePass {
     ps.Add(std::make_unique<SetValue_OpPattern>(context));
     ps.Add(std::make_unique<SetValueWithTensorOpPattern>(context));
     ps.Add(std::make_unique<SetValueWithTensor_OpPattern>(context));
-    ps.Add(std::make_unique<SoftplusOpPatten>(context));
     ps.Add(std::make_unique<EqualOpPattern>(context));
     ps.Add(std::make_unique<NotEqualOpPattern>(context));
+    ps.Add(std::make_unique<TanhOpPattern>(context));
+    ps.Add(std::make_unique<CeluOpPattern>(context));
     ps.Add(std::make_unique<OneHotOpPattern>(context));
     ps.Add(std::make_unique<AssignValueOpPattern>(context));
     ps.Add(std::make_unique<AssignValue_OpPattern>(context));
