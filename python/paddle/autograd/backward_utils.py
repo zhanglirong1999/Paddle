@@ -94,6 +94,7 @@ ALLOW_DYNAMIC_SHAPE_VJP_OPS = [
     "pd_op.swish",
     "pd_op.take_along_axis",
     "pd_op.tanh",
+    "pd_op.tile",
     "pd_op.topk",
     "pd_op.transpose",
     "pd_op.trunc",

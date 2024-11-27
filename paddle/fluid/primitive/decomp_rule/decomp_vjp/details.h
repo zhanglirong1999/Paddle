@@ -1705,54 +1705,106 @@ void tile_grad(const Tensor& x,
                Tensor* x_grad) {
   if (x_grad) {
     std::vector<int64_t> repeat_times_data = repeat_times.GetData();
-    std::vector<int64_t> out_grad_shape(out_grad.shape());
     Tensor out_grad_tmp = out_grad;
+    Tensor x_grad_tmp;
 
-    if (repeat_times_data.size() != 0) {
-      while (true) {
-        std::vector<int64_t> expand_shape(out_grad_tmp.shape());
+    if (has_dynamic_shape(x.shape()) || has_dynamic_shape(out_grad.shape())) {
+      std::vector<Tensor> out_grad_shape_vec;
+      for (int64_t i = 0; i < out_grad.dims().size(); ++i) {
+        auto out_grad_shape_slice = get_slice<T>(shape<T>(out_grad_tmp), i);
+        out_grad_shape_vec.push_back(out_grad_shape_slice);
+      }
+      if (repeat_times_data.size() != 0) {
+        while (true) {
+          std::vector<Tensor> expand_shape_vec;
+          for (int64_t i = 0; i < out_grad_tmp.dims().size(); ++i) {
+            auto expand_shape = get_slice<T>(shape<T>(out_grad_tmp), i);
+            expand_shape_vec.push_back(expand_shape);
+          }
+          int num_reduce = 0;
+          while (repeat_times_data.size() != 0 &&
+                 expand_shape_vec.size() <= 8) {
+            auto repeat = repeat_times_data.back();
+            auto orig_size =
+                cast<T>(out_grad_shape_vec.back() / repeat, DataType::INT32);
+            size_t out_grad_last_index = out_grad_shape_vec.size() - 1;
+            expand_shape_vec[out_grad_last_index] =
+                full<T>({1}, repeat, DataType::INT32);
+            expand_shape_vec.insert(
+                expand_shape_vec.begin() + out_grad_shape_vec.size(),
+                orig_size);
 
-        int num_reduce = 0;
-        // By definition, out_grad_shape.size() is guaranteed to be greater than
-        // or equal to repeat_times.size(). Paddle only supports up to 9
-        // dimensions.
-        while (repeat_times_data.size() != 0 && expand_shape.size() <= 8) {
-          // We construct the reduction from the backward direction, as the
-          // repeats are aligned with the output from right to left.
-          int64_t repeat = repeat_times_data.back();
-          int64_t orig_size = out_grad_shape.back() / repeat;
-          size_t out_grad_last_index = out_grad_shape.size() - 1;
+            repeat_times_data.pop_back();
+            out_grad_shape_vec.pop_back();
+            ++num_reduce;
+          }
+          int axis = static_cast<int>(out_grad_shape_vec.size());
+          std::vector<Tensor> reduce_axes_vec;
+          for (int i = 0; i < num_reduce; ++i) {
+            reduce_axes_vec.push_back(full<T>({1}, axis, DataType::INT32));
+            axis += 2;
+          }
+          out_grad_tmp =
+              backend::reshape<T>(out_grad_tmp, concat<T>(expand_shape_vec));
+          out_grad_tmp =
+              backend::sum<T>(out_grad_tmp, concat<T>(reduce_axes_vec));
 
-          // Reshape the corresponding dimension to be `repeat` multiplied by
-          // `orig_size`.
-          expand_shape[out_grad_last_index] = repeat;
-          expand_shape.insert(
-              expand_shape.begin() + out_grad_shape.size(), 1, orig_size);
-
-          repeat_times_data.pop_back();
-          out_grad_shape.pop_back();
-          ++num_reduce;
-        }
-
-        // Find the reduce_axes, which are determined from the forward
-        // direction. Since there can be some axes that haven't been reduced, we
-        // simply skip them this round.
-        int64_t axis = static_cast<int64_t>(out_grad_shape.size());
-        std::vector<int64_t> reduce_axes;
-        for (int i = 0; i < num_reduce; ++i) {
-          reduce_axes.push_back(axis);
-          axis += 2;
-        }
-        out_grad_tmp = reshape<T>(out_grad_tmp, expand_shape);
-        out_grad_tmp = sum<T>(out_grad_tmp, reduce_axes);
-
-        if (repeat_times_data.size() == 0) {
-          break;
+          if (repeat_times_data.size() == 0) {
+            break;
+          }
         }
       }
+      x_grad_tmp = backend::reshape<T>(out_grad_tmp, shape<T>(x));
+    } else {
+      std::vector<int64_t> out_grad_shape(out_grad.shape());
+
+      if (repeat_times_data.size() != 0) {
+        while (true) {
+          std::vector<int64_t> expand_shape(out_grad_tmp.shape());
+
+          int num_reduce = 0;
+          // By definition, out_grad_shape.size() is guaranteed to be greater
+          // than or equal to repeat_times.size(). Paddle only supports up to 9
+          // dimensions.
+          while (repeat_times_data.size() != 0 && expand_shape.size() <= 8) {
+            // We construct the reduction from the backward direction, as the
+            // repeats are aligned with the output from right to left.
+            int64_t repeat = repeat_times_data.back();
+            int64_t orig_size = out_grad_shape.back() / repeat;
+            size_t out_grad_last_index = out_grad_shape.size() - 1;
+
+            // Reshape the corresponding dimension to be `repeat` multiplied by
+            // `orig_size`.
+            expand_shape[out_grad_last_index] = repeat;
+            expand_shape.insert(
+                expand_shape.begin() + out_grad_shape.size(), 1, orig_size);
+
+            repeat_times_data.pop_back();
+            out_grad_shape.pop_back();
+            ++num_reduce;
+          }
+
+          // Find the reduce_axes, which are determined from the forward
+          // direction. Since there can be some axes that haven't been reduced,
+          // we simply skip them this round.
+          int64_t axis = static_cast<int64_t>(out_grad_shape.size());
+          std::vector<int64_t> reduce_axes;
+          for (int i = 0; i < num_reduce; ++i) {
+            reduce_axes.push_back(axis);
+            axis += 2;
+          }
+          out_grad_tmp = reshape<T>(out_grad_tmp, expand_shape);
+          out_grad_tmp = sum<T>(out_grad_tmp, reduce_axes);
+
+          if (repeat_times_data.size() == 0) {
+            break;
+          }
+        }
+      }
+      x_grad_tmp = reshape<T>(out_grad_tmp, x.shape());
     }
 
-    set_output<T>(reshape<T>(out_grad_tmp, x.shape()), x_grad);
+    set_output<T>(x_grad_tmp, x_grad);
   }
 }
 
