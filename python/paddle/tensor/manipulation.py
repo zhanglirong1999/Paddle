@@ -4701,6 +4701,12 @@ def broadcast_to(
 
     Both the number of dimensions of ``x`` and the number of elements in ``shape`` should be less than or equal to 6. The dimension to broadcast to must have a value 0.
 
+    The following figure shows the process of broadcasting a one-dimensional tensor of shape [3] to a two-dimensional tensor of shape [2,3] based on the shape specified by 'shape'.
+
+    .. image:: https://githubraw.cdn.bcebos.com/PaddlePaddle/docs/develop/docs/images/api_legend/broadcast_to.png
+        :width: 500
+        :alt: broadcast_to API
+        :align: center
 
     Args:
         x (Tensor): The input tensor, its data type is bool, float16, float32, float64, int32, int64, uint8 or uint16.
