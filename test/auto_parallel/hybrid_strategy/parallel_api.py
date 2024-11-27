@@ -200,7 +200,7 @@ class TestParallelAPI:
                         dist.Shard(0),
                     ]
 
-    def parallel_model(self, layer, optimizer=None):
+    def parallel_model(self, layer):
         dp_config = None
         mp_config = None
         pp_config = None
@@ -275,17 +275,8 @@ class TestParallelAPI:
             mp_config=mp_config,
             pp_config=pp_config,
         )
-        optimizer = parallelize_optimizer(
-            layer,
-            optimizer,
-            dp_config=dp_config,
-            mp_config=mp_config,
-            pp_config=pp_config,
-        )
         self.check_mp(layer)
-        if optimizer is None:
-            return layer
-        return layer, optimizer
+        return layer, dp_config, mp_config, pp_config
 
     def run_llama(
         self, share_embedding=False, position_embedding=False, to_static=0
@@ -300,11 +291,19 @@ class TestParallelAPI:
                 self.config, share_embedding, position_embedding
             )
 
+        model, dp_config, mp_config, pp_config = self.parallel_model(model)
+
         lr_scheduler = paddle.optimizer.lr.LinearWarmup(
             learning_rate=0.0001, warmup_steps=2, start_lr=0, end_lr=0.0001
         )
         optimizer = create_optimizer(model, lr_scheduler)
-        model, optimizer = self.parallel_model(model, optimizer)
+
+        optimizer = parallelize_optimizer(
+            optimizer,
+            dp_config=dp_config,
+            mp_config=mp_config,
+            pp_config=pp_config,
+        )
 
         criterion = LlamaPretrainingCriterion(self.config)
 
