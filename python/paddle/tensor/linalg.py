@@ -1868,6 +1868,42 @@ def dot(x: Tensor, y: Tensor, name: str | None = None) -> Tensor:
         return out
 
 
+def vecdot(
+    x: Tensor,
+    y: Tensor,
+    axis: int = -1,
+    name: str | None = None,
+) -> Tensor:
+    """
+    Computes the dot product of two tensors along a specified axis.
+
+    This function multiplies two tensors element-wise and sums them along a specified axis to compute their dot product. It supports tensors of any dimensionality, including 0-D tensors, as long as the shapes of `x` and `y` are broadcastable along the specified axis.
+
+    Args:
+        x (Tensor): The first input tensor. It should be a tensor with dtype of float32, float64, int32, int64, complex64, or complex128.
+        y (Tensor): The second input tensor. Its shape must be broadcastable with `x` along the specified `axis`, and it must have the same dtype as `x`.
+        axis (int, optional): The axis along which to compute the dot product. Default is -1, which indicates the last axis.
+        name (str|None, optional): Name of the output. Default is None. It's used to print debug info for developers. Details: :ref:`api_guide_Name`
+
+    Returns:
+        Tensor: A tensor containing the dot product of `x` and `y` along the specified axis.
+
+    Examples:
+
+        .. code-block:: python
+
+            >>> import paddle
+            >>> x = paddle.to_tensor([[1, 2, 3], [4, 5, 6]], dtype='float32')
+            >>> y = paddle.to_tensor([[1, 2, 3], [4, 5, 6]], dtype='float32')
+            >>> result = paddle.linalg.vecdot(x, y, axis=1)
+            >>> print(result)
+            Tensor(shape=[2], dtype=float32, place=Place(cpu), stop_gradient=True,
+            [14.0, 77.0])
+    """
+    out = (x.conj() * y).sum(axis=axis)
+    return out
+
+
 def cov(
     x: Tensor,
     rowvar: bool = True,

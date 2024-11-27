@@ -102,6 +102,7 @@ from .linalg import (  # noqa: F401
     t_,
     transpose,
     transpose_,
+    vecdot,
 )
 from .logic import (  # noqa: F401
     __rand__,
