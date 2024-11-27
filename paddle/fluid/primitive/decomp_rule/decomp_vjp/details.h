@@ -1711,14 +1711,14 @@ void tile_grad(const Tensor& x,
     if (has_dynamic_shape(x.shape()) || has_dynamic_shape(out_grad.shape())) {
       std::vector<Tensor> out_grad_shape_vec;
       for (int64_t i = 0; i < out_grad.dims().size(); ++i) {
-        auto out_grad_shape_slice = get_slice<T>(shape<T>(out_grad_tmp), i);
+        auto out_grad_shape_slice = get_slice<T>(shape64<T>(out_grad_tmp), i);
         out_grad_shape_vec.push_back(out_grad_shape_slice);
       }
       if (repeat_times_data.size() != 0) {
         while (true) {
           std::vector<Tensor> expand_shape_vec;
           for (int64_t i = 0; i < out_grad_tmp.dims().size(); ++i) {
-            auto expand_shape = get_slice<T>(shape<T>(out_grad_tmp), i);
+            auto expand_shape = get_slice<T>(shape64<T>(out_grad_tmp), i);
             expand_shape_vec.push_back(expand_shape);
           }
           int num_reduce = 0;
@@ -1754,7 +1754,7 @@ void tile_grad(const Tensor& x,
           }
         }
       }
-      x_grad_tmp = backend::reshape<T>(out_grad_tmp, shape<T>(x));
+      x_grad_tmp = backend::reshape<T>(out_grad_tmp, shape64<T>(x));
     } else {
       std::vector<int64_t> out_grad_shape(out_grad.shape());
 
