@@ -229,6 +229,7 @@ XPUOpMap& get_kl3_ops() {
       {"clip_grad",
        XPUKernelSet({phi::DataType::FLOAT32,
                      phi::DataType::FLOAT16,
+                     phi::DataType::BFLOAT16,
                      phi::DataType::INT64,
                      phi::DataType::INT32})},
       {"coalesce_tensor",
