@@ -679,6 +679,10 @@ void ShareDataInferMeta(const MetaTensor& x, MetaTensor* out);
 
 void ShapeInferMeta(const MetaTensor& input, MetaTensor* out);
 
+void Shape64InferMeta(const MetaTensor& input,
+                      MetaTensor* out,
+                      MetaConfig config = MetaConfig());
+
 void ShardIndexInferMeta(const MetaTensor& in,
                          int index_num,
                          int nshards,

@@ -6978,7 +6978,7 @@ def unflatten(
         new_shape = paddle.concat(
             [
                 paddle.shape(x)[:axis],
-                paddle.cast(shape, 'int32'),
+                paddle.cast(shape, 'int64'),
                 paddle.shape(x)[axis + 1 :],
             ]
         )

@@ -4476,6 +4476,19 @@
   interfaces : paddle::dialect::InferSymbolicShapeInterface
   traits : paddle::dialect::ForwardOnlyTrait
 
+- op : shape64
+  args : (Tensor input)
+  output : Tensor(out)
+  infer_meta :
+    func : Shape64InferMeta
+  kernel :
+    func : shape64 {dense -> dense},
+           shape64_sr {selected_rows -> dense}
+  data_transform :
+    skip_transform : input
+  interfaces : paddle::dialect::InferSymbolicShapeInterface
+  traits : paddle::dialect::ForwardOnlyTrait
+
 - op : shard_index
   args : (Tensor input, int index_num, int nshards, int shard_id, int ignore_value=-1)
   output : Tensor(out)

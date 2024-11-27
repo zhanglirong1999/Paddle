@@ -1110,7 +1110,7 @@ class FlattenOpPattern
                       .dims()
                       .size();
     auto x_shape =
-        rewriter.Build<paddle::dialect::ShapeOp>(op->operand_source(0))
+        rewriter.Build<paddle::dialect::Shape64Op>(op->operand_source(0))
             .result(0);
     for (size_t i = 0; i < x_rank;) {
       if (i == static_cast<size_t>(start_axis)) {

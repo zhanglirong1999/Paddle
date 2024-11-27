@@ -3563,7 +3563,8 @@ std::vector<pir::Type> ExpandOp::InferMeta(
         vec_shape.insert(vec_shape.end(), tmp.begin(), tmp.end());
       }
     } else if (shape.isa<pir::OpResult>() &&
-               shape.defining_op()->isa<paddle::dialect::ShapeOp>()) {
+               (shape.defining_op()->isa<paddle::dialect::ShapeOp>() ||
+                shape.defining_op()->isa<paddle::dialect::Shape64Op>())) {
       // tensor_shape may come from shape op
       // x0.shape = [-1,3]
       // tensor_shape = shape(x0)
@@ -3598,7 +3599,8 @@ std::vector<pir::Type> ExpandOp::InferMeta(
         if (shape_dim.size() == 1 &&
             shape_dim[0] == static_cast<int64_t>(inputs.size())) {
           for (auto item : inputs) {
-            if (item.defining_op()->isa<paddle::dialect::ShapeOp>()) {
+            if (item.defining_op()->isa<paddle::dialect::ShapeOp>() ||
+                item.defining_op()->isa<paddle::dialect::Shape64Op>()) {
               pir::Value shape_input = item.defining_op()->operand_source(0);
               int64_t value = shape_input.type()
                                   .dyn_cast<paddle::dialect::DenseTensorType>()
@@ -4448,11 +4450,11 @@ bool ShapeBroadcastOp::InferSymbolicShape(
   PADDLE_ENFORCE_EQ(x_data_shape.data().has_value(),
                     true,
                     common::errors::InvalidArgument(
-                        "Value x comes from ShapeOp, it must have data"));
+                        "Value x comes from Shape64Op, it must have data"));
   PADDLE_ENFORCE_EQ(y_data_shape.data().has_value(),
                     true,
                     common::errors::InvalidArgument(
-                        "Value y comes from ShapeOp, it must have data"));
+                        "Value y comes from Shape64Op, it must have data"));
   const auto &x_data = x_data_shape.data().value();
   const auto &y_data = y_data_shape.data().value();
 

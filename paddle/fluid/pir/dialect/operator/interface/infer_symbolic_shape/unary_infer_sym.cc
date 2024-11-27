@@ -3088,6 +3088,19 @@ bool ShapeOpInferSymbolicShape(pir::Operation *op,
   return true;
 }
 
+bool Shape64OpInferSymbolicShape(
+    pir::Operation *op, pir::InferSymbolicShapeContext *infer_context) {
+  const symbol::ShapeOrDataDimExprs &operand_shape_or_data =
+      infer_context->GetShapeOrDataForValue(op->operand_source(0));
+  const auto &out_data = operand_shape_or_data.shape();
+  const std::vector<symbol::DimExpr> shape{std::int64_t(out_data.size())};
+  symbol::ShapeOrDataDimExprs shape_or_data{
+      symbol::TensorShapeOrDataDimExprs(shape, out_data)};
+
+  infer_context->SetShapeOrDataForValue(op->result(0), shape_or_data);
+  return true;
+}
+
 bool ShardIndexOpInferSymbolicShape(
     pir::Operation *op, pir::InferSymbolicShapeContext *infer_context) {
   const auto &in_shape_or_data =
@@ -3182,6 +3195,10 @@ bool ShapeSrOpInferSymbolicShape(
   return ShapeOpInferSymbolicShape(op, infer_context);
 }
 
+bool Shape64SrOpInferSymbolicShape(
+    pir::Operation *op, pir::InferSymbolicShapeContext *infer_context) {
+  return Shape64OpInferSymbolicShape(op, infer_context);
+}
 // bool ShardIndexOpInferSymbolicShape(pir::Operation *op,
 //                                     pir::InferSymbolicShapeContext
 //                                     *infer_context) {
