@@ -2613,6 +2613,17 @@ std::vector<pir::Type> TensorToArrayOp::InferMeta(
   return argument_outputs;
 }
 
+bool TensorToArrayOp::InferSymbolicShape(
+    pir::InferSymbolicShapeContext *infer_context) {
+  const auto &x_shape_or_data =
+      infer_context->GetShapeOrDataForValue(x())
+          .dyn_cast<symbol::RankedTensorArrayShapeOrDataDimExprs>();
+  infer_context->SetShapeOrDataForValue(
+      x_grad(), symbol::ShapeOrDataDimExprs{x_shape_or_data});
+
+  return true;
+}
+
 OpInfoTuple SliceArrayOp::GetOpInfo() {
   std::vector<paddle::dialect::OpInputInfo> inputs = {
       paddle::dialect::OpInputInfo("input",
