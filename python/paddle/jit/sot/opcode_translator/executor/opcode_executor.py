@@ -101,6 +101,7 @@ from .variables import (
     SymbolicVariable,
     TensorVariable,
     TupleVariable,
+    UserCodeVariable,
     UserDefinedFunctionVariable,
     UserDefinedGeneratorFunctionVariable,
     VariableBase,
@@ -1384,14 +1385,28 @@ class OpcodeExecutorBase:
 
         # the function has no default values in 3.13
         if sys.version_info >= (3, 13):
-            flag = 0
-        else:
-            flag = instr.arg
+            if len(codeobj.get_py_value().co_freevars) > 0:
+                self.stack.push(
+                    UserCodeVariable(
+                        codeobj, self._graph, DummyTracker([codeobj])
+                    )
+                )
+            else:
+                self.push_new_fn_on_stack(
+                    codeobj.get_py_value(),
+                    global_dict,
+                    fn_name.get_py_value(),
+                    (),
+                    (),
+                    related_list,
+                    (),
+                )
+            return
 
+        flag = instr.arg
         closure, related_list, kw_defaults, default_args = (
             self.attach_new_attribute(flag, related_list)
         )
-
         self.push_new_fn_on_stack(
             codeobj.get_py_value(),
             global_dict,
@@ -1404,13 +1419,36 @@ class OpcodeExecutorBase:
 
     def SET_FUNCTION_ATTRIBUTE(self, instr: Instruction):
         origin_func = self.stack.pop()
+        flag = instr.arg
+
+        if isinstance(origin_func, UserCodeVariable):
+            origin_codeobj = origin_func.codeobj
+            fn_name = ConstantVariable(
+                origin_codeobj.value.co_qualname,
+                self._graph,
+                DummyTracker([origin_codeobj]),
+            )
+            related_list = [fn_name, origin_codeobj]
+            closure, related_list, kw_defaults, default_args = (
+                self.attach_new_attribute(flag, related_list)
+            )
+            self.push_new_fn_on_stack(
+                origin_codeobj.get_py_value(),
+                self._globals.get_value(),
+                fn_name.get_py_value(),
+                default_args,
+                closure,
+                related_list,
+                kw_defaults,
+            )
+            return
+
         # The object we manipulate must be a functionVariable
         assert isinstance(
             origin_func,
             (UserDefinedGeneratorFunctionVariable, UserDefinedFunctionVariable),
         ), f"The object we manipulate must be a function object. But now got {type(origin_func)}"
         origin_func_val = origin_func.get_py_value()
-        flag = instr.arg
         related_list = [origin_func]
         closure, related_list, kw_defaults, default_args = (
             self.attach_new_attribute(flag, related_list)
