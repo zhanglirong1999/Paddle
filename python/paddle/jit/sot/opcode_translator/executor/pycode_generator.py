@@ -899,7 +899,7 @@ class PyCodeGen:
 
     def gen_dup_top(self):
         if sys.version_info >= (3, 11):
-            return self.add_instr("COPY", arg=0)
+            return self.add_instr("COPY", arg=1)
         return self.add_instr("DUP_TOP")
 
     def gen_swap(self, n):
