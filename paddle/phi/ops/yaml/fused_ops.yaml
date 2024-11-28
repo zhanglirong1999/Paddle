@@ -526,17 +526,6 @@
     data_type : x
   intermediate : col_mat
 
-- op : fusion_seqexpand_concat_fc
-  args : (Tensor[] x, Tensor fc_weight, Tensor fc_bias, str fc_activation="identity")
-  output : Tensor(out), Tensor(fc_out)
-  infer_meta :
-    func : FusionSeqExpandConcatFCInferMeta
-  kernel :
-    func : fusion_seqexpand_concat_fc
-    data_type : x
-  optional : fc_bias
-  intermediate : fc_out
-
 - op : fusion_seqpool_concat
   args: (Tensor[] x, str pooltype = "SUM", int axis = 1)
   output: Tensor (out)
