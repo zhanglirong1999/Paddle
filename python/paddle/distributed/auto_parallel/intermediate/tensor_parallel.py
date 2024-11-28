@@ -395,15 +395,18 @@ class TensorParallel(ParallelModel):
         return model
 
 
-def tensor_parallel(model, optimizer=None, parallelize_plan=None):
+def tensor_parallel(model, optimizer=None, config=None):
     """
     Tensor parallel.
-    :param model: paddle.nn.Layer, the model to be shard into tensor parallel.
-    :param parallelize_plan: Dict, the plan to shard the layer.
-    :param optimizer: paddle.optimizer.Optimizer, the optimizer.
-    :return:
-        model: model after sharding
-        optimizer: optimizer after sharding
+    Args:
+        model (paddle.nn.Layer): the model to be shard into tensor parallel.
+        optimizer (paddle.optimizer.Optimizer): the optimizer.
+        config (dict): {
+            "parallelize_plan": dict, the plan to shard the layer.
+        }
+    Returns:
+        model: model after tp
+        optimizer: optimizer after tp
 
     NOTE: the plan should be a dict maps layer name or parameter name to a split_plan,
     which will be used to split the layer or the parameter. The name can be written in regular format.
@@ -423,6 +426,7 @@ def tensor_parallel(model, optimizer=None, parallelize_plan=None):
     }
     ```
     """
+    parallelize_plan = config.get("parallelize_plan")
     if parallelize_plan is None:
         # Do nothing if no plan.
         logging.warning(

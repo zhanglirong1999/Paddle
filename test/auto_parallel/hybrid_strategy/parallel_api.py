@@ -210,7 +210,10 @@ class TestParallelAPI:
             #     f"llama.layers.{i * decoders_per_rank - 1}": SplitPoint.END
             #     for i in range(1, self.pp)
             # }
-            pp_config = {'split_spec': "llama.layers"}
+            pp_config = {
+                'split_spec': "llama.layers",
+                "global_spec": "llama.global_layer",
+            }
         if self.dp > 1:
             dp_config = {'sharding_level': self.level}
         if self.mp > 1:
