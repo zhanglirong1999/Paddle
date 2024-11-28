@@ -1726,10 +1726,10 @@ void tile_grad(const Tensor& x,
                  expand_shape_vec.size() <= 8) {
             auto repeat = repeat_times_data.back();
             auto orig_size =
-                cast<T>(out_grad_shape_vec.back() / repeat, DataType::INT32);
+                cast<T>(out_grad_shape_vec.back() / repeat, DataType::INT64);
             size_t out_grad_last_index = out_grad_shape_vec.size() - 1;
             expand_shape_vec[out_grad_last_index] =
-                full<T>({1}, repeat, DataType::INT32);
+                full<T>({1}, repeat, DataType::INT64);
             expand_shape_vec.insert(
                 expand_shape_vec.begin() + out_grad_shape_vec.size(),
                 orig_size);
