@@ -4914,6 +4914,31 @@ void PartialConcatInferMeta(const std::vector<const MetaTensor*>& xs,
   out->set_dtype(xs[0]->dtype());
 }
 
+void SvdvalsInferMeta(const MetaTensor& x, MetaTensor* s) {
+  auto SDDim = [](const DDim& x_dim, int k) {
+    auto x_vec = common::vectorize(x_dim);
+    x_vec.erase(x_vec.end() - 2, x_vec.end());
+    x_vec.push_back(k);
+    return common::make_ddim(x_vec);
+  };
+
+  auto in_dims = x.dims();
+  int64_t x_rank = in_dims.size();
+
+  PADDLE_ENFORCE_GE(
+      x_rank,
+      2,
+      common::errors::InvalidArgument("The rank of input tensor must be >= 2"));
+
+  int64_t m = in_dims[x_rank - 2];
+  int64_t n = in_dims[x_rank - 1];
+
+  int64_t k = std::min(m, n);
+  s->set_dims(SDDim(in_dims, k));
+  s->share_lod(x);
+  s->set_dtype(x.dtype());
+}
+
 void SvdInferMeta(const MetaTensor& x,
                   bool full_matrices,
                   MetaTensor* u,

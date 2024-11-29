@@ -2982,6 +2982,55 @@ def svd(
         return u, s, vh
 
 
+def svdvals(x: Tensor, name: str | None = None) -> Tensor:
+    r"""
+    Computes the singular values of one matrix or a batch of matrices.
+
+    Let :math:`X` be the input matrix or a batch of input matrices,
+    the output singular values :math:`S` are the diagonal elements of the matrix
+    produced by singular value decomposition:
+
+    .. math::
+        X = U * diag(S) * VH
+
+    Args:
+        x (Tensor): The input tensor. Its shape should be `[..., M, N]`, where
+            `...` is zero or more batch dimensions. The data type of x should
+            be float32 or float64.
+        name (str|None, optional): Name for the operation. For more
+            information, please refer to :ref:`api_guide_Name`.
+            Default: None.
+
+    Returns:
+        Tensor: Singular values of x. The shape is `[..., K]`, where `K = min(M, N)`.
+
+    Examples:
+        .. code-block:: python
+
+            >>> import paddle
+
+            >>> x = paddle.to_tensor([[1.0, 2.0], [1.0, 3.0], [4.0, 6.0]])
+            >>> s = paddle.linalg.svdvals(x)
+            >>> print(s)
+            Tensor(shape=[2], dtype=float32, place=Place(cpu), stop_gradient=True,
+            [8.14753819, 0.78589684])
+    """
+    if in_dynamic_or_pir_mode():
+        return _C_ops.svdvals(x)
+    else:
+        check_variable_and_dtype(x, 'dtype', ['float32', 'float64'], 'svdvals')
+        helper = LayerHelper('svdvals', **locals())
+        s = helper.create_variable_for_type_inference(dtype=x.dtype)
+        attrs = {}
+        helper.append_op(
+            type='svdvals',
+            inputs={'X': [x]},
+            outputs={'S': s},
+            attrs=attrs,
+        )
+        return s
+
+
 def _conjugate(x):
     if x.is_complex():
         return x.conj()

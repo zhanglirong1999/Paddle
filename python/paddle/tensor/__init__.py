@@ -98,6 +98,7 @@ from .linalg import (  # noqa: F401
     solve,
     svd,
     svd_lowrank,
+    svdvals,
     t,
     t_,
     transpose,
