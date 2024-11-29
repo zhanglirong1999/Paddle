@@ -965,7 +965,7 @@ class ClipGradByGlobalNorm(ClipGradBase):
         global_norm_dist = []
         global_norm_not_dist = []
         if len(no_fusion_sum_square_fp16) > 0:
-            global_norm_var_fp16 = async_add_n(sum_square_dist_fp16)
+            global_norm_var_fp16 = async_add_n(no_fusion_sum_square_fp16)
             no_fusion_global_norm.append(global_norm_var_fp16.astype(sum_dtype))
         if len(sum_square_dist_fp16) > 0:
             global_norm_var_fp16 = async_add_n(sum_square_dist_fp16)
