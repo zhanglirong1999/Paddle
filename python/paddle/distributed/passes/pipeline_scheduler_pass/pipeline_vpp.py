@@ -64,26 +64,29 @@ class PipelineVirtualPipelinePass(PipelinePassBase):
         num_stages = self.get_attr("pp_degree")
         num_model_chunks = self.get_attr("vpp_degree")
         split_backward = self.get_attr("split_backward", False)
+        remainder = accumulate_steps % num_stages
         for i in range(num_model_chunks):
             self._forward_micro_step_counter[i] = 0
             self._backward_micro_step_counter[i] = 0
 
-        assert accumulate_steps % num_stages == 0
+        assert accumulate_steps >= num_stages
 
         def _get_virtual_pp_rank(micro_step, forward):
             virtual_pp_stage = micro_step % (num_stages * num_model_chunks)
-            virtual_pp_stage = virtual_pp_stage // num_stages
+            if micro_step <= (accumulate_steps // num_stages) * (
+                num_stages * num_model_chunks
+            ):
+                virtual_pp_stage = virtual_pp_stage // num_stages
+            else:
+                virtual_pp_stage = virtual_pp_stage // remainder
             if not forward:
                 virtual_pp_stage = num_model_chunks - virtual_pp_stage - 1
             return virtual_pp_stage
 
         total_num_steps = accumulate_steps * num_model_chunks
-        if accumulate_steps == num_stages:
-            warmup_steps = total_num_steps
-        else:
-            warmup_steps = (num_stages - stage_id - 1) * 2
-            warmup_steps += (num_model_chunks - 1) * num_stages
-            warmup_steps = min(warmup_steps, total_num_steps)
+        warmup_steps = (num_stages - stage_id - 1) * 2
+        warmup_steps += (num_model_chunks - 1) * num_stages
+        warmup_steps = min(warmup_steps, total_num_steps)
 
         steady_steps = total_num_steps - warmup_steps
         real_split_backward = (
