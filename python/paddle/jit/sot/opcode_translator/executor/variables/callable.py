@@ -125,8 +125,11 @@ class FunctionVariable(CallableVariable):
     def get_py_value(self, allow_tensor=False):
         return self.value
 
-    def get_code(self) -> types.CodeType:
-        return self.value.__code__
+    def get_code(self) -> VariableBase:
+        code_obj_var = VariableFactory.from_value(
+            self.value.__code__, self.graph, GetAttrTracker(self, "__code__")
+        )
+        return code_obj_var
 
     def bind(self, instance: VariableBase, name: str):
         method_var = MethodVariable(
