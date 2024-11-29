@@ -161,7 +161,9 @@ class JudgeFusionLoop:
         self.operand_value_set = set()
         self.result_value_set = set()
         self.unrecomputable_ops = unrecomputable_ops
-        self.has_unfusible_on_path_map = self._set_has_unfusible_on_path_map()
+        self.downstream_unrecomputable_ops_map = {op: set() for op in self.ops}
+        self.upstream_unrecomputable_ops_map = {op: set() for op in self.ops}
+        self._set_has_unfusible_on_path_map()
 
     def _set_has_unfusible_on_path_map(self):
         def _get_used_external_value(op):
@@ -221,56 +223,51 @@ class JudgeFusionLoop:
         def _get_producer_ops_recursivly(root):
             visited = set()
             queue = deque()
-            result = set()
             queue.append(root)
             visited.add(root)
             while queue:
                 cur = queue.popleft()
-                result.add(cur)
+                self.downstream_unrecomputable_ops_map[cur].add(root)
                 for new_op in _get_producer_ops(cur):
                     if new_op in visited:
                         continue
                     visited.add(new_op)
                     queue.append(new_op)
-            return result
 
         def _get_consumer_ops_recursivly(root):
             visited = set()
             queue = deque()
-            result = set()
             queue.append(root)
             visited.add(root)
             while queue:
                 cur = queue.popleft()
-                result.add(cur)
+                self.upstream_unrecomputable_ops_map[cur].add(root)
                 for new_op in _get_consumer_ops(cur):
                     if new_op in visited:
                         continue
                     visited.add(new_op)
                     queue.append(new_op)
-            return result
 
-        has_unfusible_on_path_map = {
-            op1: {op2: False for op2 in self.ops} for op1 in self.ops
-        }
         for op in self.ops:
             if op.name() in self.unrecomputable_ops:
-                upstream_set = _get_producer_ops_recursivly(op)
-                downstream_set = _get_consumer_ops_recursivly(op)
-
-                for upstream_op in upstream_set:
-                    for downstream_op in downstream_set:
-                        has_unfusible_on_path_map[upstream_op][
-                            downstream_op
-                        ] = True
-                        has_unfusible_on_path_map[downstream_op][
-                            upstream_op
-                        ] = True
-        return has_unfusible_on_path_map
+                _get_producer_ops_recursivly(op)
+                _get_consumer_ops_recursivly(op)
 
     def _has_unfusible_op_on_any_path(self, op1, op2):
+        no_unfusible_op_on_path = (
+            len(
+                self.downstream_unrecomputable_ops_map[op1]
+                & self.upstream_unrecomputable_ops_map[op2]
+            )
+            == 0
+            and len(
+                self.downstream_unrecomputable_ops_map[op2]
+                & self.upstream_unrecomputable_ops_map[op1]
+            )
+            == 0
+        )
         return (
-            self.has_unfusible_on_path_map[op1][op2]
+            not no_unfusible_op_on_path
             if op1 is not None and op2 is not None
             else False
         )
@@ -826,7 +823,6 @@ def replace_mid_values_with_forward_subgraph(
                     if cloned_op in parent_ops and cloned_op not in reseted_ops:
                         cloned_op.move_before(op)
                         reseted_ops.add(cloned_op)
-    DebugPrint("recompute program", program)
     return program, fwd_op_end_idx
 
 
