@@ -274,13 +274,13 @@ def pipeline_parallel(model, optimizer=None, config=None):
             raise NotImplementedError(
                 "global_spec should be None if split_spec is a dict"
             )
-
-    if isinstance(global_spec, str):
-        global_spec = [global_spec]
-    else:
-        assert isinstance(
-            global_spec, (list, tuple)
-        ), f"global_spec can only be list or list(str), but got:{type(global_spec)}"
+    if global_spec:
+        if isinstance(global_spec, str):
+            global_spec = [global_spec]
+        else:
+            assert isinstance(
+                global_spec, (list, tuple)
+            ), f"global_spec can only be list or list(str), but got:{type(global_spec)}"
 
     logger.info(
         f"split_spec_dict: {split_spec_dict}, global_spec: {global_spec}"
