@@ -2526,7 +2526,7 @@
   backward: hinge_loss_grad
 
 - op : histogram
-  args : (Tensor input, Tensor weight, int64_t bins = 100, int min = 0, int max = 0, bool density = false)
+  args : (Tensor input, Tensor weight, int64_t bins = 100, float min = 0.0, float max = 0.0, bool density = false)
   output : Tensor(out)
   infer_meta :
     func : HistogramInferMeta
