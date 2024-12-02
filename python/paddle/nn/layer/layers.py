@@ -1524,11 +1524,10 @@ class Layer:
             (not in_to_static_mode())
             and (not self._forward_pre_hooks)
             and (not self._forward_post_hooks)
-            and (not self._built)
+            and (self.__class__._build_once is Layer._build_once or self._built)
             and in_dygraph_mode()
             and (not in_profiler_mode() or in_sot_simulation_mode())
         ):
-            self._build_once(*inputs, **kwargs)
             return self.forward(*inputs, **kwargs)
         else:
             return self._dygraph_call_func(*inputs, **kwargs)
