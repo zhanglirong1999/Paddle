@@ -712,6 +712,8 @@ XPUOpMap& get_kl2_ops() {
       {"multi_encoder_xpu",
        XPUKernelSet({phi::DataType::FLOAT32, phi::DataType::FLOAT16})},
       {"multiclass_nms3", XPUKernelSet({phi::DataType::FLOAT32})},
+      {"multinomial",
+       XPUKernelSet({phi::DataType::FLOAT32, phi::DataType::FLOAT16})},
       {"nearest_interp_v2",
        XPUKernelSet({phi::DataType::FLOAT32,
                      phi::DataType::FLOAT16,
