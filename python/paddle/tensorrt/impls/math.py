@@ -67,7 +67,7 @@ def scale_converter(network, paddle_op, inputs):
 def max_converter(network, paddle_op, inputs):
     input_tensor = inputs[0]
     axis = paddle_op.operands()[1].source().get_defining_op().attrs()["value"]
-    input_shape = paddle_op.operands()[0].source().shape
+    input_shape = input_tensor.shape
     keepdim = paddle_op.attrs()["keepdim"]
     if network.has_implicit_batch_dimension:
         assert (
@@ -130,7 +130,7 @@ def clip_converter(network, paddle_op, inputs):
             return expanded_tensor
 
     input_tensor = inputs[0]
-    input_shape = paddle_op.operands()[0].source().shape
+    input_shape = input_tensor.shape
     rank = len(input_shape)
     input_shape_tensor = network.add_shape(input_tensor).get_output(0)
 
@@ -158,7 +158,7 @@ def clip_converter(network, paddle_op, inputs):
 @converter_registry.register("pd_op.remainder_", trt_version="8.x")
 def remainder_converter(network, paddle_op, inputs):
     weight_shape = paddle_op.operands()[1].source().shape
-    input_shape = paddle_op.operands()[0].source().shape
+    input_shape = inputs[0].shape
 
     weight_tensor = inputs[1]
     input_tensor = inputs[0]

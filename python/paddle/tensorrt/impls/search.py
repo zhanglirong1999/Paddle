@@ -155,7 +155,7 @@ def where_converter(network, paddle_op, inputs):
 def topk_converter(network, paddle_op, inputs):
     input_tensor = inputs[0]
 
-    input_shape = paddle_op.operands()[0].source().shape
+    input_shape = input_tensor.shape
 
     axis = paddle_op.attrs().get("axis", -1)
     largest = paddle_op.attrs().get("largest", True)
