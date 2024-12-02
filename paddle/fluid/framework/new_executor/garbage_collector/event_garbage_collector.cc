@@ -92,7 +92,7 @@ void InterpreterCoreEventGarbageCollector::Add(Variable* var,
   } else if (
       var->IsType<
           operators::reader::
-              OrderedMultiDeviceLoDTensorBlockingQueueHolder>()) {  // NOLINT
+              OrderedMultiDeviceDenseTensorBlockingQueueHolder>()) {  // NOLINT
     // TODO(xiongkun03) in old executor, this type of variable is not support
     // eager deletion. so we just leave it here ?
   } else if (var->IsType<LoDRankTable>()) {

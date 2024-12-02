@@ -1472,7 +1472,7 @@ void ProgramInterpreter::RecordStreamForGC(const Instruction& instr) {
     } else if (
         var->IsType<
             operators::reader::
-                OrderedMultiDeviceLoDTensorBlockingQueueHolder>()) {  // NOLINT
+                OrderedMultiDeviceDenseTensorBlockingQueueHolder>()) {  // NOLINT
       // do nothing
     } else if (var->IsType<phi::SelectedRows>()) {
       TensorRecordStream(
