@@ -87,13 +87,14 @@ SpmdInfo TransposeInferSpmd(const DistMetaTensor& x,
       GetDimsMappingForAxes(out_axes, axis_to_dim_map);
 
   auto x_dist_attr_dst = CopyTensorDistAttrForOutput(x_dist_attr_src);
+  x_dist_attr_dst.set_partial_status(x_dist_attr_src.partial_status());
   x_dist_attr_dst.set_dims_mapping(x_dims_mapping);
 
   // initialize output dist_attr's process_mesh, batch_dim and dynamic dims with
   // input dist_attr.
   TensorDistAttr out_dist_attr = CopyTensorDistAttrForOutput(x_dist_attr_src);
   out_dist_attr.set_dims_mapping(out_dims_mapping);
-  out_dist_attr.set_partial_status(x_dist_attr_src.partial_status());
+  out_dist_attr.set_partial_status(x_dist_attr_dst.partial_status());
 
   VLOG(4) << "TransposeInferSpmd:";
   VLOG(4) << "Input: shape: [" << str_join(x_shape) << "] "
