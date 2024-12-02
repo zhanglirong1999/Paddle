@@ -4169,6 +4169,11 @@ def scatter(
     **Scatter Layer**
     Output is obtained by updating the input on selected indices based on updates.
 
+    As shown in the figure, when ``overwrite`` is set to ``True``, the output for the same index is updated in overwrite mode, where ``x[index[i]]`` is directly replaced with ``update[i]`` sequentially; When ``overwrite`` is set to ``False``, the output for the same index is updated in accumulation mode. In this mode, ``x[index[i]]`` is first initialized with elements set to 0. Then, ``update[i]`` is sequentially added to ``x[index[i]]`` to produce the output.
+
+    .. image:: https://githubraw.cdn.bcebos.com/PaddlePaddle/docs/develop/docs/images/api_legend/scatter.png
+        :alt: Legend - scatter behavior display
+
     .. code-block:: python
         :name: scatter-example-1
 
