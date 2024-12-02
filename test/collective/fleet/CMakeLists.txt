@@ -61,8 +61,13 @@ if((WITH_ROCM) AND LOCAL_ALL_PLAT)
     "PADDLE_DIST_UT_PORT=21204;http_proxy=;https_proxy=;PYTHONPATH=../..:${PADDLE_BINARY_DIR}/python"
   )
 endif()
-if(WITH_NCCL OR WITH_RCCL)
-  if((WITH_GPU OR WITH_ROCM) AND LOCAL_ALL_PLAT)
+if(WITH_NCCL
+   OR WITH_RCCL
+   OR WITH_XPU_BKCL)
+  if((WITH_GPU
+      OR WITH_ROCM
+      OR WITH_XPU)
+     AND LOCAL_ALL_PLAT)
     bash_test_modules(
       test_parallel_dygraph_mp_layers
       START_BASH
@@ -608,13 +613,19 @@ if((WITH_GPU OR WITH_ROCM) AND LOCAL_ALL_PLAT)
   set_tests_properties(test_imperative_auto_mixed_precision_for_eager
                        PROPERTIES TIMEOUT "300" LABELS "RUN_TYPE=DIST")
 endif()
-if((WITH_GPU OR WITH_ROCM) AND LOCAL_ALL_PLAT)
+if((WITH_GPU
+    OR WITH_ROCM
+    OR WITH_XPU)
+   AND LOCAL_ALL_PLAT)
   py_test_modules(
     test_dygraph_recompute_for_eager MODULES test_dygraph_recompute_for_eager
     ENVS
     "http_proxy=;https_proxy=;PYTHONPATH=../..:${PADDLE_BINARY_DIR}/python")
 endif()
-if((WITH_GPU OR WITH_ROCM) AND LOCAL_ALL_PLAT)
+if((WITH_GPU
+    OR WITH_ROCM
+    OR WITH_XPU)
+   AND LOCAL_ALL_PLAT)
   py_test_modules(
     test_dygraph_recompute MODULES test_dygraph_recompute ENVS
     "http_proxy=;https_proxy=;PYTHONPATH=../..:${PADDLE_BINARY_DIR}/python")
