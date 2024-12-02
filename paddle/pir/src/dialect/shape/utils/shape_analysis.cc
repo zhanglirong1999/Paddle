@@ -613,6 +613,12 @@ void ShapeConstraintIRAnalysis::SetShapeOrDataForValue(
   context_.SetShapeOrDataForValue(val, shape_or_data);
 }
 
+void ShapeConstraintIRAnalysis::ShareShapeOrData(Value from, Value to) {
+  if (context_.HasShapeOrDataForValue(from)) {
+    context_.SetShapeOrDataForValue(to, context_.GetShapeOrDataForValue(from));
+  }
+}
+
 bool ShapeConstraintIRAnalysis::IsEqual(const symbol::DimExpr& lhs,
                                         const symbol::DimExpr& rhs) const {
   return context_.IsEqual(lhs, rhs);
