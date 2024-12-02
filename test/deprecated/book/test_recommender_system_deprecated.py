@@ -38,7 +38,7 @@ BATCH_SIZE = 256
 
 def get_usr_combined_features():
     # FIXME(dzh) : old API integer_value(10) may has range check.
-    # currently we don't have user configurated check.
+    # currently we don't have user configured check.
 
     USR_DICT_SIZE = paddle.dataset.movielens.max_user_id() + 1
 

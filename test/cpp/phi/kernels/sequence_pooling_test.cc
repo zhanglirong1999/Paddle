@@ -52,7 +52,7 @@ void TestSequencePoolingSum(const DeviceContext &context,
       common::make_ddim({static_cast<int64_t>(lod[0].back()), second_dim});
   in_grad.mutable_data<T>(in_dims, place);
 
-  // check tensor contruction result
+  // check tensor construction result
   PADDLE_ENFORCE_EQ(
       in_grad.dims().size(),
       out_grad.dims().size(),
