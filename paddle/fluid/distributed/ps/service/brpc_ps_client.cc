@@ -1520,7 +1520,7 @@ int32_t BrpcPsClient::RecvAndSaveTable(const uint64_t table_id,
                     common::errors::Unavailable(
                         "Cannot open %s to save variables.", file_name));
 
-  framework::SerializeToStream(fout, *var_tensor, dev_ctx);
+  phi::SerializeToStream(fout, *var_tensor, dev_ctx);
   fout.close();
 
   return 0;

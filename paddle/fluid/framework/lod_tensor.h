@@ -26,6 +26,7 @@ limitations under the License. */
 #include "paddle/fluid/platform/enforce.h"
 #include "paddle/phi/common/place.h"
 #include "paddle/phi/core/dense_tensor.h"
+#include "paddle/phi/core/framework/dense_tensor_serialize.h"
 #include "paddle/phi/core/mixed_vector.h"
 #include "paddle/utils/test_macros.h"
 
@@ -72,27 +73,6 @@ TEST_API bool operator==(const LoD& a, const LoD& b);
 TEST_API bool CheckLoD(const LoD& in, int tensor_height = -1);
 
 TEST_API LoD ConvertToOffsetBasedLoD(const LoD& length_lod);
-
-/*
- * Serialize/Deserialize phi::DenseTensor to std::ostream
- * You can pass ofstream or ostringstream to serialize to file
- * or to a in memory string. GPU tensor will be copied to CPU.
- */
-void SerializeToStream(std::ostream& os,
-                       const phi::DenseTensor& tensor,
-                       const phi::DeviceContext& dev_ctx);
-void DeserializeFromStream(std::istream& is,
-                           phi::DenseTensor* tensor,
-                           const phi::DeviceContext& dev_ctx);
-void DeserializeFromStream(std::istream& is,
-                           phi::DenseTensor* tensor,
-                           const phi::DeviceContext& dev_ctx,
-                           const size_t& seek,
-                           const std::vector<int64_t>& shape);
-
-void SerializeToStream(std::ostream& os, const phi::DenseTensor& tensor);
-
-void DeserializeFromStream(std::istream& os, phi::DenseTensor* tensor);
 
 }  // namespace framework
 }  // namespace paddle

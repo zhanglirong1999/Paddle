@@ -53,7 +53,7 @@ void BindIO(pybind11::module *m) {
                true,
                common::errors::Unavailable("Cannot open %s to save variables.",
                                            str_file_name));
-           paddle::framework::SerializeToStream(fout, tensor);
+           phi::SerializeToStream(fout, tensor);
 
            int64_t tellp = fout.tellp();
            fout.close();
@@ -69,7 +69,7 @@ void BindIO(pybind11::module *m) {
                common::errors::Unavailable("Cannot open %s to load variables.",
                                            str_file_name));
 
-           paddle::framework::DeserializeFromStream(fin, &tensor);
+           phi::DeserializeFromStream(fin, &tensor);
            int64_t tellg = fin.tellg();
            fin.close();
            return tellg;
@@ -85,7 +85,7 @@ void BindIO(pybind11::module *m) {
                common::errors::Unavailable(
                    "Cannot open %s to save SelectedRows.", str_file_name));
 
-           paddle::framework::SerializeToStream(fout, selected_rows);
+           phi::SerializeToStream(fout, selected_rows);
            int64_t tellp = fout.tellp();
            fout.close();
            return tellp;
@@ -101,7 +101,7 @@ void BindIO(pybind11::module *m) {
             common::errors::Unavailable("Cannot open %s to load SelectedRows.",
                                         str_file_name));
 
-        paddle::framework::DeserializeFromStream(fin, &selected_rows);
+        phi::DeserializeFromStream(fin, &selected_rows);
         int64_t tellg = fin.tellg();
         fin.close();
         return tellg;
@@ -110,7 +110,7 @@ void BindIO(pybind11::module *m) {
   m->def("save_dense_tensor_to_memory",
          [](const phi::DenseTensor &tensor) -> py::bytes {
            std::ostringstream ss;
-           paddle::framework::SerializeToStream(ss, tensor);
+           phi::SerializeToStream(ss, tensor);
            return ss.str();
          });
 
@@ -118,13 +118,13 @@ void BindIO(pybind11::module *m) {
          [](phi::DenseTensor &tensor, const std::string &tensor_bytes) {
            std::istringstream fin(tensor_bytes,
                                   std::ios::in | std::ios::binary);
-           paddle::framework::DeserializeFromStream(fin, &tensor);
+           phi::DeserializeFromStream(fin, &tensor);
          });
 
   m->def("save_selected_rows_to_memory",
          [](const phi::SelectedRows &selected_rows) -> py::bytes {
            std::ostringstream ss;
-           paddle::framework::SerializeToStream(ss, selected_rows);
+           phi::SerializeToStream(ss, selected_rows);
            return ss.str();
          });
 
@@ -133,7 +133,7 @@ void BindIO(pybind11::module *m) {
             const std::string &selected_rows_bytes) {
            std::istringstream fin(selected_rows_bytes,
                                   std::ios::in | std::ios::binary);
-           paddle::framework::DeserializeFromStream(fin, &selected_rows);
+           phi::DeserializeFromStream(fin, &selected_rows);
          });
 
   m->def("load_dense_tensor", [](const std::string path) {
