@@ -63,16 +63,30 @@ void MultiClassNMSKernel(const Context& ctx,
     if (has_rois_num) {
       phi::DenseTensor rois_num_host;
       rois_num_host.Resize(rois_num.get_ptr()->dims());
-      ctx.template HostAlloc<int>(&rois_num_host);
-      phi::Copy(ctx,
-                *rois_num.get_ptr(),
-                rois_num_host.place(),
-                false,
-                &rois_num_host);
-      n = rois_num.get_ptr()->numel();
-      for (int i = 0; i < n; i++) {
-        rois_num_vec.push_back(rois_num_host.data<int>()[i]);
-        boxes_count += rois_num_host.data<int>()[i];
+      if (rois_num.get_ptr()->dtype() == phi::DataType::INT64) {
+        ctx.template HostAlloc<int64_t>(&rois_num_host);
+        phi::Copy(ctx,
+                  *rois_num.get_ptr(),
+                  rois_num_host.place(),
+                  false,
+                  &rois_num_host);
+        n = rois_num.get_ptr()->numel();
+        for (int64_t i = 0; i < n; i++) {
+          rois_num_vec.push_back(rois_num_host.data<int64_t>()[i]);
+          boxes_count += rois_num_host.data<int64_t>()[i];
+        }
+      } else if (rois_num.get_ptr()->dtype() == phi::DataType::INT32) {
+        ctx.template HostAlloc<int>(&rois_num_host);
+        phi::Copy(ctx,
+                  *rois_num.get_ptr(),
+                  rois_num_host.place(),
+                  false,
+                  &rois_num_host);
+        n = rois_num.get_ptr()->numel();
+        for (int i = 0; i < n; i++) {
+          rois_num_vec.push_back(rois_num_host.data<int>()[i]);
+          boxes_count += rois_num_host.data<int>()[i];
+        }
       }
     } else {
       auto lod = bboxes.lod().back();

@@ -396,7 +396,7 @@ def linspace(
         else:
             check_type(stop, 'stop', (int, float), 'linspace')
         if isinstance(num, paddle.pir.Value):
-            check_dtype(num.dtype, 'num', ['int32'], 'linspace')
+            check_dtype(num.dtype, 'num', ['int32', 'int64'], 'linspace')
         check_dtype(
             dtype,
             'dtype',
