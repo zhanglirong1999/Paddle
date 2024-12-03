@@ -26,9 +26,6 @@ UE = "UE"
 unpacket = "unpacket"
 
 # These words need to be fixed
-axises = 'axises'
-Axises = 'Axises'
-aixs = 'aixs'
 beacuse = 'beacuse'
 becasue = 'becasue'
 Becasue = 'Becasue'
@@ -382,7 +379,6 @@ Normlized = 'Normlized'
 normlize = 'normlize'
 noraml = 'noraml'
 numer = 'numer'
-Numberic = 'Numberic'
 occured = 'occured'
 Ocurred = 'Ocurred'
 occures = 'occures'
