@@ -58,10 +58,11 @@ PyLayerInstruction::PyLayerInstruction(
 
   SetKernelType(AnalyseOpFuncType(op, place));
   VLOG(6) << "finish process analyse kernel type";
-
   for (size_t i = 0; i < pylayer_op.num_results(); ++i) {
-    output_vars_.push_back(value_exec_info->GetScope()->GetVar(
-        value_exec_info->GetValue2VarName().at(pylayer_op.result(i))));
+    if (pylayer_op.result(i) && pylayer_op.result(i).type()) {
+      output_vars_.push_back(value_exec_info->GetScope()->GetVar(
+          value_exec_info->GetValue2VarName().at(pylayer_op.result(i))));
+    }
   }
   VLOG(6) << "finish process output_vars";
 
