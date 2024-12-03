@@ -433,7 +433,7 @@ class FunctionGraph:
         symbolic_inputs = self._find_tensor_inputs(input_names)
         compiled_fn = self.sir_ctx.compile_fn(
             statement_ir.name,
-            [var.meta.to_input_spec() for var in symbolic_inputs],
+            tuple(var.meta.to_input_spec() for var in symbolic_inputs),
             **self._kwargs,
         )
         return compiled_fn, (statement_ir, symbolic_inputs, symbolic_outputs)
