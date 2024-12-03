@@ -102,6 +102,7 @@
 #include "paddle/cinn/hlir/dialect/operator/transforms/add_cinn_pass.h"
 #include "paddle/cinn/hlir/dialect/operator/transforms/check_infer_symbolic_util.h"
 #include "paddle/pir/include/dialect/shape/ir/shape_dialect.h"
+#include "paddle/pir/include/dialect/shape/utils/shape_analysis.h"
 #endif
 
 #include "paddle/common/flags.h"
@@ -843,6 +844,11 @@ void AnalysisPredictor::OptimizeInferencePirProgram() {
             std::make_unique<pir::PassManager::IRPrinterOption>(
                 ir_printing_conditions, ir_printing_conditions));
       }
+      auto &shape_analysis =
+          pir::ShapeAnalysisManager::Instance().Get(pir_program_.get());
+      pass_manager->SetValueReplacedHook([&](pir::Value from, pir::Value to) {
+        shape_analysis.ShareShapeOrData(from, to);
+      });
       return pass_manager;
     };
 
