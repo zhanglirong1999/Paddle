@@ -15,7 +15,6 @@
 #include "paddle/fluid/framework/var_type_traits.h"
 
 #include "paddle/common/macros.h"
-#include "paddle/fluid/framework/lod_rank_table.h"
 #include "paddle/fluid/framework/scope.h"
 #include "paddle/phi/core/framework/reader.h"
 #include "paddle/phi/core/operators/reader/dense_tensor_blocking_queue.h"

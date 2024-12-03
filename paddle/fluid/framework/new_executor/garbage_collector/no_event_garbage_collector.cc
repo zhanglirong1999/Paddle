@@ -55,9 +55,6 @@ void InterpreterCoreNoEventGarbageCollector::Add(
               OrderedMultiDeviceDenseTensorBlockingQueueHolder>()) {  // NOLINT
     // TODO(xiongkun03) in old executor, this type of variable is not support
     // eager deletion. so we just leave it here ?
-  } else if (var->IsType<LoDRankTable>()) {
-    // TODO(xiongkun03) in old executor, this type of variable is not support
-    // eager deletion. so we just leave it here ?
   } else if (var->IsType<phi::SelectedRows>()) {
     Add(var->GetMutable<phi::SelectedRows>()
             ->mutable_value()
