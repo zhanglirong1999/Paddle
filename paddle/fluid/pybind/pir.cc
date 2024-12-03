@@ -687,6 +687,23 @@ void BindBlock(py::module *m) {
       .def("add_arg", &Block::AddArg)
       .def("add_kwarg", &Block::AddKwarg)
       .def("erase_kwarg", &Block::EraseKwarg)
+      .def("get_value_from_op_idxs",
+           [](Block &self, const py::list &op_idxs) -> py::list {
+             py::list value_list;
+             auto it = self.begin();
+             std::set<int> idxs_set;
+             for (py::handle item : op_idxs) {
+               idxs_set.insert(item.cast<int>());
+             }
+             for (int i = 0; it != self.end(); ++i, ++it) {
+               if (idxs_set.find(i) != idxs_set.end()) {
+                 for (uint32_t j = 0; j < it->num_results(); ++j) {
+                   value_list.append(static_cast<pir::Value>(it->result(j)));
+                 }
+               }
+             }
+             return value_list;
+           })
       .def("remove_op",
            [](Block &self, const Operation &op) { self.erase(op); })
       .def(

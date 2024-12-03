@@ -14,8 +14,10 @@
 from __future__ import annotations
 
 import functools
+import logging
 import math
 import os
+import time
 from collections import deque
 from typing import TYPE_CHECKING
 
@@ -378,6 +380,8 @@ def auto_recompute(
     # 1.1 classify value nodes
     import networkx as nx
 
+    start_time = time.time()
+
     # model value as graph's node, op as graph's edge
     (
         required_fw_value_nodes,
@@ -629,6 +633,10 @@ def auto_recompute(
         backward_op_start_idx,
     )
     DebugPrint("program after recompute:", program_after_recompute)
+    end_time = time.time()
+    logging.info(
+        f"Time of auto recompute program: ***** [ {end_time - start_time} ] ***** seconds."
+    )
     return program_after_recompute, fwd_op_end_idx_after_recompute
 
 
@@ -828,36 +836,40 @@ def replace_mid_values_with_forward_subgraph(
 
 def classify_value_node(program, grad_outputs, fwd_op_end_idx):
     all_ops = program.global_block().ops
-    required_fw_value_nodes = backward_utils.ValueSet()
     required_fw_ops = set(all_ops[: fwd_op_end_idx + 1])
-    for required_fw_op in required_fw_ops:
-        fw_op_outputs = required_fw_op.results()
-        required_fw_value_nodes = (
-            required_fw_value_nodes | backward_utils.ValueSet(fw_op_outputs)
-        )
-    required_bw_value_nodes = backward_utils.ValueSet()
+
+    required_fw_op_idxs = list(range(0, fwd_op_end_idx + 1))
+    required_fw_value_nodes = backward_utils.ValueSet(
+        program.global_block().get_value_from_op_idxs(required_fw_op_idxs)
+    )
+
     required_bw_ops = set()
     for grad_output in grad_outputs:
         required_bw_ops = required_bw_ops | find_child_ops(grad_output)
         required_bw_ops.add(grad_output.get_defining_op())
-    for required_bw_op in required_bw_ops:
-        bw_op_outputs = (
-            required_bw_op.results() if required_bw_op is not None else []
-        )
-        required_bw_value_nodes = (
-            required_bw_value_nodes | backward_utils.ValueSet(bw_op_outputs)
-        )
-    unclaimed_value_nodes = backward_utils.ValueSet()
+
+    required_bw_op_idxs = []
+    for idx, op in enumerate(all_ops):
+        if op in required_bw_ops:
+            required_bw_op_idxs.append(idx)
+    required_bw_value_nodes = backward_utils.ValueSet(
+        program.global_block().get_value_from_op_idxs(required_bw_op_idxs)
+    )
+
     unclaimed_ops = {
         op
         for op in all_ops
         if op not in required_fw_ops and op not in required_bw_ops
     }
-    for unclaimed_op in unclaimed_ops:
-        unclaimed_op_outputs = unclaimed_op.results()
-        unclaimed_value_nodes = unclaimed_value_nodes | backward_utils.ValueSet(
-            unclaimed_op_outputs
-        )
+
+    unclaimed_op_idxs = []
+    for idx, op in enumerate(all_ops):
+        if op in unclaimed_ops:
+            unclaimed_op_idxs.append(idx)
+    unclaimed_value_nodes = backward_utils.ValueSet(
+        program.global_block().get_value_from_op_idxs(unclaimed_op_idxs)
+    )
+
     return (
         required_fw_value_nodes,
         required_bw_value_nodes | unclaimed_value_nodes,
