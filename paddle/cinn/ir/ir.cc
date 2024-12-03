@@ -602,7 +602,7 @@ Expr Store::Make(Expr tensor, Expr value, const std::vector<Expr> &indices) {
   node->tensor = tensor;
   node->value = value;
   node->indices =
-      utils::GetCompitableStoreLoadIndices(tensor.as_tensor_ref(), indices);
+      utils::GetCompatibleStoreLoadIndices(tensor.as_tensor_ref(), indices);
 
   if (tensor->type() != Void()) {
     node->set_type(
@@ -904,7 +904,7 @@ Expr Load::Make(Expr tensor, const std::vector<Expr> &origin_indices) {
       true,
       ::common::errors::InvalidArgument("The tensor type is not valid. "
                                         "A valid tensor type is required."));
-  const auto indices = utils::GetCompitableStoreLoadIndices(
+  const auto indices = utils::GetCompatibleStoreLoadIndices(
       tensor.as_tensor_ref(), origin_indices);
   PADDLE_ENFORCE_EQ(
       !indices.empty(),

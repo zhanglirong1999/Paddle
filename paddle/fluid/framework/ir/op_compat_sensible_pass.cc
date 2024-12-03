@@ -220,7 +220,7 @@ bool OpCompat::Judge(const OpDesc& op_desc, const std::string& pass_name) {
         LOG(WARNING) << " Attribute(" << attr_compat.first << ") of Op("
                      << op_name_
                      << ") is not defined in opProto or is in extra set!"
-                     << "The compatable check for this attribute is not use."
+                     << "The compatible check for this attribute is not use."
                      << " Please remove it from the precondition of pass: "
                      << pass_name.c_str();
       }
@@ -298,7 +298,7 @@ OpCompat& OpCompatSensiblePass::AddOpCompat(OpCompat&& op_compat) {
   return *(op_compat_judgers_[name]);
 }
 
-//! Tell the Op compability of a subgraph.
+//! Tell the Op compatibility of a subgraph.
 bool OpCompatSensiblePass::IsCompat(
     const GraphPatternDetector::subgraph_t& subgraph, Graph*) const {
   PADDLE_ENFORCE_EQ(op_compat_judgers_.empty(),

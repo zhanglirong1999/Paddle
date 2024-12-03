@@ -1394,7 +1394,7 @@ def eye(
                 'int32',
                 'int64',
                 'complex64',
-                'comple128',
+                'complex128',
             ],
             'eye',
         )
