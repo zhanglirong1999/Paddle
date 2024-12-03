@@ -114,7 +114,7 @@ TEST(bfloat16, dense_tensor_cpu) {
   EXPECT_EQ(input_data[3].x, 0x0000);
 
   dense_tensor.Resize({4, 1});
-  dense_tensor.set_lod(phi::LoD({{0, 2, 4}}));
+  dense_tensor.set_lod(phi::LegacyLoD({{0, 2, 4}}));
   bfloat16* data_ptr = dense_tensor.mutable_data<bfloat16>(CPUPlace());
 
   EXPECT_NE(data_ptr, nullptr);

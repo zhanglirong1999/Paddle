@@ -489,10 +489,11 @@ class GetLoDLevelTest : public OperatorWithKernel {
     OP_INOUT_CHECK(ctx->HasOutput("Out"), "Output", "Out", "GetLoDLevelTest");
 
     auto lod_level = ctx->GetLoDLevel("X");
-    PADDLE_ENFORCE_GT(lod_level,
-                      0,
-                      common::errors::InvalidArgument(
-                          "The LoD level Input(X) should be larger than 0."));
+    PADDLE_ENFORCE_GT(
+        lod_level,
+        0,
+        common::errors::InvalidArgument(
+            "The LegacyLoD level Input(X) should be larger than 0."));
   }
 };
 

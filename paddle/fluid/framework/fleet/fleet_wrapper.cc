@@ -1983,7 +1983,7 @@ int32_t FleetWrapper::CopyTableByFeasign(
 size_t FleetWrapper::GetAbsoluteSum(size_t start,
                                     size_t end,
                                     size_t level,
-                                    const phi::LoD& lod) {
+                                    const phi::LegacyLoD& lod) {
   if (level >= lod.size() - 1) {
     return end - start;
   }

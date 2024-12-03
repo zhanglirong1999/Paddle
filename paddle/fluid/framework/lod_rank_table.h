@@ -41,16 +41,16 @@ class LoDRankTable {
 
   LoDRankTable() {}
 
-  void Reset(const LoD& lod, size_t level);
+  void Reset(const LegacyLoD& lod, size_t level);
 
   const std::vector<TableItem>& items() const { return this->items_; }
 
-  const LoD& coarse_lod() const { return this->coarse_lod_; }
+  const LegacyLoD& coarse_lod() const { return this->coarse_lod_; }
 
   size_t level() const { return coarse_lod_.size(); }
 
  private:
-  LoD coarse_lod_;
+  LegacyLoD coarse_lod_;
   std::vector<TableItem> items_;
 };
 

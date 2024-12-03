@@ -211,7 +211,7 @@ void MultiClassNMSKernel(const Context& ctx,
     }
     phi::Copy(ctx, nms_rois_num_cpu, nms_rois_num->place(), true, nms_rois_num);
   }
-  LoD lod;
+  LegacyLoD lod;
   if (num_kept == 0) {
     batch_starts[batch_starts.size() - 1] = 1;
   }

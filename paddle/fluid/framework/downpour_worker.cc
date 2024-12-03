@@ -232,7 +232,7 @@ void DownpourWorker::FillSparseValue(size_t table_idx) {
                                                  phi::CPUPlace());
     memset(ptr, 0, sizeof(float) * len * table.emb_dim());
     auto& tensor_lod = tensor->lod()[0];
-    LoD data_lod{tensor_lod};
+    LegacyLoD data_lod{tensor_lod};
     tensor_emb->set_lod(data_lod);
 
     bool is_nid = (adjust_ins_weight_config_.need_adjust() &&

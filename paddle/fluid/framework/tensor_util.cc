@@ -1067,7 +1067,7 @@ std::ostream& print_tensor<phi::dtype::complex<double>>(
   return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const LoD& lod) {
+std::ostream& operator<<(std::ostream& os, const LegacyLoD& lod) {
   // NOTE(xiongkun):
   // https://stackoverflow.com/questions/5195512/namespaces-and-operator-resolution
   // if we don't redefine, the operator << of phi / framework LoD is not found.
@@ -1080,7 +1080,7 @@ std::ostream& operator<<(std::ostream& os, const LoD& lod) {
 
 namespace phi {
 
-std::ostream& operator<<(std::ostream& os, const LoD& lod) {
+std::ostream& operator<<(std::ostream& os, const LegacyLoD& lod) {
   paddle::string::operator<<(os, lod);
   return os;
 }

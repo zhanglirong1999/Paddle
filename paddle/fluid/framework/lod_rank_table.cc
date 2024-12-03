@@ -19,7 +19,7 @@ limitations under the License. */
 
 namespace paddle {
 namespace framework {
-void LoDRankTable::Reset(const LoD& lod, size_t level) {
+void LoDRankTable::Reset(const LegacyLoD& lod, size_t level) {
   this->coarse_lod_.clear();
   this->items_.clear();
   PADDLE_ENFORCE_LT(

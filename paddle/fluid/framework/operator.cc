@@ -193,9 +193,9 @@ static int GetRowSize(const Scope& scope, const std::string& name) {
   return -1;
 }
 
-static LoD GetLoDDebug(const Scope& scope, const std::string& name) {
+static LegacyLoD GetLoDDebug(const Scope& scope, const std::string& name) {
   Variable* var = scope.FindVar(name);
-  auto default_lod = LoD({{}});
+  auto default_lod = LegacyLoD({{}});
 
   if (var == nullptr) {
     return default_lod;
@@ -644,12 +644,12 @@ bool RuntimeInferShapeContext::HasRuntimeAttributes() const {
   return is_runtime;
 }
 
-std::vector<LoD> RuntimeInferShapeContext::GetOutputsLod(
+std::vector<LegacyLoD> RuntimeInferShapeContext::GetOutputsLod(
     const std::string& out) const {
   auto out_it = ctx_.outputs.find(out);
   auto& out_var_list = out_it->second;
 
-  std::vector<LoD> ret;
+  std::vector<LegacyLoD> ret;
   for (auto* out_var : out_var_list) {
     if (out_var != nullptr) {
       auto* out_tensor = out_var->GetMutable<phi::DenseTensor>();

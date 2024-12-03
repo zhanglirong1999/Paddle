@@ -2266,7 +2266,7 @@ void PushBackOutputTypes(pir::IrContext* ctx,
           data_layout = phi::DataLayout::ONEDNN;
         }
 #endif
-        phi::LoD lod = {{}};
+        phi::LegacyLoD lod = {{}};
         size_t offset = 0;
         auto dense_tensor_dtype = DenseTensorType::get(
             ctx, fp32_dtype, dims, data_layout, lod, offset);

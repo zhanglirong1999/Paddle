@@ -354,7 +354,7 @@ bool PaddleTensorToDenseTensor(const PaddleTensor &pt,
         "now."));
   }
   // TODO(Superjomn) Low performance, need optimization for heavy LoD copy.
-  phi::LoD lod;
+  phi::LegacyLoD lod;
   for (auto &level : pt.lod) {
     lod.emplace_back(level);
   }
