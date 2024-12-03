@@ -3025,20 +3025,7 @@ def svdvals(x: Tensor, name: str | None = None) -> Tensor:
             Tensor(shape=[2], dtype=float32, place=Place(cpu), stop_gradient=True,
             [8.14753819, 0.78589684])
     """
-    if in_dynamic_or_pir_mode():
-        return _C_ops.svdvals(x)
-    else:
-        check_variable_and_dtype(x, 'dtype', ['float32', 'float64'], 'svdvals')
-        helper = LayerHelper('svdvals', **locals())
-        s = helper.create_variable_for_type_inference(dtype=x.dtype)
-        attrs = {}
-        helper.append_op(
-            type='svdvals',
-            inputs={'X': [x]},
-            outputs={'S': s},
-            attrs=attrs,
-        )
-        return s
+    return _C_ops.svdvals(x)
 
 
 def _conjugate(x):
