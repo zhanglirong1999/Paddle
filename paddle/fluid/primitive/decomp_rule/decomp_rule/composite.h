@@ -183,8 +183,8 @@ template <typename T>
 Tensor one_hot_decomp(const Tensor& x, const Tensor& num_classes) {
   auto start = full<T>({1}, 0, x.dtype(), x.place());
   auto step = full<T>({1}, 1, x.dtype(), x.place());
-  auto arange_class = backend::arange_with_tensor<T>(
-      start, num_classes, step, x.dtype(), x.place());
+  auto arange_class =
+      backend::arange<T>(start, num_classes, step, x.dtype(), x.place());
   auto reshape_x = backend::unsqueeze<T>(x, {-1});
   auto equal_res = backend::equal<T>(reshape_x, arange_class);
   return cast<T>(equal_res, phi::DataType::FLOAT32);
@@ -1223,10 +1223,9 @@ Tensor index_sample_decomp(const Tensor& x, const Tensor& index) {
   auto index_dim = get_slice<T>(shape64<T>(index), 0);
   auto start = full<T>({1}, 0, index_dim.dtype());
   auto step = full<T>({1}, 1, index_dim.dtype());
-  auto arange_tmp =
-      reshape<T>(backend::arange_with_tensor<T>(
-                     start, index_dim, step, index.dtype(), index.place()),
-                 tmp_shape);
+  auto arange_tmp = reshape<T>(
+      backend::arange<T>(start, index_dim, step, index.dtype(), index.place()),
+      tmp_shape);
 
   auto index_res =
       reshape<T>(backend::expand<T>(arange_tmp, shape64<T>(index)), tmp_shape);

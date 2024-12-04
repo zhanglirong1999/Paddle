@@ -1256,7 +1256,7 @@ void masked_select_grad(const Tensor& x,
     auto end = full<T>({1}, x_num, x.dtype(), x.place());
     auto start = full<T>({1}, 0, x.dtype(), x.place());
     auto step = full<T>({1}, 1, x.dtype(), x.place());
-    auto x_arange = backend::arange_with_tensor<T>(
+    auto x_arange = backend::arange<T>(
         start, end, step, promoted_x.dtype(), promoted_x.place());
 
     auto x_arange_reshape = reshape<T>(x_arange, promoted_x.shape());
