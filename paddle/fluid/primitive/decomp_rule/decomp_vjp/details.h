@@ -1253,9 +1253,9 @@ void masked_select_grad(const Tensor& x,
       grad_num *= promoted_out_grad.shape()[i];
     }
 
-    auto end = full<T>({1}, x_num, x.dtype(), x.place());
-    auto start = full<T>({1}, 0, x.dtype(), x.place());
-    auto step = full<T>({1}, 1, x.dtype(), x.place());
+    auto end = full<T>({1}, x_num, promoted_x.dtype(), x.place());
+    auto start = full<T>({1}, 0, promoted_x.dtype(), x.place());
+    auto step = full<T>({1}, 1, promoted_x.dtype(), x.place());
     auto x_arange = backend::arange<T>(
         start, end, step, promoted_x.dtype(), promoted_x.place());
 
