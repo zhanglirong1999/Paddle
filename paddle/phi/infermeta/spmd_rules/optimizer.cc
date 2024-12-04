@@ -22,8 +22,7 @@ limitations under the License. */
 #include "paddle/phi/infermeta/spmd_rules/elementwise.h"
 #include "paddle/phi/infermeta/spmd_rules/utils.h"
 
-namespace phi {
-namespace distributed {
+namespace phi::distributed {
 
 SpmdInfo AdamInferSpmdDynamic(const DistMetaTensor& param,
                               const DistMetaTensor& grad,
@@ -271,5 +270,4 @@ SpmdInfo SgdInferSpmd(const DistMetaTensor& param,
       {param_dist_attr, master_param_dist_attr}};
 }
 
-}  // namespace distributed
-}  // namespace phi
+}  // namespace phi::distributed
