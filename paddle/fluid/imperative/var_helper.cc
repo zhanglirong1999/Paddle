@@ -26,8 +26,7 @@
 #include "paddle/phi/common/place.h"
 #include "paddle/phi/core/framework/reader.h"
 #include "paddle/phi/core/selected_rows.h"
-namespace paddle {
-namespace imperative {
+namespace paddle::imperative {
 
 /* GetVariableWrapper */
 template <>
@@ -301,5 +300,4 @@ template void SetCachedValue<VariableWrapper>(
     std::shared_ptr<VariableWrapper> var,
     const phi::KernelKey &key,
     std::shared_ptr<VariableWrapper> res);
-}  // namespace imperative
-}  // namespace paddle
+}  // namespace paddle::imperative
