@@ -1758,6 +1758,12 @@ class Layer:
                 if name in d:
                     del d[name]
 
+        if isinstance(
+            value, paddle.jit.dy2static.program_translator.StaticFunction
+        ):
+            object.__setattr__(self, name, value)
+            value._patched_name = name
+            return
         if isinstance(getattr(type(self), name, None), property):
             object.__setattr__(self, name, value)
         params = self.__dict__.get('_parameters', None)
