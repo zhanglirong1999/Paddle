@@ -779,7 +779,7 @@ ReshardApiInputToKernelInput(phi::DeviceContext* dev_ctx,
     if (tensor_in) {
       phi::distributed::DistTensor* dist_tensor =
           static_cast<phi::distributed::DistTensor*>(tensor_in.get());
-      VLOG(4) << "ReshardIsNeededWithPartial"
+      VLOG(4) << "ReshardIsNeededWithPartial "
               << ReshardIsNeededWithPartial(dist_tensor->dist_attr(),
                                             dist_attr);
       if (ReshardIsNeededWithPartial(dist_tensor->dist_attr(), dist_attr)) {
