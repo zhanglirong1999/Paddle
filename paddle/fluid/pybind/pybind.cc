@@ -251,8 +251,7 @@ DECLARE_FILE_SYMBOLS(aligned_allocator);
 DECLARE_FILE_SYMBOLS(pass_timing);
 DECLARE_FILE_SYMBOLS(op_compatible_info);
 
-namespace paddle {
-namespace pybind {
+namespace paddle::pybind {
 
 PyTypeObject *g_framework_scope_pytype = nullptr;
 PyTypeObject *g_framework_densetensorarray_pytype = nullptr;
@@ -3352,5 +3351,4 @@ All parameter, weight, gradient are variables in Paddle.
   BindDistApi(&m);
 #endif
 }
-}  // namespace pybind
-}  // namespace paddle
+}  // namespace paddle::pybind
