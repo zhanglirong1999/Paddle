@@ -67,8 +67,7 @@ PD_DECLARE_bool(enable_unused_var_check);
 COMMON_DECLARE_bool(run_kp_kernel);
 PHI_DECLARE_bool(enable_host_event_recorder_hook);
 
-namespace paddle {
-namespace framework {
+namespace paddle::framework {
 
 std::vector<std::tuple<phi::Place, LibraryType>> kKernelPriority = {
     std::make_tuple(phi::GPUPlace(0), LibraryType::kCUDNN),
@@ -3665,5 +3664,4 @@ void OperatorWithKernel::BuildPhiKernelContext(
 #endif
 }
 
-}  // namespace framework
-}  // namespace paddle
+}  // namespace paddle::framework

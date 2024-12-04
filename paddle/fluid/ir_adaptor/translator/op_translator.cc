@@ -58,8 +58,7 @@
 // paddle/fluid/pir/dialect/CMakeLists.txt.
 #include "paddle/fluid/pir/dialect/operator/ir/pd_op.h"
 
-namespace paddle {
-namespace translator {
+namespace paddle::translator {
 
 namespace {
 
@@ -4024,5 +4023,4 @@ OpTranslator::OpTranslator() {
 
   special_handlers["c_sync_comm_stream"] = SyncCommStreamOpTranscriber();
 }
-}  // namespace translator
-}  // namespace paddle
+}  // namespace paddle::translator
