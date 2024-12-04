@@ -76,6 +76,7 @@ DEFAULT_RECOMPUTABLE_OPS: list[str] = [
     "pd_op.where",
     "pd_op.pow",
     "pd_op.shape",
+    "pd_op.shape64",
     "pd_op.slice",
     "pd_op.squeeze",
     "pd_op.unsqueeze",
@@ -729,6 +730,8 @@ def replace_mid_values_with_forward_subgraph(
             if len(op_inputs) == 0 and define_op.name() not in [
                 "pd_op.full",
                 "pd_op.full_int_array",
+                "builtin.parameter",
+                "pd_op.data",
             ]:
 
                 def getIdx(program, op):
@@ -738,7 +741,7 @@ def replace_mid_values_with_forward_subgraph(
                     raise RuntimeError("op not found in program")
 
                 raise Exception(
-                    f"Every path to recompute value {recompute_value} must have saved value or starting point of the path is one of op in [pd_op.full, pd_op.full_int_array], but find {define_op.name()} op"
+                    f"Every path to recompute value {recompute_value} must have saved value or starting point of the path is one of op in [pd_op.full, pd_op.full_int_array], but find {define_op.name()} op, op ir is {define_op}"
                 )
             for op_input in op_inputs:
                 if op_input in saved_values:
