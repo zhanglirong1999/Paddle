@@ -62,9 +62,7 @@ std::set<std::string> StaticBuildBlackList = {
     "sparse_sparse_coo_tensor" /*: to handle sparse output*/,
     "distributed_fused_lamb_init"};
 
-namespace paddle {
-namespace framework {
-namespace interpreter {
+namespace paddle::framework::interpreter {
 
 using InterpreterCore = framework::InterpreterCore;
 
@@ -984,6 +982,4 @@ void FakeInitializeOutputsForStructureKernel(
   }
 }
 
-}  // namespace interpreter
-}  // namespace framework
-}  // namespace paddle
+}  // namespace paddle::framework::interpreter
