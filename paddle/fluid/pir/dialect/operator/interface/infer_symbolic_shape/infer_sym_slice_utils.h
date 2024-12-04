@@ -18,27 +18,33 @@
 
 namespace paddle::dialect::slice_utils {
 
-inline ExprVec GetExprVecFromData(const ShapeOrData &shapeordata) {
-  if (shapeordata.isa<TensorListExprs>()) {
-    ExprVec result;
+inline bool GetExprVecOfStartEnd(
+    const symbol::ShapeOrDataDimExprs &shape_or_data,
+    std::vector<symbol::DimExpr> *expr_vec) {
+  if (shape_or_data.isa<TensorListExprs>()) {
     TensorListExprs list =
-        shapeordata.dyn_cast<symbol::TensorListShapeOrDataDimExprs>();
+        shape_or_data.dyn_cast<symbol::TensorListShapeOrDataDimExprs>();
     for (size_t i = 0; i < list.size(); i++) {
       PADDLE_ENFORCE_EQ(list.at(i).data().has_value(),
                         true,
                         common::errors::InvalidArgument(
                             "i-th element of list has no value, please check"));
       for (auto expr : list.at(i).data().value()) {
-        result.emplace_back(expr);
+        expr_vec->emplace_back(expr);
       }
     }
-    return result;
+    return true;
+  } else if (shape_or_data.isa<symbol::TensorShapeOrDataDimExprs>()) {
+    if (shape_or_data.data().has_value()) {
+      *expr_vec = shape_or_data.data().value();
+      return true;
+    }
+    return false;
   } else {
-    PADDLE_ENFORCE_EQ(shapeordata.data().has_value(),
-                      true,
-                      common::errors::InvalidArgument(
-                          "Input `shapeordata.data` is empty, please check"));
-    return shapeordata.data().value();
+    PADDLE_THROW(::common::errors::InvalidArgument(
+        "The starts and ends parameters of pd_op.slice currently only support "
+        "two types: TensorListShapeOrDataDimExprs and "
+        "TensorShapeOrDataDimExprs"));
   }
 }
 
