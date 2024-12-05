@@ -687,7 +687,7 @@ void BindBlock(py::module *m) {
       .def("add_arg", &Block::AddArg)
       .def("add_kwarg", &Block::AddKwarg)
       .def("erase_kwarg", &Block::EraseKwarg)
-      .def("get_value_from_op_idxs",
+      .def("get_values_by_op_idx",
            [](Block &self, const py::list &op_idxs) -> py::list {
              py::list value_list;
              auto it = self.begin();
