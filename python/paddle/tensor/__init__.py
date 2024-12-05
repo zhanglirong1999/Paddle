@@ -88,6 +88,7 @@ from .linalg import (  # noqa: F401
     lu_unpack,
     matmul,
     matrix_power,
+    matrix_transpose,
     multi_dot,
     mv,
     norm,
