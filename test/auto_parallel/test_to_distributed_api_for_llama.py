@@ -20,11 +20,16 @@ import paddle
 
 class TestToDistributedApiForLlamaBasic(test_base.CommunicationTestDistBase):
     def setUp(self):
+        self._num_of_devices = 8
         super().setUp(
-            num_of_devices=8,
+            num_of_devices=self._num_of_devices,
             timeout=120,
         )
-        self._default_envs = {"dtype": "float32", "seed": "2023"}
+        self._default_envs = {
+            "dtype": "float32",
+            "seed": "2023",
+            "num_of_devices": self._num_of_devices,
+        }
         self._changeable_envs = {"backend": ["cpu", "gpu"]}
 
     def test_llama(self):

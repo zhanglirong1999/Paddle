@@ -11,9 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 
+import logging
 import math
 import warnings
+
+import numpy as np
 
 import paddle
 import paddle.distributed as dist
@@ -30,11 +34,50 @@ from paddle.distributed.auto_parallel.static.tuner.to_distributed_api_patterns i
     register_used_patterns,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class ToDistributedConfig:
     def __init__(self):
         self.input_spec = None
         self.sequence_parallel = False
+
+
+def cost_model(matched_programs, device_num, node_num):
+    # TODO(jeff41404): multi-node will be supported later
+    assert (
+        node_num == 1
+    ), "we only support single node now, multi-node will be supported later"
+
+    # TODO(jeff41404): will evaluate the best combination of parallel strategies
+    # based on cost_model and return global_mesh, currently using pre-defined parallel strategy
+    if device_num % 2 == 0:
+        if device_num == 8:
+            return dist.ProcessMesh(
+                np.arange(device_num).reshape(2, 2, 2).tolist(),
+                dim_names=["pp", "dp", "mp"],
+            )
+        elif device_num == 6:
+            return dist.ProcessMesh(
+                np.arange(device_num).reshape(3, 2).tolist(),
+                dim_names=["dp", "mp"],
+            )
+        elif device_num == 4:
+            return dist.ProcessMesh(
+                np.arange(device_num).reshape(2, 2).tolist(),
+                dim_names=["dp", "mp"],
+            )
+        elif device_num == 2:
+            return dist.ProcessMesh(list(range(device_num)), dim_names=["dp"])
+        else:
+            raise ValueError(
+                f"device_num must be an even number to be able to use at least 2 parallel strategies, but got: {device_num}"
+            )
+    else:
+        logger.debug(
+            f'device_num must be an even number to be able to use at least 2 parallel strategies, but got: {device_num}, only use data parallel.'
+        )
+        return dist.ProcessMesh(list(range(device_num)), dim_names=["dp"])
 
 
 def record_program_ops_pre_hook(layer, inputs):
@@ -207,32 +250,225 @@ def get_layer_pp_info(mesh, num_hidden_layers, layer_index):
         return None
 
 
-# mesh, config: input_spec
-def to_distributed(model, dataloader, optimizer, mesh, config):
-    paddle.distributed.init_parallel_env()
+def to_distributed(
+    model: paddle.nn.Layer,
+    optimizer: paddle.optimizer.Optimizer,
+    dataloader: paddle.io.DataLoader,
+    device_num: int,
+    node_num: int | None = 1,
+    config: ToDistributedConfig | None = None,
+) -> tuple[paddle.nn.Layer, paddle.optimizer.Optimizer, paddle.io.DataLoader]:
+    """
+    `to_distributed` can automatically convert neural networks, optimizer, and dataloader
+    that do not contain any distributed code into neural networks, optimizers, and dataloader
+    that are suitable for distributed training and ensure their correctness.
+    At the same time, during the transformation process, the optimal distributed strategy
+    will be automatically selected based on `node_num` and `device_num` to maximize performance.
 
-    with_pp = True if "pp" in mesh.dim_names else False
-    with_sp = True if config.sequence_parallel else False
+    Args:
+        model(paddle.nn.Layer): The model in dygraph mode, whose parameters
+            are ordinary tensors, do not contain any distributed code.
+            If one device has sufficient memory, it can train directly.
+        optimizer(paddle.optimizer.Optimizer): The optimizer for training.
+            one instance of a regular optimizer, e.g. `paddle.optimizer.Adam` etc.
+        dataloader(paddle.io.DataLoader): The dataloader used in dygraph mode,
+            It is instantiated through regular `paddle.io.Dataset` and `paddle.io.Sampler`,
+            not `paddle.io.DistributedBatchSampler`.
+        device_num(int): the number of devices on each node or machine.
+        node_num(int|None, optional): the number of nodes or machines.
+        config(ToDistributedConfig| None = None): Configs for input_spec and sequence_parallel.
+            The custom input specs specify the shape, dtype, and name information
+            of each model inputs. If it is not None, the input specs and
+            will be inferred from the custom input specs. The custom
+            input specs should be a list of `paddle.static.InputSpec`. Default: None.
+            sequence_parallel indicates whether to use sequence parallel. Default: False.
 
-    # # Data Parallel
-    # # step_0: shard dataloader
-    if with_pp:
-        first_stage_mesh = mesh.get_mesh_with_dim("pp", 0)
-        last_stage_mesh = mesh.get_mesh_with_dim("pp", 1)
-        loader = dist.shard_dataloader(
-            dataloader,
-            meshes=[first_stage_mesh, last_stage_mesh],
-            shard_dims="dp",
-        )
-    else:
-        loader = dist.shard_dataloader(
-            dataloader, meshes=[mesh], shard_dims="dp"
-        )
+    Returns:
+        model: The model in dygraph mode but contain distributed attributes.
+        optimizer: The optimizer for training and may be sharded states.
+        dataloader: The dataloader can be used in distributed training.
 
-    # Sharding Parallel
-    # # step_1: shard optimizer
+    Examples:
+        .. code-block:: python
+            >>> import numpy as np
+            >>> import paddle
+            >>> import paddle.distributed as dist
+            >>> from paddle import nn
 
-    # # step_2: register pre-hooks and post-hooks, thus recording corresponding static ops in following paddle.jit.to_static
+            >>> EPOCHES = 1
+            >>> VOCAB_SIZE = 8000
+            >>> BATCH_NUM = 2
+            >>> BATCH_SIZE = 4
+            >>> HIDDEN_SIZE = 2048
+            >>> INTERMEDIATE_SIZE = 4096
+            >>> SEQ_LENGTH = 1024
+            >>> NUM_HIDDEN_LAYERS = 4
+            >>> class RandomDataset(paddle.io.Dataset): # type: ignore[type-arg]
+            ...     def __init__(self, inputs, labels, num_samples):
+            ...         self.inputs = inputs
+            ...         self.labels = labels
+            ...         self.num_samples = num_samples
+            ...     def __getitem__(self, idx):
+            ...         return self.inputs[idx], self.labels[idx]
+            ...     def __len__(self):
+            ...         return self.num_samples
+
+            >>> class Mlp(nn.Layer):
+            ...     def __init__(
+            ...         self,
+            ...         hidden_size=HIDDEN_SIZE,
+            ...         intermediate_size=INTERMEDIATE_SIZE,
+            ...     ):
+            ...         super().__init__()
+            ...         self.hidden_size = hidden_size
+            ...         self.intermediate_size = intermediate_size
+            ...         self.gate_proj = nn.Linear(
+            ...             hidden_size, intermediate_size, bias_attr=False
+            ...         )
+            ...         self.up_proj = nn.Linear(
+            ...             hidden_size, intermediate_size, bias_attr=False
+            ...         )
+            ...         self.down_proj = nn.Linear(
+            ...             intermediate_size, hidden_size, bias_attr=False
+            ...         )
+
+            ...     def forward(self, x):
+            ...         x = paddle.incubate.nn.functional.swiglu(
+            ...             self.gate_proj(x), self.up_proj(x)
+            ...         )
+            ...         out = self.down_proj(x)
+            ...         return out
+
+            >>> class DecoderLayer(nn.Layer):
+            ...     def __init__(
+            ...         self,
+            ...         hidden_size=HIDDEN_SIZE,
+            ...         intermediate_size=INTERMEDIATE_SIZE,
+            ...     ):
+            ...         super().__init__()
+            ...         self.hidden_size = hidden_size
+            ...         self.intermediate_size = intermediate_size
+            ...         self.mlp = Mlp()
+
+            ...     def forward(
+            ...         self,
+            ...         hidden_states,
+            ...     ):
+            ...         residual = hidden_states
+            ...         hidden_states = self.mlp(hidden_states)
+            ...         hidden_states = residual + hidden_states
+            ...         return hidden_states
+
+            >>> class DemoNet(nn.Layer):
+            ...     def __init__(
+            ...         self,
+            ...         vocab_size=VOCAB_SIZE,
+            ...         hidden_size=HIDDEN_SIZE,
+            ...         intermediate_size=INTERMEDIATE_SIZE,
+            ...         labels=None,
+            ...     ):
+            ...         super().__init__()
+            ...         self.embed_tokens = nn.Embedding(
+            ...             vocab_size,
+            ...             hidden_size,
+            ...         )
+            ...         self.layers = nn.LayerList(
+            ...             [
+            ...                 DecoderLayer()
+            ...                 for i in range(NUM_HIDDEN_LAYERS)
+            ...             ]
+            ...         )
+            ...         self.weight = self.create_parameter(
+            ...             shape=[hidden_size, vocab_size],
+            ...             dtype=paddle.get_default_dtype(),
+            ...         )
+            ...         self.ignore_index = -100
+            ...         self.loss_func = paddle.nn.CrossEntropyLoss(
+            ...             reduction="none", ignore_index=self.ignore_index
+            ...         )
+
+            ...     def forward(
+            ...         self,
+            ...         input_ids=None,
+            ...         labels=None,
+            ...     ):
+            ...         batch_size, seq_length = input_ids.shape
+            ...         hidden_states = self.embed_tokens(input_ids)
+            ...         for idx, (decoder_layer) in enumerate(self.layers):
+            ...             layer_outputs = decoder_layer(
+            ...                 hidden_states,
+            ...             )
+            ...             hidden_states = layer_outputs
+            ...         logits = paddle.matmul(hidden_states, self.weight)
+            ...         loss = None
+            ...         if labels is not None:
+            ...             masked_lm_loss = self.loss_func(
+            ...                 logits.astype("float32"),
+            ...                 labels.unsqueeze(2),
+            ...             )
+            ...             binary_sequence = paddle.where(
+            ...                 masked_lm_loss > 0,
+            ...                 paddle.ones_like(masked_lm_loss),
+            ...                 paddle.zeros_like(masked_lm_loss),
+            ...             )
+            ...             count = paddle.sum(binary_sequence)
+            ...             if count == 0:
+            ...                 loss = paddle.sum(masked_lm_loss * binary_sequence)
+            ...             else:
+            ...                 loss = paddle.sum(masked_lm_loss * binary_sequence) / count
+            ...         return (loss, logits)
+            >>> model = DemoNet()
+            >>> input_seqs = np.random.randint(
+            ...     low=0, high=1024, size=(BATCH_SIZE * BATCH_NUM, SEQ_LENGTH)
+            ... ).astype("int64")
+            >>> labels = np.random.randint(
+            ...     low=0, high=1024, size=(BATCH_SIZE * BATCH_NUM, SEQ_LENGTH)
+            ... ).astype("int64")
+            >>> dataset = RandomDataset(
+            ...     input_seqs, labels, BATCH_SIZE * BATCH_NUM
+            ... )
+            >>> sampler = paddle.io.BatchSampler(
+            ...     dataset, batch_size=BATCH_SIZE, shuffle=False, drop_last=True
+            ... )
+            >>> loader = paddle.io.DataLoader(
+            ...     dataset, batch_sampler=sampler
+            ... )
+            >>> opt = paddle.optimizer.SGD(
+            ...     learning_rate=0.1, parameters=model.parameters()
+            ... )
+            >>> input_seq_spec = paddle.static.InputSpec(
+            ...     [BATCH_SIZE, SEQ_LENGTH], 'float32', 'input_seq', True
+            ... )
+            >>> dist_config = ToDistributedConfig()
+            >>> dist_config.input_spec = [input_seq_spec]
+            >>> dist_config.sequence_parallel = True
+
+            >>> # # wrap model by using **to_distributed**
+            >>> dist_model, dist_opt, dist_loader = to_distributed(
+            ...     model,
+            ...     opt,
+            ...     loader,
+            ...     device_num,
+            ...     node_num,
+            ...     dist_config,
+            ... )
+
+            >>> for epoch in range(EPOCHES):
+            ...     dist_model.train()
+            ...     for i, data in enumerate(dist_loader()):
+            ...         inputs, labels = data
+            ...         loss, _ = dist_model(inputs, labels=labels)
+            ...         print(f"epoch {epoch}, step {i}: loss {loss}")
+            ...         loss.backward()
+            ...         dist_opt.step()
+            ...         dist_opt.clear_grad()
+
+    """
+    logger.debug(f'input model: {model}')
+    # paddle.distributed.init_parallel_env()
+
+    # step 1: identifying network structure and pattern recogincation
+    # step 1.1: register pre-hooks and post-hooks, thus recording corresponding static ops in following paddle.jit.to_static
     for layer in model.sublayers():
         pre_hook_helper = layer.register_forward_pre_hook(
             record_program_ops_pre_hook
@@ -243,15 +479,19 @@ def to_distributed(model, dataloader, optimizer, mesh, config):
         layer._op_recorder.hooks.append(pre_hook_helper)
         layer._op_recorder.hooks.append(post_hook_helper)
 
-    # # step_3: call @to_static, get program, and corresponding static ops of each layer
-    # (1) with FLAGS_enable_pir_api=False, get program based on var and op, default to False
-    # (2) with FLAGS_enable_pir_api=True, get pir program
+    # step 1.2: call @to_static, get program, and corresponding static ops of each layer
     static_func = paddle.jit.to_static(
         model.forward, input_spec=config.input_spec, full_graph=True
     )
     program = static_func.concrete_program.main_program
+    # currently, paddle.jit.to_static has side effects that will affect model.
+    # After fixing it, one line of code below can be dropped
+    static_func.rollback()
+    logger.debug(
+        f'Converted model to pir program: {program}, for pattern matching'
+    )
 
-    # # step_4: get the mapping [dynamic-layers : static ops]
+    # step 1.3: get the mapping [dynamic-layers : static ops]
     op_to_id = {}
     for idx, op in enumerate(program.global_block().ops):
         op_to_id[op] = idx
@@ -268,10 +508,11 @@ def to_distributed(model, dataloader, optimizer, mesh, config):
             ops_id.append(op_id)
         ops_id_to_layer[tuple(ops_id)] = layer
 
-    # # step_5: pattern recogincation
+    # step 1.4: pattern recogincation
     DECODER_LAYER_NAME = 'decoder_layer'
     register_used_patterns(DECODER_LAYER_NAME)
     results = match_all_patterns(program)
+    logger.debug(f'Matched decoder layer patterns are: {results}')
 
     matched_programs = {}
     for pattern_name, matched_patterns in results.items():
@@ -289,42 +530,54 @@ def to_distributed(model, dataloader, optimizer, mesh, config):
                 for pattern_op_id in pattern_ops_id:
                     assert (
                         pattern_op_id in matched_pattern.keys()
-                    ), "pattern not matched"
+                    ), f"please check ops_dist_infos of {pattern_name}, {pattern_op_id} not in matched_pattern: {matched_pattern.keys()}"
                     program_op_id = matched_pattern[pattern_op_id]
                     program_ops_id.append(program_op_id)
                 program_ops_dist_infos[tuple(program_ops_id)] = op_dist_info
             processed_patterns.append(program_ops_dist_infos)
         matched_programs[pattern_name] = processed_patterns
 
-    # Tensor Parallel
-    # # step_6: shard weight tensors in decoder blocks
-    num_hidden_layers = len(matched_programs[DECODER_LAYER_NAME])
-    for pattern_name, processed_patterns in matched_programs.items():
-        assert (
-            len(processed_patterns) == num_hidden_layers
-        ), "transformer patterns matched are incomplete"
-        for idx, processed_pattern in enumerate(processed_patterns):
-            local_mesh = mesh
-            if with_pp:
-                pp_stage_id = get_layer_pp_info(mesh, num_hidden_layers, idx)
-                local_mesh = mesh.get_mesh_with_dim("pp", pp_stage_id)
+    # step 2: calculate the optimal parallel strategies based on the network structure
+    mesh = cost_model(matched_programs, device_num, node_num)
+    logger.debug(f'mesh: {mesh}')
 
-            for program_ops_id, dist_infos in processed_pattern.items():
-                assert (
-                    program_ops_id in ops_id_to_layer.keys()
-                ), f"program_ops: {program_ops_id} is not corresponding to a dynamic layer"
-                dynamic_layer = ops_id_to_layer[program_ops_id]
-                mesh_num_dims = len(local_mesh.shape)
-                sharding_info = dist_infos.get_dist_info(mesh_num_dims)
-                dynamic_layer.weight = dist.shard_tensor(
-                    dynamic_layer.weight, local_mesh, sharding_info[0]
-                )
-                if dynamic_layer.bias is not None:
-                    dynamic_layer.bias = dist.shard_tensor(
-                        dynamic_layer.bias, local_mesh, sharding_info[1]
+    with_pp = True if "pp" in mesh.dim_names else False
+    with_mp = True if "mp" in mesh.dim_names else False
+    with_dp = True if "dp" in mesh.dim_names else False
+    with_sp = True if config.sequence_parallel else False
+
+    # step 3: processing tensor parallel if necessary, according to the optimal parallel strategies shard weight tensors in decoder blocks
+    if with_mp:
+        num_hidden_layers = len(matched_programs[DECODER_LAYER_NAME])
+        for pattern_name, processed_patterns in matched_programs.items():
+            assert (
+                len(processed_patterns) == num_hidden_layers
+            ), "transformer patterns matched are incomplete"
+            for idx, processed_pattern in enumerate(processed_patterns):
+                local_mesh = mesh
+                if with_pp:
+                    pp_stage_id = get_layer_pp_info(
+                        mesh, num_hidden_layers, idx
                     )
-    # Pipeline Parallel
-    # # step_7: reshard inputs of decoder blocks to next pp mesh b when switching from pp stage a to pp stage b
+                    local_mesh = mesh.get_mesh_with_dim("pp", pp_stage_id)
+
+                for program_ops_id, dist_infos in processed_pattern.items():
+                    assert (
+                        program_ops_id in ops_id_to_layer.keys()
+                    ), f"program_ops: {program_ops_id} is not corresponding to a dynamic layer"
+                    dynamic_layer = ops_id_to_layer[program_ops_id]
+                    mesh_num_dims = len(local_mesh.shape)
+                    sharding_info = dist_infos.get_dist_info(mesh_num_dims)
+                    dynamic_layer.weight = dist.shard_tensor(
+                        dynamic_layer.weight, local_mesh, sharding_info[0]
+                    )
+                    if dynamic_layer.bias is not None:
+                        dynamic_layer.bias = dist.shard_tensor(
+                            dynamic_layer.bias, local_mesh, sharding_info[1]
+                        )
+    logger.debug(f'after tensor parallel, model: {model}')
+
+    # step 4: processing pipeline parallel if necessary, reshard inputs of decoder blocks to next pp mesh b when switching from pp stage a to pp stage b
     if with_pp:
         decoder_layers = []
         for pattern_name, matched_all_patterns in results.items():
@@ -342,7 +595,7 @@ def to_distributed(model, dataloader, optimizer, mesh, config):
             num_decoder_blocks = len(decoder_layers)
             assert (
                 num_decoder_blocks == num_hidden_layers
-            ), "decoder pattern layers matched are incomplete"
+            ), f"decoder pattern layers matched are incomplete, num_decoder_blocks: {num_decoder_blocks} should be equal to num_hidden_layers: {num_hidden_layers}"
 
             pp_degree = mesh.get_dim_size("pp")
             num_blocks_per_stage = num_decoder_blocks // pp_degree
@@ -354,9 +607,9 @@ def to_distributed(model, dataloader, optimizer, mesh, config):
                 pre_hook_helper = decoder_layer.register_forward_pre_hook(
                     reshard_all_inputs
                 )
+    logger.debug(f'after pipeline parallel, model: {model}')
 
-    # Sequence Parallel
-    # # step_8: reshard or transpose sequence dims for inputs of attention/mlp inputs
+    # step 5: processing sequence parallel if necessary, reshard or transpose sequence dims for inputs of attention/mlp inputs
     if with_sp:
         clear_used_patterns()
         EMBEDDING_LAYER_NAME = "embedding"
@@ -389,6 +642,7 @@ def to_distributed(model, dataloader, optimizer, mesh, config):
                                 ops_id_to_layer[tuple(sorted(program_ops_id))]
                             ]
 
+        logger.debug(f'Matched attention/mlp layers are: {matched_layers}')
         # init mesh
         GLOBAL_MESH = []
         if with_pp:
@@ -457,9 +711,29 @@ def to_distributed(model, dataloader, optimizer, mesh, config):
                 reshard_transpose_rms_norm_layer_output
             )
 
-    # # step_9: clean layer_op recorder hooks
+    # step 6: processing data parallel if necessary, shard dataloader
+    # TODO(jeff41404): shard optimizer
+    if with_dp:
+        if with_pp:
+            first_stage_mesh = mesh.get_mesh_with_dim("pp", 0)
+            last_stage_mesh = mesh.get_mesh_with_dim("pp", 1)
+            loader = dist.shard_dataloader(
+                dataloader,
+                meshes=[first_stage_mesh, last_stage_mesh],
+                shard_dims="dp",
+            )
+        else:
+            loader = dist.shard_dataloader(
+                dataloader, meshes=[mesh], shard_dims="dp"
+            )
+    else:
+        loader = dist.shard_dataloader(
+            dataloader, meshes=[mesh], shard_dims=None
+        )
+
+    # step 7: clean layer_op recorder hooks
     for layer in model.sublayers():
         for hook_helper in layer._op_recorder.hooks:
             hook_helper.remove()
 
-    return model, loader, optimizer
+    return model, optimizer, loader
