@@ -1631,7 +1631,7 @@ void BindType(py::module *m) {
       });
 
   m->def("create_shaped_type",
-         [](Type &type, const std::vector<int> &shape) -> Type {
+         [](Type &type, const std::vector<int64_t> &shape) -> Type {
            if (type.isa<DenseTensorType>()) {
              DenseTensorType src_type = type.dyn_cast<DenseTensorType>();
              DenseTensorType dst_type =
