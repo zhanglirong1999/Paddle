@@ -787,7 +787,6 @@ def large_scale_sparse_pass(program, main_program, config, is_startup=False):
             persistable=False,
             dtype="int64",
             shape=[1, 1],
-            lod_level=0,
         )
 
         # insert grad split to ids and tensor op

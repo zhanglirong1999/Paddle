@@ -1427,7 +1427,7 @@ class FleetUtil:
 
                 >>> # below is part of example model
                 >>> label = paddle.static.data(name="click", shape=[-1, 1],\
-                ...     dtype="int64", lod_level=0)
+                ...     dtype="int64")
                 >>> emb = my_slot_net(slots, label) # emb can be fc layer of size 1
                 >>> similarity_norm = paddle.nn.functional.sigmoid(paddle.clip(\
                 ...     emb, min=-15.0, max=15.0), name="similarity_norm")\
@@ -1632,7 +1632,7 @@ class FleetUtil:
 
                 >>> # below is part of model
                 >>> label = paddle.static.data(name="click", shape=[-1, 1],\
-                ...     dtype="int64", lod_level=0)
+                ...     dtype="int64")
                 >>> emb = my_slot_net(slots, label) # emb can be fc layer of size 1
                 >>> similarity_norm = paddle.nn.functional.sigmoid(paddle.clip(\
                 ...     emb, min=-15.0, max=15.0), name="similarity_norm")\
