@@ -457,8 +457,9 @@ class IndicesPreservePass:
 class ValuePreservePass:
     OP_NAME_PREFIX = "preserved_value_"
 
-    def __init__(self, values):
+    def __init__(self, values, use_cinn_pass):
         self.values = values
+        self.use_cinn_pass = use_cinn_pass
 
     def apply(self, program):
         raise RuntimeError("Not implemented.")
@@ -523,9 +524,11 @@ class ValuePreservePass:
         return program
 
 
-class FusedBnAddActPass(ValuePreservePass):
+class FullGraphPreProcessPass(ValuePreservePass):
     def apply(self, program):
         program = paddle.base.libpaddle.pir.apply_bn_add_act_pass(program)
+        if self.use_cinn_pass:
+            program = paddle.base.libpaddle.pir.reduce_as_sum_pass(program)
         return program
 
 
@@ -1043,13 +1046,15 @@ class PartialProgramLayer:
         )
 
         # construct a runnable program.
-        fused_bn_add_act_pass = FusedBnAddActPass(
-            [inputs, params, targets, x_grad_value, p_grad_value, o_grad_value]
+        fused_bn_add_act_pass = FullGraphPreProcessPass(
+            [inputs, params, targets, x_grad_value, p_grad_value, o_grad_value],
+            cinn_is_enabled(self._build_strategy, self._backend),
         )
         forward_index_pass = IndicesPreservePass(
             [forward_end_idx, backward_start_op_index, backward_end_op_index],
             fused_bn_add_act_pass,
         )
+
         program = forward_index_pass(program)
         (
             inputs,

@@ -50,6 +50,7 @@
 #include "paddle/fluid/pir/dialect/operator/utils/op_yaml_info_parser.h"
 #include "paddle/fluid/pir/dialect/operator/utils/utils.h"
 #include "paddle/fluid/pir/transforms/general/common_subexpression_elimination_pass.h"
+#include "paddle/fluid/pir/transforms/general/dead_code_elimination_pass.h"
 #include "paddle/fluid/pir/transforms/gpu/fused_bn_add_act_pass.h"
 #include "paddle/fluid/pir/transforms/passes.h"
 #include "paddle/fluid/pir/utils/general_functions.h"
@@ -84,6 +85,7 @@
 #include "paddle/cinn/hlir/dialect/operator/transforms/add_cinn_pass.h"
 #include "paddle/cinn/hlir/dialect/operator/transforms/check_infer_symbolic_util.h"
 #include "paddle/cinn/hlir/dialect/operator/transforms/pir_to_py_code_converter.h"
+#include "paddle/cinn/hlir/dialect/operator/transforms/reduce_as_to_sum_pass.h"
 #include "paddle/cinn/hlir/framework/pir_compiler.h"
 #include "paddle/pir/include/dialect/shape/utils/shape_analysis.h"
 #endif
@@ -2511,6 +2513,26 @@ std::shared_ptr<Program> ApplyCommonSubexpressionEliminationPass(
   return program;
 }
 
+std::shared_ptr<Program> ApplyReduceAsToSumPass(
+    std::shared_ptr<Program> program) {
+#ifdef PADDLE_WITH_CINN
+  pir::PassManager pm(pir::IrContext::Instance(), 2);
+  pm.AddPass(cinn::dialect::ir::CreateReduceAsToSumPass());
+  pm.AddPass(pir::CreateDeadCodeEliminationPass());
+  pm.Run(program.get());
+  if (FLAGS_print_ir) {
+    std::cout << "IR After ReduceAsToSumPass -------------------" << std::endl;
+    std::cout << *program << std::endl;
+  }
+  return program;
+#else
+  PADDLE_THROW(common::errors::Unimplemented(
+      "Currently we only support ReduceAsToSumPass Pass for Pir under "
+      "@to_static, please "
+      "compile PaddlePaddle with CINN"));
+#endif
+}
+
 std::shared_ptr<Program> ApplyFusedBnAddActPass(
     std::shared_ptr<Program> program) {
   pir::PassManager pm(pir::IrContext::Instance(), 3);
@@ -2529,6 +2551,7 @@ void BindIrPass(pybind11::module *m) {
   m->def("infer_symbolic_shape_pass", InferSymbolicShapePass);
   m->def("apply_cse_pass", ApplyCommonSubexpressionEliminationPass);
   m->def("apply_bn_add_act_pass", ApplyFusedBnAddActPass);
+  m->def("reduce_as_sum_pass", ApplyReduceAsToSumPass);
 
   py::class_<Pass, std::shared_ptr<Pass>> pass(*m,
                                                "Pass",
