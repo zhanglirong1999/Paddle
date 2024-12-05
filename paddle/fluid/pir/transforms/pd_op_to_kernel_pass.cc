@@ -3520,7 +3520,9 @@ void ProcessBlock(
 std::unique_ptr<pir::Program> PdOpLowerToKernelPass(pir::Program* prog,
                                                     phi::Place place) {
   auto program = std::make_unique<pir::Program>(pir::IrContext::Instance());
-
+  if (FLAGS_print_ir) {
+    std::cout << "IR before lowering = " << *prog << std::endl;
+  }
   auto block = prog->block();
 
   pir::IrContext* ctx = pir::IrContext::Instance();
