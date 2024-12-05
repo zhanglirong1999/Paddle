@@ -386,10 +386,6 @@ bool CauseNewSymbolicShape(const ::pir::Operation& op) {
     return true;
   }
 
-  if (!HaveUnkDim(op)) {
-    return false;
-  }
-
   std::unordered_set<std::string> input_exprs = [&]() {
     std::unordered_set<std::string> res;
     for (const auto& input_value : op.operands_source()) {
