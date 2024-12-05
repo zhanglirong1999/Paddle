@@ -861,34 +861,6 @@ bool IsStaticShape(const Value& value) {
   return false;
 }
 
-static const char* kOpCallStack = "op_callstack";
-static const char* kSymShapeStr = "sym_shape_str";
-static const char* kResultName = "name";
-static const char* kStopGradient = "stop_gradient";
-
-InferSymbolicShapeCacheKey::InferSymbolicShapeCacheKey(
-    const Operation& op,
-    const std::vector<symbol::ShapeOrDataDimExprs>& input_shape_or_datas)
-    : InferSymbolicShapeCacheKey(
-          op.name(), input_shape_or_datas, op.attributes()) {}
-
-InferSymbolicShapeCacheKey::InferSymbolicShapeCacheKey(
-    const std::string& op_name,
-    const std::vector<symbol::ShapeOrDataDimExprs>& input_shape_or_datas,
-    const AttributeMap& attributes)
-    : op_name_(op_name), input_shape_or_datas_(input_shape_or_datas) {
-  // Keep attribute always in order.
-  std::map<std::string, ::pir::Attribute, std::less<>> order_attributes(
-      attributes.begin(), attributes.end());
-  attributes_.reserve(attributes.size());
-  for (const auto& [attr_name, attr_value] : order_attributes) {
-    if (!attr_value || attr_name == kOpCallStack || attr_name == kSymShapeStr ||
-        attr_name == kStopGradient || attr_name == kResultName)
-      continue;
-    attributes_.emplace_back(attr_name, attr_value);
-  }
-}
-
 std::size_t InferSymbolicShapeCacheKey::GetHashValue() const {
   const auto name_hash_func = std::hash<std::string>();
   const auto attr_hash_func = std::hash<pir::Attribute>();
@@ -907,12 +879,7 @@ std::size_t InferSymbolicShapeCacheKey::GetHashValue() const {
 bool InferSymbolicShapeCacheKey::operator==(
     const InferSymbolicShapeCacheKey& other) const {
   if (op_name_ != other.op_name_) return false;
-  if (attributes_.size() != other.attributes_.size()) return false;
-  for (std::size_t i = 0; i < attributes_.size(); ++i) {
-    if (attributes_[i].first != other.attributes_[i].first ||
-        attributes_[i].second != other.attributes_[i].second)
-      return false;
-  }
+  if (attributes_ != other.attributes_) return false;
   if (input_shape_or_datas_.size() != other.input_shape_or_datas_.size())
     return false;
   for (std::size_t i = 0; i < input_shape_or_datas_.size(); ++i) {
@@ -927,11 +894,10 @@ std::ostream& operator<<(std::ostream& os,
   os << "InferSymbolicShapeCacheKey - " << info.op_name_ << std::endl;
   if (!info.attributes_.empty()) {
     os << "  attrs: {";
-    for (std::size_t i = 0; i < info.attributes_.size() - 1; ++i) {
-      ::pir::IrPrinter(os).PrintAttribute(info.attributes_[i].second);
+    for (const auto& attr : info.attributes_) {
+      ::pir::IrPrinter(os).PrintAttribute(attr.second);
       os << ", ";
     }
-    ::pir::IrPrinter(os).PrintAttribute(info.attributes_.back().second);
     os << std::endl;
   }
   if (!info.input_shape_or_datas_.empty()) {
@@ -952,5 +918,4 @@ void InferSymbolicShapeCacheKey::SetInputShapeOrDatas(
     const std::vector<symbol::ShapeOrDataDimExprs>& input_shape_or_datas) {
   this->input_shape_or_datas_ = input_shape_or_datas;
 }
-
 }  // namespace pir

@@ -36,12 +36,12 @@ using InferSymbolicShapeCacheValue = std::vector<symbol::ShapeOrDataDimExprs>;
 class IR_API InferSymbolicShapeCacheKey {
  public:
   InferSymbolicShapeCacheKey(
-      const Operation& op,
-      const std::vector<symbol::ShapeOrDataDimExprs>& input_shape_or_datas);
-  InferSymbolicShapeCacheKey(
       const std::string& op_name,
       const std::vector<symbol::ShapeOrDataDimExprs>& input_shape_or_datas,
-      const AttributeMap& attributes);
+      const std::map<std::string, Attribute>& attributes)
+      : op_name_(op_name),
+        input_shape_or_datas_(input_shape_or_datas),
+        attributes_(attributes) {}
   bool operator==(const InferSymbolicShapeCacheKey& other) const;
   std::size_t GetHashValue() const;
   friend std::ostream& operator<<(std::ostream& os,
@@ -51,7 +51,7 @@ class IR_API InferSymbolicShapeCacheKey {
  private:
   std::string op_name_;
   std::vector<symbol::ShapeOrDataDimExprs> input_shape_or_datas_;
-  std::vector<std::pair<std::string, ::pir::Attribute>> attributes_;
+  std::map<std::string, Attribute> attributes_;
   const std::vector<symbol::ShapeOrDataDimExprs>& GetInputShapeOrDatas() const;
   void SetInputShapeOrDatas(
       const std::vector<symbol::ShapeOrDataDimExprs>& input_shape_or_datas);
