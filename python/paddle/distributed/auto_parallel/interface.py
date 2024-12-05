@@ -216,6 +216,9 @@ def recompute(op):
             self._op = op
 
         def __call__(self, *args, **kwargs):
+            block = paddle.static.default_main_program().global_block()
+            rc_begin_id = len(block.ops)
+
             with paddle.static.name_scope(
                 f'/auto_parallel/rc_{_g_recompute_idx}'
             ):
@@ -227,6 +230,13 @@ def recompute(op):
                     )
                 else:
                     output = self._op(*args, **kwargs)
+
+            if paddle.framework.in_pir_mode():
+                block = paddle.static.default_main_program().global_block()
+                rc_end_id = len(block.ops)
+                for idx in range(rc_begin_id, rc_end_id):
+                    rc_op = block.ops[idx]
+                    rc_op.set_int_attr("fwd_recompute_id", _g_recompute_idx)
 
             return output
 

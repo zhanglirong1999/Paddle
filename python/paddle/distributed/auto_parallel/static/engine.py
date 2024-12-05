@@ -805,6 +805,14 @@ class Engine:
         # re-run apply_mix2dist_pass to dist accumulator.
         apply_mix2dist_pass(dist_program)
 
+        if mode == "train" and self._strategy.recompute.enable:
+            auto_parallel_recompute_pir_pass = new_pass(
+                "auto_parallel_recompute_pir", {}
+            )
+            auto_parallel_recompute_pir_pass.apply(
+                [dist_program], [startup_program]
+            )
+
         # Part 2: Parallelism search (for full auto-parallel)
         # NOTE make all parallelis search logic work as Pass,
         # and all the Pass in this Part should be optional to allow consistence in dynamic and static mode.
