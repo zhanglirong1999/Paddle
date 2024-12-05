@@ -736,12 +736,17 @@ def replace_mid_values_with_forward_subgraph(
             define_op = recompute_value.get_defining_op()
             if define_op in marked_recompute_ops or define_op is None:
                 return
+            if define_op.name() in [
+                "builtin.parameter",
+                "pd_op.data",
+            ]:
+                if recompute_value not in needed_saved_values:
+                    needed_saved_values.add(recompute_value)
+                return
             op_inputs = define_op.operands_source()
             if len(op_inputs) == 0 and define_op.name() not in [
                 "pd_op.full",
                 "pd_op.full_int_array",
-                "builtin.parameter",
-                "pd_op.data",
             ]:
 
                 def getIdx(program, op):
