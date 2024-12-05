@@ -140,14 +140,6 @@ class ColWiseParallel(PlanBase):
         return gather_hook
 
     def apply(self, layer, process_mesh, shard_weight=True, shard_bias=True):
-        """
-        With calling of this function, parameters will be marked as split and turn in to shard_tensor.
-        :param layer: paddle.nn.Layer, layer to be split
-        :param process_mesh: dist.ProcessMesh, process_mesh where the split will work on
-        :param shard_weight: BOOL, whether shard the weight or not
-        :param shard_bias: BOOL, whether shard the weight or not
-        :return: no return, the shard will happen on the origin layer
-        """
         index = process_mesh.dim_names.index('mp')  # get the axis for the split
         size = len(process_mesh.shape)
         placement = [dist.Replicate() for _ in range(size)]
@@ -229,14 +221,6 @@ class RowWiseParallel(PlanBase):
         return split_hook
 
     def apply(self, layer, process_mesh, shard_weight=True, shard_bias=False):
-        """
-        With calling of this function, parameters will be marked as split and turn in to shard_tensor.
-        :param layer: paddle.nn.Layer, layer to be split
-        :param process_mesh: dist.ProcessMesh, process_mesh where the split will work on
-        :param shard_weight: BOOL, whether shard the weight or not
-        :param shard_bias: BOOL, whether shard the weight or not
-        :return: no return, the shard will happen on the origin layer
-        """
         index = process_mesh.dim_names.index('mp')  # get the axis for the split
         size = len(process_mesh.shape)
         placement = [dist.Replicate() for _ in range(size)]
