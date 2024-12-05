@@ -35,13 +35,11 @@ class TestDistCTR2x2(TestDistRunnerBase):
             name="dnn_data",
             shape=[-1, 1],
             dtype="int64",
-            lod_level=1,
         )
         lr_data = paddle.static.data(
             name="lr_data",
             shape=[-1, 1],
             dtype="int64",
-            lod_level=1,
         )
         label = paddle.static.data(
             name="click",

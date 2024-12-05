@@ -424,7 +424,6 @@ class TestDataset(unittest.TestCase):
                     name=str(feat_name),
                     shape=[-1, 1],
                     dtype='int64',
-                    lod_level=1,
                 )
             )
 
@@ -435,7 +434,6 @@ class TestDataset(unittest.TestCase):
                     name=str(feat_name),
                     shape=[-1, 1],
                     dtype='int64',
-                    lod_level=1,
                 )
             )
 
@@ -462,7 +460,6 @@ class TestDataset(unittest.TestCase):
                     name=str(feat_name),
                     shape=[-1, 1],
                     dtype='int64',
-                    lod_level=1,
                 )
             )
 
