@@ -884,10 +884,8 @@ def append_backward_ops(
                         after_ops_num = len(bwd_block.ops)
 
                         # update grad_op structure
-                        bwd_ops = [
-                            bwd_block.ops[i]
-                            for i in range(before_ops_num, after_ops_num)
-                        ]
+                        bwd_ops = bwd_block.ops[before_ops_num:after_ops_num]
+
                         # update input_grad map
                         update_input_grad_map(
                             op, input_grads, get_real_op_inputs(op)
@@ -907,10 +905,7 @@ def append_backward_ops(
                         after_ops_num = len(bwd_block.ops)
 
                         # update grad_op structure
-                        bwd_ops = [
-                            bwd_block.ops[i]
-                            for i in range(before_ops_num, after_ops_num)
-                        ]
+                        bwd_ops = bwd_block.ops[before_ops_num:after_ops_num]
 
                         # update input_grad map
                         update_input_grad_map(
