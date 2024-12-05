@@ -24,12 +24,8 @@ from paddle.tensorrt.converter_utils import (
     fill_constant_layer,
     get_axes_for_reduce_op,
     trt_cast,
-    trt_div,
     trt_expand,
-    trt_floor_div,
     trt_max,
-    trt_prod,
-    trt_sub,
 )
 from paddle.tensorrt.register import converter_registry
 
@@ -157,6 +153,8 @@ def clip_converter(network, paddle_op, inputs):
 @converter_registry.register("pd_op.remainder", trt_version="8.x")
 @converter_registry.register("pd_op.remainder_", trt_version="8.x")
 def remainder_converter(network, paddle_op, inputs):
+    from paddle.tensorrt.util import support_fp32_mix_precision
+
     weight_shape = paddle_op.operands()[1].source().shape
     input_shape = inputs[0].shape
 
@@ -178,22 +176,29 @@ def remainder_converter(network, paddle_op, inputs):
         input_tensor.name,
         weight_tensor.name,
     )
-
-    # Check if floor division is needed
     is_floor_div = input_tensor.dtype != trt.DataType.INT32
-
-    # Floor division
-    quotient = (
-        trt_floor_div(network, lhs_val, rhs_val)
-        if is_floor_div
-        else trt_div(network, lhs_val, rhs_val)
-    )
+    if is_floor_div:
+        quotient_layer = network.add_elementwise(
+            lhs_val, rhs_val, trt.ElementWiseOperation.FLOOR_DIV
+        )
+    else:
+        quotient_layer = network.add_elementwise(
+            lhs_val, rhs_val, trt.ElementWiseOperation.DIV
+        )
+    quotient = quotient_layer.get_output(0)
+    support_fp32_mix_precision(paddle_op.name(), quotient_layer)
 
     # Multiply rhs by the quotient
-    product = trt_prod(network, rhs_val, quotient)
-
-    # Subtract the product from lhs to get the remainder
-    remainder = trt_sub(network, lhs_val, product)
+    product_layer = network.add_elementwise(
+        rhs_val, quotient, trt.ElementWiseOperation.PROD
+    )
+    product = product_layer.get_output(0)
+    support_fp32_mix_precision(paddle_op.name(), product_layer)
+    remainder_layer = network.add_elementwise(
+        lhs_val, product, trt.ElementWiseOperation.SUB
+    )
+    remainder = remainder_layer.get_output(0)
+    support_fp32_mix_precision(paddle_op.name(), remainder_layer)
 
     return remainder
 
