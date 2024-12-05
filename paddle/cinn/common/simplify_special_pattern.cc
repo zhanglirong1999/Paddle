@@ -30,7 +30,7 @@ std::optional<ir::IndexExpr> DivMulAddModCornerCase(const ir::IndexExpr& lhs,
   auto rhsMod = rhs.As<ir::Mod>();
   if (!lhsMul || !rhsMod) return std::nullopt;
 
-  // Why inner is lhs of Mul? beacuse we sort by expr length, and the length of
+  // Why inner is lhs of Mul? because we sort by expr length, and the length of
   // inner is longer in this case.
   auto inner = lhsMul->a().as_index();
   auto mult_outer = lhsMul->b().as_index();

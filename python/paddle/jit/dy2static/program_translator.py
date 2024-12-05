@@ -700,7 +700,7 @@ class StaticFunction(Generic[_InputT, _RetT]):
     def __deepcopy__(self, memo):
         """
         Customized behavior for copy.deepcopy, return original decorated function instead
-        of a new StaticFunction Object. StaticFunction itself is not copyable becuase it's
+        of a new StaticFunction Object. StaticFunction itself is not copyable because it's
         associated with class_instance.
 
         We add __deepcopy__ here only for the following usage:
