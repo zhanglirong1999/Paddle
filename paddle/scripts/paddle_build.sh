@@ -1116,12 +1116,12 @@ function check_whl_size() {
     whldiffSize=`echo $(($pr_whl_size - $dev_whl_size))`
     if [ ${whldiffSize} -gt 10 ]; then
        approval_line=`curl -H "Authorization: token ${GITHUB_API_TOKEN}" https://api.github.com/repos/PaddlePaddle/Paddle/pulls/${GIT_PR_ID}/reviews?per_page=10000`
-       APPROVALS=`echo ${approval_line}|python ${PADDLE_ROOT}/tools/check_pr_approval.py 1 22334008 22361972`
+       APPROVALS=`echo ${approval_line}|python ${PADDLE_ROOT}/tools/check_pr_approval.py 1 zhangbo9674 risemeup1 phlrain`
        echo "current pr ${GIT_PR_ID} got approvals: ${APPROVALS}"
        if [ "${APPROVALS}" == "FALSE" ]; then
            echo "=========================================================================================="
            echo "This PR make the release paddlepaddle whl size growth exceeds 10 M."
-           echo "Then you must have one RD (jim19930609 (Recommend) or JiabinYang) approval for this PR\n"
+           echo "Then you must have one RD (zhangbo9674 or risemeup1 or phlrain) approval for this PR\n"
            echo "=========================================================================================="
            exit 6
        fi
