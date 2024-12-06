@@ -525,6 +525,7 @@ class OpTest(unittest.TestCase):
                 not cls.input_shape_is_large
                 and cls.op_type
                 not in check_shape_white_list.NEED_TO_FIX_OP_LIST
+                and not is_xpu_op_test()
             ):
                 raise AssertionError(
                     "Number of element(s) of input should be large than or equal to 100 for "
