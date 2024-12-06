@@ -48,7 +48,6 @@
 #include "paddle/pir/include/dialect/shape/utils/shape_analysis.h"
 
 PD_DECLARE_bool(cinn_use_cuda_vectorize);
-PD_DECLARE_bool(cinn_bucket_compile);
 PD_DECLARE_bool(cinn_check_tensor_buffer_map);
 const int default_priority = 100;
 
@@ -582,31 +581,25 @@ ir::Tensor OpLowererImpl::GetTensor(const OpLoweringGroupPtr& group,
     }
   };
 
-  if (FLAGS_cinn_bucket_compile) {
-    std::vector<ir::Dim> sym_shape;
-    ForEachDimExpr(
-        [&](const auto& sym) { sym_shape.emplace_back(input_id, sym); });
-    if (sym_shape.empty()) {
-      sym_shape.emplace_back(input_id, symbol::DimExpr{1});
-    }
-    auto tensor = lang::CreatePlaceHolder(
-        sym_shape, CompatibleInfo::ConvertIRType(dtype), input_id);
-    auto IsIntType = [](const ::pir::Type& t) {
-      return t.isa<::pir::Int32Type>() || t.isa<::pir::Int64Type>();
-    };
-    if (IsIntType(dtype) && group->HasShapeOrDataExprs(value)) {
-      const auto& tensor_value = details::GetTensorValueFromShapeOrData(
-          group->GetShapeOrDataExprs(value));
-      if (tensor_value.has_value()) {
-        tensor->set_value(*tensor_value);
-      }
-    }
-    return tensor;
-  } else {
-    auto shape = ::common::vectorize<int>(type_info.dims());
-    return lang::CreatePlaceHolder(
-        shape, CompatibleInfo::ConvertIRType(dtype), input_id);
+  std::vector<ir::Dim> sym_shape;
+  ForEachDimExpr(
+      [&](const auto& sym) { sym_shape.emplace_back(input_id, sym); });
+  if (sym_shape.empty()) {
+    sym_shape.emplace_back(input_id, symbol::DimExpr{1});
   }
+  auto tensor = lang::CreatePlaceHolder(
+      sym_shape, CompatibleInfo::ConvertIRType(dtype), input_id);
+  auto IsIntType = [](const ::pir::Type& t) {
+    return t.isa<::pir::Int32Type>() || t.isa<::pir::Int64Type>();
+  };
+  if (IsIntType(dtype) && group->HasShapeOrDataExprs(value)) {
+    const auto& tensor_value = details::GetTensorValueFromShapeOrData(
+        group->GetShapeOrDataExprs(value));
+    if (tensor_value.has_value()) {
+      tensor->set_value(*tensor_value);
+    }
+  }
+  return tensor;
 }
 
 std::vector<ir::Tensor> OpLowererImpl::CollectInputTensor(
