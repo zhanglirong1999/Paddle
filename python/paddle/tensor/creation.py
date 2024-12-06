@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import math
 import re
+import warnings
 from typing import TYPE_CHECKING, Any, overload
 
 import numpy as np
@@ -931,6 +932,18 @@ def to_tensor(
     if place is None:
         place = _current_expected_place_()
     if in_dynamic_mode():
+        is_tensor = paddle.is_tensor(data)
+        if not is_tensor and hasattr(data, "__cuda_array_interface__"):
+            if not core.is_compiled_with_cuda():
+                raise RuntimeError(
+                    "PaddlePaddle is not compiled with CUDA, but trying to create a Tensor from a CUDA array."
+                )
+            return core.tensor_from_cuda_array_interface(data)
+        if is_tensor:
+            warnings.warn(
+                "To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach(), "
+                "rather than paddle.to_tensor(sourceTensor)."
+            )
         return _to_tensor_non_static(data, dtype, place, stop_gradient)
 
     # call assign for static graph

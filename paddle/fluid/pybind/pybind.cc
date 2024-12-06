@@ -36,6 +36,7 @@ limitations under the License. */
 #include <utility>
 #include <vector>
 
+#include "paddle/common/ddim.h"
 #include "paddle/fluid/framework/compiled_program.h"
 #include "paddle/fluid/framework/convert_utils.h"
 #include "paddle/fluid/framework/custom_operator.h"
@@ -75,9 +76,11 @@ limitations under the License. */
 #include "paddle/fluid/prim/utils/utils.h"
 #include "paddle/phi/common/bfloat16.h"
 #include "paddle/phi/common/float16.h"
+#include "paddle/phi/common/int_array.h"
 #include "paddle/phi/core/framework/reader.h"
 #include "paddle/phi/core/memory/allocation/allocator_strategy.h"
 #include "paddle/phi/core/raw_tensor.h"
+#include "paddle/phi/core/tensor_meta.h"
 #if defined(PADDLE_WITH_CUDA) || defined(PADDLE_WITH_HIP)
 #include "paddle/phi/core/memory/allocation/auto_growth_best_fit_allocator_v2.h"
 #include "paddle/phi/core/memory/allocation/cuda_ipc_allocator.h"
@@ -1257,6 +1260,101 @@ PYBIND11_MODULE(libpaddle, m) {
 
     PyCapsule_SetName(data.ptr(), "used_dltensor");
     return ptensor;
+  });
+
+  m.def("tensor_from_cuda_array_interface", [](py::object obj) {
+    // We use CUDA Array Interface (Version 2) protocol:
+    // https://numba.pydata.org/numba-doc/dev/cuda/cuda_array_interface.html
+    py::object cuda_array_interface = obj.attr("__cuda_array_interface__");
+    PADDLE_ENFORCE_EQ(py::isinstance<py::dict>(cuda_array_interface),
+                      true,
+                      common::errors::InvalidArgument(
+                          "`__cuda_array_interface` must be a dict"));
+    py::dict cuda_dict = cuda_array_interface.cast<py::dict>();
+
+    // Extract the `obj.__cuda_array_interface__['shape']` attribute
+    PADDLE_ENFORCE_EQ(
+        cuda_dict.contains("shape"),
+        true,
+        common::errors::InvalidArgument(
+            "The 'shape' key is missing in the __cuda_array_interface__  "
+            "dict."));
+    py::object shape_obj = cuda_dict["shape"];
+    PADDLE_ENFORCE_EQ(
+        py::isinstance<py::tuple>(shape_obj) ||
+            py::isinstance<py::list>(shape_obj),
+        true,
+        common::errors::InvalidArgument("Shape must be a tuple or list"));
+    std::vector<int64_t> shapes;
+    shapes = shape_obj.cast<std::vector<int64_t>>();
+    phi::IntArray shapeIntArray = phi::IntArray(shapes);
+
+    // Extract the `obj.__cuda_array_interface__['typestr'] attribute
+    PADDLE_ENFORCE_EQ(
+        cuda_dict.contains("typestr"),
+        true,
+        common::errors::InvalidArgument(
+            "The 'typestr' key is missing in the __cuda_array_interface__  "
+            "dict."));
+    py::object typestr_obj = cuda_dict["typestr"];
+    std::string typestr = typestr_obj.cast<std::string>();
+    phi::DataType dtype = paddle::framework::ConvertToPDDataType(typestr);
+
+    // Extract the `obj.__cuda_array_interface__['data']` attribute
+    PADDLE_ENFORCE_EQ(
+        cuda_dict.contains("data"),
+        true,
+        common::errors::InvalidArgument(
+            "The 'data' key is missing in the __cuda_array_interface__  "
+            "dict."));
+    py::object data_obj = cuda_dict["data"];
+    py::tuple data_tuple = data_obj.cast<py::tuple>();
+
+    // Data tuple(ptr_as_int, read_only_flag).
+    // The ptr_as_int stands for data pointer but in Python it is a integer.
+    // It need to be converted to a large enough integral type first
+    // and then convert to void*
+    void *data_ptr = reinterpret_cast<void *>(data_tuple[0].cast<intptr_t>());
+    PADDLE_ENFORCE_NE(
+        data_tuple[1].cast<bool>(),
+        true,
+        common::errors::InvalidArgument("Read-only array is not supported"));
+
+    // Extract the `obj.__cuda_array_interface__['strides']` attribute
+    phi::IntArray stridesIntArray;
+    if (cuda_dict.contains("strides") && !cuda_dict["strides"].is_none()) {
+      std::vector<int64_t> strides_vec =
+          cuda_dict["strides"].cast<std::vector<int64_t>>();
+
+      // __cuda_array_interface__ strides uses bytes
+      size_t element_size = phi::SizeOf(dtype);
+      for (auto &stride : strides_vec) {
+        PADDLE_ENFORCE_NE(
+            stride % element_size,
+            0,
+            common::errors::InvalidArgument(
+                "strides must be a multiple of the element size."));
+        stride /= element_size;
+      }
+      stridesIntArray = phi::IntArray(strides_vec);
+    } else {
+      DDim ddim_strides =
+          phi::DenseTensorMeta::calc_strides(common::make_ddim(shapes));
+      int rank = ddim_strides.size();
+      const int64_t *ddim_data = ddim_strides.Get();
+      std::vector<int64_t> strides_vec(ddim_data, ddim_data + rank);
+      stridesIntArray = phi::IntArray(strides_vec);
+    }
+    return paddle::from_blob(data_ptr,
+                             shapeIntArray,
+                             stridesIntArray,
+                             dtype,
+                             phi::DataLayout::NCHW,
+                             phi::Place(),
+                             [obj](void *data) {
+                               py::gil_scoped_acquire gil;
+                               obj.dec_ref();
+                             });
   });
 
   m.def("_create_loaded_parameter",
