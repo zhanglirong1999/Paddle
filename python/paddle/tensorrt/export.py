@@ -37,7 +37,7 @@ from paddle.nn import Layer
 from paddle.tensorrt.converter import PaddleToTensorRTConverter
 from paddle.tensorrt.util import (
     forbid_op_lower_trt,
-    mark_buitlin_op,
+    mark_builtin_op,
     run_pir_pass,
     warmup_shape_infer,
 )
@@ -267,7 +267,7 @@ def convert_to_trt(program, trt_config, scope):
             forbid_op_lower_trt(program, trt_config.disable_ops)
 
         # Adding marker labels to builtin ops facilitates convert processing, but they ultimately do not enter the TensorRT subgraph.
-        mark_buitlin_op(program)
+        mark_builtin_op(program)
 
         # run pir pass (including trt_sub_graph_extract_pass)
         program_with_pir = run_pir_pass(program, partition_mode=True)

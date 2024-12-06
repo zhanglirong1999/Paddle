@@ -966,7 +966,7 @@ static PyObject *builtin_combine_op(PyObject *self,
                                     PyObject *args,
                                     PyObject *kwargs) {
   try {
-    VLOG(6) << "Add buitin_combine op into program";
+    VLOG(6) << "Add builtin_combine op into program";
     VLOG(8) << "args count: " << (PyTuple_Size(args) / 2);
     // Get Value from args
     PyObject *x_obj = PyTuple_GET_ITEM(args, 0);

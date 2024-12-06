@@ -25,7 +25,7 @@ from paddle.tensorrt.export import (
     TensorRTConfig,
 )
 from paddle.tensorrt.util import (
-    mark_buitlin_op,
+    mark_builtin_op,
     run_pir_pass,
     warmup_shape_infer,
 )
@@ -247,7 +247,7 @@ class TensorRTBaseTest(unittest.TestCase):
             main_program = run_pir_pass(main_program, partition_mode=False)
 
             # Adding marker labels to builtin ops facilitates convert processing, but they ultimately do not enter the TensorRT subgraph.
-            mark_buitlin_op(main_program)
+            mark_builtin_op(main_program)
 
             # run trt_sub_graph_extract_pass()
             program_with_trt = run_pir_pass(main_program, partition_mode=True)
