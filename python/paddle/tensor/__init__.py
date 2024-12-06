@@ -500,6 +500,7 @@ tensor_method_func = [
     'bincount',
     'mv',
     'matrix_power',
+    'matrix_transpose',
     'qr',
     'householder_product',
     'pca_lowrank',
