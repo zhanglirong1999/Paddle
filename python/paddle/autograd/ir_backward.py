@@ -233,13 +233,11 @@ def prepare_grad_outputs(grad_outputs, outputs, state):
         else:
             if output.shape != grad.shape:
                 raise ValueError(
-                    "The shape of grad_output[%d] %s should be the same as the shape of output[%d] %s"
-                    % (i, str(grad.shape), i, str(output.shape))
+                    f"The shape of grad_output[{i}] {grad.shape} should be the same as the shape of output[{i}] {output.shape}"
                 )
             if output.dtype != grad.dtype:
                 warnings.warn(
-                    "The dtype of grad_output[%d] %s is not same as the dtype of output[%d] %s"
-                    % (i, str(grad.dtype), i, str(output.dtype))
+                    f"The dtype of grad_output[{i}] {grad.dtype} is not same as the dtype of output[{i}] {output.dtype}"
                 )
             feedop = grad.get_defining_op()
             update_bwdop_structure(

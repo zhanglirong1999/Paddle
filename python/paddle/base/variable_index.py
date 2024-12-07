@@ -297,8 +297,7 @@ def parse_index(x, indices):
                 # the unpack size would cause error.
                 # We raises IndexError here to support grammar like `a, b = var`
                 raise IndexError(
-                    "slice_item %d at dim %d should be >= 0 and < x.shape[%d]: %d"
-                    % (slice_item, dim, dim, x.shape[dim])
+                    f"slice_item {slice_item} at dim {dim} should be >= 0 and < x.shape[{dim}]: {x.shape[dim]}"
                 )
             # not calculate result to reduce call times for slice OP.
             decrease_axes.append(dim)

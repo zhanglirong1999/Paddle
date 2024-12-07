@@ -1146,7 +1146,7 @@ def _append_backward_ops_with_checkpoints_(
             grad_to_var.update(op_grad_to_var)
 
         ff_ops = ops[segment[0] : segment[1]]
-        var_suffix = ".subprog_%d" % i
+        var_suffix = f".subprog_{i}"
 
         for op in ff_ops:
             if op.has_attr("sub_block"):

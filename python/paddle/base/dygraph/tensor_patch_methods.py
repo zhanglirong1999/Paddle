@@ -76,8 +76,7 @@ class TensorHookRemoveHelper:
                 return True
             else:
                 warnings.warn(
-                    "The backward hook (ID: %d) of Tensor `%s` you want to remove does not exist or has been removed."
-                    % (self._hook_id, tensor.name),
+                    f"The backward hook (ID: {self._hook_id}) of Tensor `{tensor.name}` you want to remove does not exist or has been removed.",
                     RuntimeWarning,
                 )
         return False
