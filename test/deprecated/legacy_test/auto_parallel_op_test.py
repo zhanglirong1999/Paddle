@@ -404,7 +404,7 @@ def dims_map_to_placements(
             if placement.is_shard():
                 placement = cast(dist.Shard, placement)
                 raise RuntimeError(
-                    f"DeviceMesh dimension cann't be mapped to two dimension of the same tensor: {i} and {placement.dim}"
+                    f"DeviceMesh dimension can't be mapped to two dimension of the same tensor: {i} and {placement.dim}"
                 )
             elif placement.is_partial():
                 raise RuntimeError(

@@ -1840,7 +1840,7 @@ def infershape_for_composite(block, grad_op_desc):
                 for name, args in grad_op_desc.outputs().items()
             },
             # NOTE Runtime attr will be ignore as the c++ GetRuntimeAttr
-            # interface cann't be exported to python. Please note the WARNING
+            # interface can't be exported to python. Please note the WARNING
             # message logged in RuntimeAttrs of composite_grad_desc_maker.h
             attrs=grad_op_desc.get_attr_map(),
         )

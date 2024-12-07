@@ -5553,7 +5553,7 @@ class IrGraph:
 
         Args:
             name(str): the name of the persistable variable node.
-            vart_type(core.VarDesc.VarType): the type of the persistable variable node.
+            var_type(core.VarDesc.VarType): the type of the persistable variable node.
             shape(list): the shape of the persistable variable node.
             var_dtype(core.VarDesc.VarType): the data type of the persistable variable node.
 
@@ -5574,7 +5574,7 @@ class IrGraph:
 
         Args:
             name(str): the name of the variable node.
-            vart_type(core.VarDesc.VarType): the type of the variable node.
+            var_type(core.VarDesc.VarType): the type of the variable node.
             shape(list): the shape of the variable node.
             var_dtype(core.VarDesc.VarType): the data type of the variable node.
 
@@ -6849,7 +6849,7 @@ class Program:
         res.blocks = [Block(res, i) for i in range(res.desc.num_blocks())]
         res._sync_with_cpp()
 
-        # Note: The op_role and op_role_var cann't be deleted currently,
+        # Note: The op_role and op_role_var can't be deleted currently,
         # and we will try to remove them in the future.
         common_clipped_attrs_list = ["op_callstack", "with_quant_attr"]
 
