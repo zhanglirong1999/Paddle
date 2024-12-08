@@ -76,3 +76,5 @@ if(WITH_DISTRIBUTE AND WITH_GPU)
 endif()
 py_test_modules(test_pir_1f1b_plan MODULES test_pir_1f1b_plan ENVS
                 FLAGS_enable_pir_api=1)
+py_test_modules(test_pir_reshard_p_to_s MODULES test_pir_reshard_p_to_s ENVS
+                FLAGS_enable_pir_api=1)
