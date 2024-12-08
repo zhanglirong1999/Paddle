@@ -71,7 +71,7 @@ class TestDistCTR2x2(TestDistRunnerBase):
                 weight_attr=base.ParamAttr(
                     initializer=paddle.nn.initializer.Constant(value=0.01)
                 ),
-                name='dnn-fc-%d' % i,
+                name=f'dnn-fc-{i}',
             )
             dnn_out = fc
 
