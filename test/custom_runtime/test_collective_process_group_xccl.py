@@ -70,7 +70,7 @@ def start_local_trainers(
 
         print(f"start trainer proc:{cmd} env:{proc_env}")
 
-        fn = open("workerlog.%d" % idx, "a")
+        fn = open(f"workerlog.{idx}", "a")
         proc = subprocess.Popen(
             cmd.split(" "), env=current_env, stdout=fn, stderr=fn
         )
