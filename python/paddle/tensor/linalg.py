@@ -162,8 +162,8 @@ def transpose(
             if dim >= len(x.shape):
                 raise ValueError(
                     "Each element in Input(perm) should be less than Input(x)'s dimension, "
-                    "but %d-th element in Input(perm) is %d which exceeds Input(x)'s "
-                    "dimension %d." % (idx, perm[idx], len(x.shape))
+                    f"but {idx}-th element in Input(perm) is {perm[idx]} which exceeds Input(x)'s "
+                    f"dimension {len(x.shape)}."
                 )
 
         helper = LayerHelper('transpose', **locals())
@@ -5560,7 +5560,7 @@ def histogramdd(
         check_type(ranges, 'ranges', (list, tuple), 'histogramdd')
         assert D * 2 == len(
             ranges
-        ), "The length of ranges list must be %d\n" % (D * 2)
+        ), f"The length of ranges list must be {D * 2}\n"
 
     check_type(density, 'density', bool, 'histogramdd')
 
@@ -5574,9 +5574,7 @@ def histogramdd(
     if weights is not None:
         weights = weights.astype(x.dtype)
         reshaped_weights = weights.reshape([N])
-        assert reshaped_weights.shape[0] == N, (
-            "The size of weight must be %d" % N
-        )
+        assert reshaped_weights.shape[0] == N, f"The size of weight must be {N}"
     # ranges
     __check_ranges(D, ranges)
     if ranges is None:
@@ -5599,13 +5597,13 @@ def histogramdd(
     if isinstance(bins, (int, list)):  # int or int[]
         if isinstance(bins, int):
             bins = [bins] * D
-        assert len(bins) == D, (
-            "The length of bins must be %d when bins is a list.\n" % D
-        )
+        assert (
+            len(bins) == D
+        ), f"The length of bins must be {D} when bins is a list.\n"
         for idx, r in enumerate(ranges):
             if not isinstance(bins[idx], int):
                 raise ValueError(
-                    "The type of %d-th element in bins list must be int." % idx
+                    f"The type of {idx}-th element in bins list must be int."
                 )
             e = paddle.linspace(r[0], r[1], bins[idx] + 1, x.dtype)
             edges.append(e)
@@ -5931,19 +5929,17 @@ def diagonal(
             axis1_ = axis1 if axis1 >= 0 else len(input_shape) + axis1
             axis2_ = axis2 if axis2 >= 0 else len(input_shape) + axis2
 
-            assert axis1_ < len(input_shape), (
-                "The argument axis1 is out of range (expected to be in range of [%d, %d], but got %d).\n"
-                % (-(len(input_shape)), len(input_shape) - 1, axis1)
-            )
+            assert axis1_ < len(
+                input_shape
+            ), f"The argument axis1 is out of range (expected to be in range of [{-(len(input_shape))}, {len(input_shape) - 1}], but got {axis1}).\n"
 
-            assert axis2_ < len(input_shape), (
-                "The argument axis2 is out of range (expected to be in range of [%d, %d], but got %d).\n"
-                % (-(len(input_shape)), len(input_shape) - 1, axis2)
-            )
+            assert axis2_ < len(
+                input_shape
+            ), f"The argument axis2 is out of range (expected to be in range of [{-(len(input_shape))}, {len(input_shape) - 1}], but got {axis2}).\n"
 
             assert axis1_ != axis2_, (
                 "axis1 and axis2 cannot be the same axis."
-                "But received axis1 = %d, axis2 = %d\n" % (axis1, axis2)
+                f"But received axis1 = {axis1}, axis2 = {axis2}\n"
             )
 
         __check_input(x, offset, axis1, axis2)

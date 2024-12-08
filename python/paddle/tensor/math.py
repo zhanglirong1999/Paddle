@@ -2365,8 +2365,8 @@ def mm(input: Tensor, mat2: Tensor, name: str | None = None) -> Tensor:
                     raise ValueError(
                         "When the matrix is larger than 2 dimensions, the higher "
                         "dimensional values of the two matrices need to be equal. "
-                        "But received x_shape[%d] != y_shape[%d]. X's shape: %s, "
-                        "Y's shape: %s.\n" % (i, i, x_shape, y_shape)
+                        f"But received x_shape[{i}] != y_shape[{i}]. X's shape: {x_shape}, "
+                        f"Y's shape: {y_shape}.\n"
                     )
 
     __check_input(input, mat2)
@@ -2890,8 +2890,8 @@ def inverse(x: Tensor, name: str | None = None) -> Tensor:
             if len(x.shape) < 2:
                 raise ValueError(
                     "The input of inverse is expected to be a Tensor whose number "
-                    "of dimensions is no less than 2. But received: %d, "
-                    "x's shape: %s." % (len(x.shape), x.shape)
+                    f"of dimensions is no less than 2. But received: {len(x.shape)}, "
+                    f"x's shape: {x.shape}."
                 )
 
         _check_input(x)
@@ -3956,19 +3956,17 @@ def trace(
         axis1_ = axis1 if axis1 >= 0 else len(input_shape) + axis1
         axis2_ = axis2 if axis2 >= 0 else len(input_shape) + axis2
 
-        assert (0 <= axis1_) and (axis1_ < len(input_shape)), (
-            "The argument axis1 is out of range (expected to be in range of [%d, %d], but got %d).\n"
-            % (-(len(input_shape)), len(input_shape) - 1, axis1)
-        )
+        assert (0 <= axis1_) and (
+            axis1_ < len(input_shape)
+        ), f"The argument axis1 is out of range (expected to be in range of [{-(len(input_shape))}, {len(input_shape) - 1}], but got {axis1}).\n"
 
-        assert (0 <= axis2_) and (axis2_ < len(input_shape)), (
-            "The argument axis2 is out of range (expected to be in range of [%d, %d], but got %d).\n"
-            % (-(len(input_shape)), len(input_shape) - 1, axis2)
-        )
+        assert (0 <= axis2_) and (
+            axis2_ < len(input_shape)
+        ), f"The argument axis2 is out of range (expected to be in range of [{-(len(input_shape))}, {len(input_shape) - 1}], but got {axis2}).\n"
 
         assert axis1_ != axis2_, (
             "axis1 and axis2 cannot be the same axis."
-            "But received axis1 = %d, axis2 = %d\n" % (axis1, axis2)
+            f"But received axis1 = {axis1}, axis2 = {axis2}\n"
         )
 
     if in_dynamic_or_pir_mode():
@@ -7206,7 +7204,7 @@ def vander(
     if x.dim() != 1:
         raise ValueError(
             "The input of x is expected to be a 1-D Tensor."
-            "But now the dims of Input(X) is %d." % x.dim()
+            f"But now the dims of Input(X) is {x.dim()}."
         )
 
     if n is None:

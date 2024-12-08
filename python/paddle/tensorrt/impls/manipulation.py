@@ -193,10 +193,9 @@ def unsqueeze_converter(network, paddle_op, inputs):
     x = inputs[0]
     input_dims = x.shape
     axes = paddle_op.operands()[1].source().get_defining_op().attrs()["value"]
-    assert len(axes) > 0, (
-        "axes size should be > 0 in when convert unsqueeze op in TensorRT, but received len(axes) = %d."
-        % (len(axes))
-    )
+    assert (
+        len(axes) > 0
+    ), f"axes size should be > 0 in when convert unsqueeze op in TensorRT, but received len(axes) = {len(axes)}."
 
     should_unsqueeze = [False] * (len(input_dims) + len(axes))
     cur_out_rank = len(input_dims)
@@ -352,10 +351,7 @@ def slice_converter(network, paddle_op, inputs):
         starts = starts_op.attrs()["value"]
         assert len(starts) == len(
             axes
-        ), "The size of this starts: %d must be equal to the axes: %d." % (
-            len(starts),
-            len(axes),
-        )
+        ), f"The size of this starts: {len(starts)} must be equal to the axes: {len(axes)}."
         for idx in range(len(axes)):
             if starts[idx] < 0:
                 starts_tensor[axes[idx]] = trt_max(
@@ -388,10 +384,7 @@ def slice_converter(network, paddle_op, inputs):
         ends = ends_op.attrs()["value"]
         assert len(ends) == len(
             axes
-        ), "The size of this ends: %d must be equal to the axes: %d." % (
-            len(ends),
-            len(axes),
-        )
+        ), f"The size of this ends: {len(ends)} must be equal to the axes: {len(axes)}."
         for idx in range(len(axes)):
             if ends[idx] < 0:
                 ends_tensor[axes[idx]] = trt_max(

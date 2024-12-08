@@ -225,8 +225,7 @@ def custom_write_stub(resource, pyfile):
         for op_name in new_custom_ops:
             api_content.append(_custom_api_content(op_name))
         print(
-            "Received len(custom_op) =  %d, using custom operator"
-            % len(new_custom_ops)
+            f"Received len(custom_op) = {len(new_custom_ops)}, using custom operator"
         )
 
     with open(pyfile, 'w') as f:

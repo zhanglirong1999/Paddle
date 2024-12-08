@@ -263,9 +263,9 @@ def trt_reshape(network, input, new_shape, name="", is_shape_tensor=False):
 
 # Get element tensor of 1D shape tensor
 def get_shape_tensor_element(network, x, index, is_scalar=False):
-    assert index >= 0, (
-        "The index should be greater or equal than 0, but got %d" % index
-    )
+    assert (
+        index >= 0
+    ), f"The index should be greater or equal than 0, but got {index}"
     index_tensor = add_1D_constant_layer(network, index, is_scalar=is_scalar)
     gather_layer = network.add_gather(input=x, indices=index_tensor, axis=0)
     return gather_layer.get_output(0)
