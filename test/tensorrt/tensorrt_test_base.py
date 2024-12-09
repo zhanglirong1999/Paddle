@@ -22,6 +22,7 @@ from paddle.base import core
 from paddle.tensorrt.converter import PaddleToTensorRTConverter
 from paddle.tensorrt.export import (
     Input,
+    PrecisionMode,
     TensorRTConfig,
 )
 from paddle.tensorrt.util import (
@@ -261,7 +262,7 @@ class TensorRTBaseTest(unittest.TestCase):
                     max_input_shape=self.max_shape,
                 )
                 trt_config = TensorRTConfig(inputs=[input])
-                trt_config.tensorrt_precision_mode = "FP16"
+                trt_config.precision_mode = PrecisionMode.FP16
 
             converter = PaddleToTensorRTConverter(
                 program_with_trt, scope, trt_config

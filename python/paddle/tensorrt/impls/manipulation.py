@@ -22,7 +22,6 @@ from paddle.tensorrt.converter_utils import (
     cast_tensor,
     fix_negative_indices,
     get_axes_for_reduce_op,
-    get_positive_dim,
     get_shape_tensor_element,
     has_dynamic_shape,
     resize_to_1d,
@@ -246,21 +245,58 @@ def squeeze_converter(network, paddle_op, inputs):
     input_shape = input_val.shape
     input_shape_size = len(input_shape)
 
-    if type(input_val) == trt.Weights:
+    # If input is weights, convert to TensorRT tensor
+    if isinstance(input_val, trt.Weights):
         input_val = network.add_constant(input_shape, input_val).get_output(0)
 
-    axis = paddle_op.operands()[1].source().get_defining_op().attrs()["value"]
-    axis = axis[0]
+    # Get axis
+    axis = (
+        paddle_op.operands()[1]
+        .source()
+        .get_defining_op()
+        .attrs()
+        .get("value", [])
+    )
 
-    axis = get_positive_dim(axis, input_shape_size + 1)
-    output_shape = []
-    for i, s in enumerate(input_shape):
-        if i == axis and s == 1:
-            continue
-        output_shape.append(s)
+    if not axis:
+        for i in range(input_shape_size):
+            if input_shape[i] == -1:
+                raise RuntimeError(
+                    "The necessary attributes of the squeeze operator axis is missing"
+                )
+            elif input_shape[i] == 1:
+                axis.append(i)
+    else:
+        # Verify that each axis to squeeze has size 1
+        for a in axis:
+            if a < 0:
+                a += input_shape_size
+            if input_shape[a] != 1:
+                raise RuntimeError(
+                    f"Cannot squeeze dimension {a} with size {input_shape[a]}. Only dimensions with size 1 can be squeezed."
+                )
 
+    axes_size = len(axis)
+    if axes_size == 0:
+        raise RuntimeError(
+            f"axis.size should be >0 in pd_op.squeeze op in TensorRT, but received {axes_size}"
+        )
+    # Mark which dimensions to squeeze
+    should_squeeze = [False] * input_shape_size
+    for a in axis:
+        should_squeeze[a] = True
+
+    # Get dimensions to keep
+    gather_indices = [
+        i for i, squeeze in enumerate(should_squeeze) if not squeeze
+    ]
+
+    # Add Shuffle layer
     layer = network.add_shuffle(input_val)
-    layer.reshape_dims = tuple(output_shape)
+    shape_tensor = trt_shape(network, input_val)
+    real_shape_tensor = trt_gather(network, shape_tensor, gather_indices)
+    layer.set_input(1, real_shape_tensor)
+
     return layer.get_output(0)
 
 
