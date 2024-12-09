@@ -775,7 +775,7 @@ void HandleComplexGradToRealGrad(const OpFuncNode& op_func_node,
         continue;
       }
       auto* grad_tensor =
-          framework::GetMutableLoDTensorOrSelectedRowsValueFromVar(grad_var);
+          framework::GetMutableDenseTensorOrSelectedRowsValueFromVar(grad_var);
       // skip nullptr tensor
       if (grad_tensor == nullptr || !grad_tensor->IsInitialized()) {
         VLOG(3) << "skip with grad_tensor not IsInitialized";

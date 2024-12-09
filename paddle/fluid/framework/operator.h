@@ -133,7 +133,8 @@ inline bool VarIsTensor(const Variable& var) {
 
 const phi::DenseTensor* GetDenseTensorOrSelectedRowsValueFromVar(
     const Variable& var);
-phi::DenseTensor* GetMutableLoDTensorOrSelectedRowsValueFromVar(Variable* var);
+phi::DenseTensor* GetMutableDenseTensorOrSelectedRowsValueFromVar(
+    Variable* var);
 
 class ExecutionContext;
 class OperatorBase;

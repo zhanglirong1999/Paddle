@@ -318,7 +318,7 @@ TEST(VarNameTest, all) {
 namespace paddle {
 namespace framework {
 
-class IndicateLoDTensorDataTypeTest : public OperatorWithKernel {
+class IndicateDenseTensorDataTypeTest : public OperatorWithKernel {
  public:
   using OperatorWithKernel::OperatorWithKernel;
 
@@ -332,7 +332,8 @@ class IndicateLoDTensorDataTypeTest : public OperatorWithKernel {
   }
 };
 
-class IndicateLoDTensorDataTypeTestProtoMaker : public OpProtoAndCheckerMaker {
+class IndicateDenseTensorDataTypeTestProtoMaker
+    : public OpProtoAndCheckerMaker {
  public:
   void Make() override {
     AddInput("phi::DenseTensor", "Input of phi::DenseTensor type Variable.");
@@ -393,8 +394,8 @@ class EmptyTestKernel : public OpKernel<T> {
 
 REGISTER_OP_WITHOUT_GRADIENT(
     indicate_lod_tensor_data_type_test,
-    paddle::framework::IndicateLoDTensorDataTypeTest,
-    paddle::framework::IndicateLoDTensorDataTypeTestProtoMaker);
+    paddle::framework::IndicateDenseTensorDataTypeTest,
+    paddle::framework::IndicateDenseTensorDataTypeTestProtoMaker);
 REGISTER_OP_WITHOUT_GRADIENT(
     indicate_selected_rows_data_type_test,
     paddle::framework::IndicateSelectedRowsDataTypeTest,

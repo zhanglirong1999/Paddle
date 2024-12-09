@@ -1107,7 +1107,8 @@ const phi::DenseTensor* GetDenseTensorOrSelectedRowsValueFromVar(
   }
 }
 
-phi::DenseTensor* GetMutableLoDTensorOrSelectedRowsValueFromVar(Variable* var) {
+phi::DenseTensor* GetMutableDenseTensorOrSelectedRowsValueFromVar(
+    Variable* var) {
   if (var->IsType<phi::DenseTensor>()) {
     return var->GetMutable<phi::DenseTensor>();
   } else if (var->IsType<phi::SelectedRows>()) {
@@ -2462,7 +2463,7 @@ void OperatorWithKernel::TransferInplaceVarsBack(
                             common::errors::InvalidArgument(
                                 "The variable[%s] is nullptr.", var_name));
     auto* original_tensor =
-        GetMutableLoDTensorOrSelectedRowsValueFromVar(origin_var);
+        GetMutableDenseTensorOrSelectedRowsValueFromVar(origin_var);
     auto* var = transfer_scope.FindVar(var_name);
     PADDLE_ENFORCE_NOT_NULL(var,
                             common::errors::InvalidArgument(
@@ -2495,7 +2496,7 @@ void OperatorWithKernel::HandleComplexGradToRealGrad(
         continue;
       }
       auto* grad_tensor =
-          GetMutableLoDTensorOrSelectedRowsValueFromVar(grad_var);
+          GetMutableDenseTensorOrSelectedRowsValueFromVar(grad_var);
       // skip nullptr tensor
       if (grad_tensor == nullptr || !grad_tensor->IsInitialized()) {
         continue;
