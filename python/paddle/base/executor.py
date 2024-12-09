@@ -351,7 +351,7 @@ def has_feed_operators(block, feed_targets, feed_holder_name):
         feed_targets: a dictionary of {feed_target_name: feed_target_data}
         feed_holder_name: the name of the variable that holds the data of
             all feed targets. The type of this feed_holder variable is
-            FEED_MINIBATCH, which is essentially vector<LoDTensor>.
+            FEED_MINIBATCH, which is essentially vector<DenseTensor>.
 
     Returns:
         A boolean value that indicates whether a block has feed operators
