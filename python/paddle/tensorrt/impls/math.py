@@ -30,15 +30,15 @@ from paddle.tensorrt.converter_utils import (
 from paddle.tensorrt.register import converter_registry
 
 
-@converter_registry.register("pd_op.add", trt_version="8.x")
-@converter_registry.register("pd_op.add_", trt_version="8.x")
+@converter_registry.register("pd_op.add", trt_version="trt_version_ge=8.0")
+@converter_registry.register("pd_op.add_", trt_version="trt_version_ge=8.0")
 def add_converter(network, paddle_op, inputs):
     return add_elementwise_layer(
         network, paddle_op, inputs, trt.ElementWiseOperation.SUM
     )
 
 
-@converter_registry.register("pd_op.scale", trt_version="8.x")
+@converter_registry.register("pd_op.scale", trt_version="trt_version_ge=8.0")
 def scale_converter(network, paddle_op, inputs):
     scale = paddle_op.operands()[1].source().get_defining_op().attrs()["value"]
     bias = paddle_op.attrs().get("bias", 0.0)
@@ -59,7 +59,7 @@ def scale_converter(network, paddle_op, inputs):
     return scale_layer.get_output(0)
 
 
-@converter_registry.register("pd_op.max", trt_version="8.x")
+@converter_registry.register("pd_op.max", trt_version="trt_version_ge=8.0")
 def max_converter(network, paddle_op, inputs):
     input_tensor = inputs[0]
     axis = paddle_op.operands()[1].source().get_defining_op().attrs()["value"]
@@ -84,21 +84,21 @@ def max_converter(network, paddle_op, inputs):
     return layer.get_output(0)
 
 
-@converter_registry.register("pd_op.divide", trt_version="8.x")
+@converter_registry.register("pd_op.divide", trt_version="trt_version_ge=8.0")
 def divide_converter(network, paddle_op, inputs):
     return add_elementwise_layer(
         network, paddle_op, inputs, trt.ElementWiseOperation.DIV
     )
 
 
-@converter_registry.register("pd_op.subtract", trt_version="8.x")
+@converter_registry.register("pd_op.subtract", trt_version="trt_version_ge=8.0")
 def substract_converter(network, paddle_op, inputs):
     return add_elementwise_layer(
         network, paddle_op, inputs, trt.ElementWiseOperation.SUB
     )
 
 
-@converter_registry.register("pd_op.multiply", trt_version="8.x")
+@converter_registry.register("pd_op.multiply", trt_version="trt_version_ge=8.0")
 def multiply_converter(network, paddle_op, inputs):
     return add_elementwise_layer(
         network, paddle_op, inputs, trt.ElementWiseOperation.PROD

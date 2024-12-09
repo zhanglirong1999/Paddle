@@ -25,6 +25,8 @@ if parent_dir not in sys.path:
     sys.path.append(parent_dir)
 
 
+from tensorrt import INetworkDefinition, ITensor
+
 from paddle.base.log_helper import get_logger
 
 _logger = get_logger(
@@ -243,9 +245,17 @@ def trt_cast(network, input, dtype):
     return identity_layer.get_output(0)
 
 
-def trt_shape(network, input):
+def trt_shape(network: INetworkDefinition, input: ITensor) -> ITensor:
+    """
+    Add a IShapeLayer to get the shape of `input` ITensor.
+    This includes a workaround that casting the shape result(int64) from TRT10 back to int32.
+    Many existing paddle op kernels only support input shape tensor as int32
+    , to make TRT op more compatible with other paddle op, we cast back to int32.
+    NOTE: please remove this workaround when all paddle op supports shape tensor in int64
+    """
     shape_layer = network.add_shape(input)
     if version_list[0] >= 10:  # trt_version >=10
+        # workaround
         return trt_cast(network, shape_layer.get_output(0), trt.int32)
     return shape_layer.get_output(0)
 

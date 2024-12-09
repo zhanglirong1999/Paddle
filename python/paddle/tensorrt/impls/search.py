@@ -35,7 +35,7 @@ def non_zero_converter(network, paddle_op, inputs):
     return non_zero_layer.get_output(0)
 
 
-@converter_registry.register("pd_op.argmax", trt_version="8.x")
+@converter_registry.register("pd_op.argmax", trt_version="trt_version_ge=8.0")
 def argmax_converter(network, paddle_op, inputs):
     x = inputs[0]
     input_dims = x.shape
