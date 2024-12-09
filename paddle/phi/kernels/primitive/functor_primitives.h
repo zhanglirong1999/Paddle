@@ -83,6 +83,17 @@ struct IdentityFunctor {
   }
 };
 
+template <typename T>
+struct IdentityFunctor<phi::dtype::complex<T>, bool> {
+  HOSTDEVICE inline IdentityFunctor() {}
+
+  HOSTDEVICE explicit inline IdentityFunctor(int n) {}
+
+  HOSTDEVICE inline bool operator()(const phi::dtype::complex<T>& x) const {
+    return x.real != 0 || x.imag != 0;
+  }
+};
+
 /**
  * @brief Default unary div functor. Divide by a constant
  */

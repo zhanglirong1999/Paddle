@@ -4970,7 +4970,7 @@ def all(
     Computes the ``logical and`` of tensor elements over the given dimension.
 
     Args:
-        x (Tensor): An N-D Tensor, the input data type should be 'bool', 'float32', 'float64', 'int32', 'int64'.
+        x (Tensor): An N-D Tensor, the input data type should be 'bool', 'float32', 'float64', 'int32', 'int64', 'complex64', 'complex128'.
         axis (int|list|tuple|None, optional): The dimensions along which the ``logical and`` is compute. If
             :attr:`None`, and all elements of :attr:`x` and return a
             Tensor with a single element, otherwise must be in the
@@ -5036,7 +5036,18 @@ def all(
             'reduce_all': reduce_all,
         }
         check_variable_and_dtype(
-            x, 'x', ['bool', 'float32', 'float64', 'int32', 'int64'], 'all'
+            x,
+            'x',
+            [
+                'bool',
+                'float32',
+                'float64',
+                'int32',
+                'int64',
+                'complex64',
+                'complex128',
+            ],
+            'all',
         )
         check_type(axis, 'axis', (int, list, tuple, type(None)), 'all')
 
