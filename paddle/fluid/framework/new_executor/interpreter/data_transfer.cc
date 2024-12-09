@@ -238,7 +238,7 @@ void DataTransferHelper::RunAndConstructOpFuncNode(
 bool IsTensorOfVarInitialized(Variable* var) {
   if (var->IsInitialized()) {
     if (var->IsType<phi::DenseTensor>() || var->IsType<phi::SelectedRows>()) {
-      return GetLoDTensorOrSelectedRowsValueFromVar(*var)->IsInitialized();
+      return GetDenseTensorOrSelectedRowsValueFromVar(*var)->IsInitialized();
     } else if (var->IsType<phi::TensorArray>()) {
       return static_cast<const phi::DenseTensor*>(
                  &(var->Get<phi::TensorArray>()[0]))
@@ -509,7 +509,7 @@ void ApplyDataTransform(const OpKernelType& expected_kernel_key,
           const phi::DenseTensor* tensor_in = nullptr;
           if (var->IsType<phi::DenseTensor>() ||
               var->IsType<phi::SelectedRows>()) {
-            tensor_in = GetLoDTensorOrSelectedRowsValueFromVar(*var);
+            tensor_in = GetDenseTensorOrSelectedRowsValueFromVar(*var);
           } else if (var->IsType<phi::TensorArray>()) {
             if (var->Get<phi::TensorArray>().empty()) {
               continue;
@@ -800,7 +800,7 @@ void HandleComplexGradToRealGrad(const OpFuncNode& op_func_node,
         continue;
       }
       const auto* tensor =
-          framework::GetLoDTensorOrSelectedRowsValueFromVar(*var);
+          framework::GetDenseTensorOrSelectedRowsValueFromVar(*var);
       PADDLE_ENFORCE_NOT_NULL(
           tensor,
           common::errors::Unavailable(

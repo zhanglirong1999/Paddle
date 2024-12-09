@@ -1094,7 +1094,7 @@ void OperatorBase::GenerateTemporaryNames() {
   }
 }
 
-const phi::DenseTensor* GetLoDTensorOrSelectedRowsValueFromVar(
+const phi::DenseTensor* GetDenseTensorOrSelectedRowsValueFromVar(
     const Variable& var) {
   if (var.IsType<phi::DenseTensor>()) {
     return static_cast<const phi::DenseTensor*>(&(var.Get<phi::DenseTensor>()));
@@ -2467,7 +2467,7 @@ void OperatorWithKernel::TransferInplaceVarsBack(
     PADDLE_ENFORCE_NOT_NULL(var,
                             common::errors::InvalidArgument(
                                 "The variable[%s] is nullptr.", var_name));
-    auto* transformed_tensor = GetLoDTensorOrSelectedRowsValueFromVar(*var);
+    auto* transformed_tensor = GetDenseTensorOrSelectedRowsValueFromVar(*var);
     original_tensor->ShareDataWith(*transformed_tensor);
   }
 }
@@ -2515,7 +2515,7 @@ void OperatorWithKernel::HandleComplexGradToRealGrad(
       if (!VarIsTensor(*var)) {
         continue;
       }
-      const auto* tensor = GetLoDTensorOrSelectedRowsValueFromVar(*var);
+      const auto* tensor = GetDenseTensorOrSelectedRowsValueFromVar(*var);
       PADDLE_ENFORCE_NOT_NULL(
           tensor,
           common::errors::Unavailable(
@@ -2582,7 +2582,7 @@ Scope* OperatorWithKernel::PrepareData(
         continue;
       }
 
-      auto* tensor_in = GetLoDTensorOrSelectedRowsValueFromVar(*var);
+      auto* tensor_in = GetDenseTensorOrSelectedRowsValueFromVar(*var);
 
       // When no_buffer_ins then checking of phi::DenseTensor::holder_ is
       // not a thread safe. And for infershape scenario checks
