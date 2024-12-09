@@ -507,11 +507,9 @@ void BindTensor(pybind11::module &m) {  // NOLINT
         return std::make_unique<phi::DenseTensor>(new_offset_lod);
       }))
       .def(py::init([]() { return std::make_unique<phi::DenseTensor>(); }))
-      // We implement offset based LOD in C++ while we use length based with
-      // Python API. So we changed set_lod to set_recursive_sequence_lengths
-      // to
-      // avoid misuse.
-      // The discussion is here:
+      // We implement offset based LegacyLoD in C++ while we use length based
+      // with Python API. So we changed set_lod to
+      // set_recursive_sequence_lengths to avoid misuse. The discussion is here:
       // https://github.com/PaddlePaddle/Paddle/issues/10855
       .def(
           "set_lod",
