@@ -642,6 +642,10 @@ std::vector<Int> ArangeVector(Int start, Int end, Int step = 1) {
   return res;
 }
 
+symbol::DimExpr GetShapeProduct(const std::vector<symbol::DimExpr>& shape,
+                                int start,
+                                int end);
+
 bool ShapeProductEqual(const std::vector<symbol::DimExpr>& in_shape,
                        const std::vector<symbol::DimExpr>& out_shape,
                        int in_start,
