@@ -154,6 +154,7 @@ CUSTOM_VJP = [
     'minimum_grad',
     'pow_grad',
     'relu_grad',
+    'relu6_grad',
     'sigmoid_grad',
     'silu_grad',
     'softmax_grad',

@@ -1299,6 +1299,19 @@ void relu_grad(const Tensor& out, const Tensor& out_grad, Tensor* x_grad) {
 }
 
 template <typename T>
+void relu6_grad(const Tensor& out, const Tensor& out_grad, Tensor* x_grad) {
+  if (x_grad) {
+    Tensor zeros = full_scalar<T>(0.0, out.dtype());
+    Tensor six = full_scalar<T>(6.0, out.dtype());
+    auto mask_gt = greater_than<T>(out, zeros);
+    auto mask_lt = less_than<T>(out, six);
+    auto mask = bitwise_and<T>(mask_gt, mask_lt);
+    auto res = cast<T>(mask, out.dtype()) * out_grad;
+    set_output<T>(res, x_grad);
+  }
+}
+
+template <typename T>
 void gather_grad(const Tensor& x,
                  const Tensor& index,
                  const Tensor& out_grad,
