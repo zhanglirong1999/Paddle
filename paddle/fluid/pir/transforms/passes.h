@@ -49,6 +49,7 @@ USE_PIR_PASS(fused_rotary_position_embedding_pass);
 USE_PIR_PASS(auto_mixed_precision_pass);
 USE_PIR_PASS(horizontal_fuse_pass);
 USE_PIR_PASS(auto_layout_simplify_pass);
+USE_PIR_PASS(auto_layout_insert_pass);
 USE_PIR_PASS(auto_layout_pass);
 USE_PIR_PASS(common_subexpression_elimination_pass);
 USE_PIR_PASS(add_shadow_output_after_dead_parameter_pass);
