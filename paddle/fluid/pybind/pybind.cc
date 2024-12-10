@@ -161,6 +161,9 @@ limitations under the License. */
 #if defined(PADDLE_WITH_NCCL) || defined(PADDLE_WITH_RCCL)
 #include "paddle/fluid/operators/nccl/nccl_gpu_common.h"
 #endif
+#ifdef PADDLE_WITH_CUDA
+#include "paddle/phi/backends/gpu/cuda/gpu_event_timer.h"
+#endif
 #ifndef PADDLE_WITH_HIP
 #include "paddle/phi/core/platform/device/gpu/cuda/cuda_profiler.h"
 #endif
@@ -2429,6 +2432,54 @@ All parameter, weight, gradient are variables in Paddle.
 
   m.def("get_no_need_buffer_values",
         framework::interpreter::GetNoNeedBufferValues);
+#ifdef PADDLE_WITH_CUDA
+  py::class_<phi::GPUEventTimer>(m, "GPUEventTimer")
+      .def(py::init<phi::GPUPlace>(), py::arg("place"))
+      .def(
+          "start",
+          [](phi::GPUEventTimer &timer) { timer.Start(); },
+          py::call_guard<py::gil_scoped_release>())
+      .def(
+          "stop",
+          [](phi::GPUEventTimer &timer) { timer.Stop(); },
+          py::call_guard<py::gil_scoped_release>())
+      .def("reset",
+           &phi::GPUEventTimer::Reset,
+           py::call_guard<py::gil_scoped_release>())
+      .def("elapsed",
+           &phi::GPUEventTimer::Elapsed,
+           py::arg("reset") = true,
+           py::call_guard<py::gil_scoped_release>())
+      .def(
+          "elapsed_list",
+          [](phi::GPUEventTimer &timer, bool reset) {
+            std::vector<double> values;
+            {
+              py::gil_scoped_release release;
+              values = timer.ElapsedList(reset);
+            }
+            size_t n = values.size();
+            py::array_t<double, py::array::c_style | py::array::forcecast>
+                array(n);
+            auto buffer = array.request();
+            std::memcpy(buffer.ptr, values.data(), sizeof(values[0]) * n);
+            return array;
+          },
+          py::arg("reset") = true)
+      .def("pre_alloc",
+           &phi::GPUEventTimer::PreAlloc,
+           py::arg("n"),
+           py::call_guard<py::gil_scoped_release>())
+      .def("shrink_to_fit",
+           &phi::GPUEventTimer::ShrinkToFit,
+           py::call_guard<py::gil_scoped_release>())
+      .def("size",
+           &phi::GPUEventTimer::Size,
+           py::call_guard<py::gil_scoped_release>())
+      .def("capacity",
+           &phi::GPUEventTimer::Capacity,
+           py::call_guard<py::gil_scoped_release>());
+#endif
 
   m.def("init_gflags", framework::InitGflags);
   m.def("init_glog", framework::InitGLOG);
