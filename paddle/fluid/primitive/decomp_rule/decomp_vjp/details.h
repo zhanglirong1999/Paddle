@@ -1824,6 +1824,24 @@ void tile_grad(const Tensor& x,
 }
 
 template <typename T>
+void hardsigmoid_grad(const Tensor& out,
+                      const Tensor& out_grad,
+                      float slope,
+                      float offset,
+                      Tensor* x_grad) {
+  if (x_grad) {
+    Tensor zeros = full_scalar<T>(0.0, out.dtype());
+    Tensor one = full_scalar<T>(1.0, out.dtype());
+    auto mask_gt = greater_than<T>(out, zeros);
+    auto mask_lt = less_than<T>(out, one);
+    auto mask = bitwise_and<T>(mask_gt, mask_lt);
+    Tensor slope_tensor = full_scalar<T>(slope, out.dtype());
+    auto res = cast<T>(mask, out.dtype()) * slope_tensor * out_grad;
+    set_output<T>(res, x_grad);
+  }
+}
+
+template <typename T>
 void hardswish_grad(const Tensor& x, const Tensor& out_grad, Tensor* x_grad) {
   if (x_grad) {
     const Tensor offset = full_scalar<T>(3.0, x.dtype());

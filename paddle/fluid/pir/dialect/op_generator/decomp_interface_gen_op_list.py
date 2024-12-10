@@ -168,6 +168,7 @@ OTHER_PRIM_VJP_OPS = [
 CUSTOM_VJP = [
     'bce_loss_grad',
     'gelu_grad',
+    'hardsigmoid_grad',
     'hardswish_grad',
     'leaky_relu_grad',
     'mean_grad',

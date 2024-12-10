@@ -146,6 +146,7 @@ CUSTOM_VJP = [
     'dropout_grad',
     'gelu_grad',
     'group_norm_grad',
+    'hardsigmoid_grad',
     'hardswish_grad',
     'instance_norm_grad',
     'layer_norm_grad',
