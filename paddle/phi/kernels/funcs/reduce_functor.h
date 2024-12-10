@@ -53,7 +53,7 @@ struct FrobeniusNormGradFunctor {
 struct MaxFunctor {
   template <typename DeviceContext, typename X, typename Y, typename Dim>
   void operator()(const DeviceContext& place, X* x, Y* y, const Dim& dim) {
-    y->device(place) = x->maximum(dim);
+    y->device(place) = x->template maximum<Dim, Eigen::PropagateNaN>(dim);
   }
 };
 
@@ -85,7 +85,7 @@ struct SumFunctor {
 struct MinFunctor {
   template <typename DeviceContext, typename X, typename Y, typename Dim>
   void operator()(const DeviceContext& place, X* x, Y* y, const Dim& dim) {
-    y->device(place) = x->minimum(dim);
+    y->device(place) = x->template minimum<Dim, Eigen::PropagateNaN>(dim);
   }
 };
 
