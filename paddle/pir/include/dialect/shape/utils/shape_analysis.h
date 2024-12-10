@@ -199,6 +199,8 @@ class IR_API ShapeConstraintIRAnalysis final
   // Set ShapeOrData of `to` value by ShapeOrData of `from` value.
   void ShareShapeOrData(Value from, Value to);
 
+  void AddEqualCstr(const symbol::DimExpr& lhs, const symbol::DimExpr& rhs);
+
   bool IsEqual(const symbol::DimExpr& lhs, const symbol::DimExpr& rhs) const;
 
   bool IsGreatThanOne(const symbol::DimExpr& dim_expr) const;

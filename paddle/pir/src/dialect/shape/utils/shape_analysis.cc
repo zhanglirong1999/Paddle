@@ -625,6 +625,11 @@ void ShapeConstraintIRAnalysis::ShareShapeOrData(Value from, Value to) {
   }
 }
 
+void ShapeConstraintIRAnalysis::AddEqualCstr(const symbol::DimExpr& lhs,
+                                             const symbol::DimExpr& rhs) {
+  context_.AddEqualCstr(lhs, rhs);
+}
+
 bool ShapeConstraintIRAnalysis::IsEqual(const symbol::DimExpr& lhs,
                                         const symbol::DimExpr& rhs) const {
   return context_.IsEqual(lhs, rhs);
