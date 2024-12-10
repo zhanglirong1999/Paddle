@@ -512,15 +512,9 @@ class AutoParallelForwardChecker:
                     rtol=self.atol,
                     atol=self.rtol,
                     err_msg=(
-                        'Check eager auto parallel failed. Mismatch between eager auto parallel outputs '
-                        'and eager outputs on %s, the eager forward output tensor\'s index is : %d \n'
-                        'eager auto parallel output tensor:\n%s\n eager output tensor:\n%s\n'
-                        % (
-                            str(self.place),
-                            i,
-                            actual_ret[i],
-                            self.eager_forward_desire[i],
-                        )
+                        f"Check eager auto parallel failed. Mismatch between eager auto parallel outputs "
+                        f"and eager outputs on {self.place!s}. The eager forward output tensor's index is : {i} \n"
+                        f"eager auto parallel output tensor:\n{actual_ret[i]}\n eager output tensor:\n{self.eager_forward_desire[i]}\n"
                     ),
                 )
 
