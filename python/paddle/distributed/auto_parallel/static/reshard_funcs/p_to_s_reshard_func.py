@@ -45,10 +45,16 @@ class PToSReshardFunction(ReshardFunction):
         return True
 
     def reshard(self, src_dist_attr, dst_dist_attr, src_value, dst_type):
+        src_mesh = src_dist_attr.process_mesh
         src_reduce_type = src_dist_attr.partial_status[0]
         assert (
             src_reduce_type == paddle.base.core.ReduceType.kRedSum
         ), f"The p to s reshard func only support sum op, but received {src_reduce_type}"
+
+        chunk_id = -1
+        if src_value.get_defining_op().dist_attr:
+            chunk_id = src_value.get_defining_op().dist_attr.chunk_id
+
         split_axis = dst_dist_attr.dims_mapping.index(0)
         permute = False
         if split_axis != 0:
@@ -63,30 +69,49 @@ class PToSReshardFunction(ReshardFunction):
             dst_dist_attr = copy_dist_attr_with_new_member(
                 dst_dist_attr, new_dims_mapping=tmp_dims_mapping
             )
-            dst_type = paddle.base.libpaddle.pir.cvt_to_dist_type(
-                src_value.type(), dst_dist_attr
-            )
-            original_dims_mapping = dst_dist_attr.dims_mapping.copy()
-            original_split_axis = split_axis
-            split_axis = 0
 
         num_of_process = len(src_dist_attr.process_mesh.process_ids)
         remainder_of_padding = src_value.shape[split_axis] % num_of_process
         is_balanced_split = remainder_of_padding == 0
 
         if is_balanced_split:
-            dst_value = self.reshard_p_to_s_with_padding(
-                src_value,
-                split_axis,
-                src_dist_attr,
-                dst_dist_attr,
-                dst_type,
+            global_dst_attr = dst_type.as_dist_type().dist_attr()
+            global_dims_mapping = global_dst_attr.dims_mapping
+            axis = global_dims_mapping[0]
+            global_dims_mapping[0] = global_dims_mapping[split_axis]
+            global_dims_mapping[split_axis] = axis
+            global_dist_attr = copy_dist_attr_with_new_member(
+                global_dst_attr, new_dims_mapping=global_dims_mapping
             )
-            if permute:
+            dst_type = paddle.base.libpaddle.pir.cvt_to_dist_type(
+                src_value.type(), global_dist_attr
+            )
+            group = new_process_group(sorted(src_mesh.process_ids))
+            dst_value = paddle._C_ops.reduce_scatter(
+                src_value, group.id, num_of_process
+            )
+            dst_value.get_defining_op().set_execution_stream(
+                ExecutionStreamType.DefaultStream.value
+            )
+
+            # set dist type and dist attr
+            dst_value.set_type(dst_type)
+            dst_value.get_defining_op().dist_attr = (
+                paddle.base.libpaddle.pir.create_op_dist_attribute(
+                    src_mesh, [src_dist_attr], [dst_dist_attr], chunk_id
+                )
+            )
+
+            if split_axis != 0:
                 dst_value = paddle._C_ops.transpose(dst_value, perm)
-                split_axis = original_split_axis
             return dst_value
         else:
+            dst_type = paddle.base.libpaddle.pir.cvt_to_dist_type(
+                src_value.type(), dst_dist_attr
+            )
+            original_dims_mapping = dst_dist_attr.dims_mapping.copy()
+            original_split_axis = split_axis
+            split_axis = 0
             avg_size_on_split_axis = int(
                 (src_value.shape[split_axis] + num_of_process - 1)
                 / num_of_process
@@ -108,7 +133,7 @@ class PToSReshardFunction(ReshardFunction):
             padding_tensor.set_type(tmp_src_type)
             padding_tensor.get_defining_op().dist_attr = (
                 paddle.base.libpaddle.pir.create_op_dist_attribute(
-                    src_dist_attr.process_mesh, [], [src_dist_attr]
+                    src_dist_attr.process_mesh, [], [src_dist_attr], chunk_id
                 )
             )
             concat_value = paddle._C_ops.concat(
@@ -131,6 +156,7 @@ class PToSReshardFunction(ReshardFunction):
                         axis_dist_attr,
                     ],
                     [src_dist_attr],
+                    chunk_id,
                 )
             )
 
