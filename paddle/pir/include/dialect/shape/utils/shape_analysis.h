@@ -28,6 +28,9 @@
 
 namespace pir {
 using InferSymbolicShapeCacheValue = std::vector<symbol::ShapeOrDataDimExprs>;
+
+enum TransLayoutType { NCHW2NHWC, NHWC2NCHW, INVALID };
+
 /**
  * This class represents information needed to determine the output
  * shape of an operator, which includes the operator's name, input shapes, and
@@ -198,6 +201,10 @@ class IR_API ShapeConstraintIRAnalysis final
 
   // Set ShapeOrData of `to` value by ShapeOrData of `from` value.
   void ShareShapeOrData(Value from, Value to);
+
+  // Update Symbol Shape for value by layout transformation.
+  void UpdateShapeOrDataByTransLayout(Value val,
+                                      TransLayoutType trans_layout_type);
 
   void AddEqualCstr(const symbol::DimExpr& lhs, const symbol::DimExpr& rhs);
 

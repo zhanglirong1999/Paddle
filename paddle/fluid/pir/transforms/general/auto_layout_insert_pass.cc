@@ -36,6 +36,9 @@
 #include "paddle/pir/include/pass/pass.h"
 #include "paddle/pir/include/pass/pass_registry.h"
 #include "paddle/pir/include/pass/utils.h"
+#ifdef PADDLE_WITH_CINN
+#include "paddle/pir/include/dialect/shape/utils/shape_analysis.h"
+#endif
 
 namespace {
 
@@ -103,9 +106,19 @@ class AutoLayoutInsertPass : public pir::Pass {
             op->dyn_cast<paddle::dialect::InferMetaInterface>()) {
       auto output_types =
           infer_meta_interface.InferMeta(input_values, &p_attribute_map);
+      pir::TransLayoutCallbackFn callback = nullptr;
+#ifdef PADDLE_WITH_CINN
+      auto& shape_analysis =
+          pir::ShapeAnalysisManager::Instance().Get(op->GetParentProgram());
+      callback = [&](pir::Value value, common::DataLayout new_layout) -> void {
+        shape_analysis.UpdateShapeOrDataByTransLayout(
+            value, pir::TransLayoutType::NCHW2NHWC);
+      };
+#endif
       for (size_t i = 0; i < output_types.size(); ++i) {
         op->result(i).set_type(output_types[i]);
-        pir::SetNewLayoutForValue(op->result(i), common::DataLayout::NHWC);
+        pir::SetNewLayoutForValue(
+            op->result(i), common::DataLayout::NHWC, callback);
       }
     } else {
       InferMetaSpecificOp();

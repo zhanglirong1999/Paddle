@@ -624,6 +624,40 @@ void ShapeConstraintIRAnalysis::ShareShapeOrData(Value from, Value to) {
   }
 }
 
+void ShapeConstraintIRAnalysis::UpdateShapeOrDataByTransLayout(
+    Value val, TransLayoutType trans_layout_type) {
+  if (context_.HasShapeOrDataForValue(val)) {
+    const auto& cur_shape = context_.GetShapeOrDataForValue(val).shape();
+    PADDLE_ENFORCE_EQ(cur_shape.size(),
+                      4,
+                      common::errors::InvalidArgument(
+                          "Currently, the rank of value must be 4 when update "
+                          "symbolic shape of value by layout transformation, "
+                          "but now rank of value is %d.",
+                          cur_shape.size()));
+    if (trans_layout_type == TransLayoutType::NCHW2NHWC) {
+      std::vector<symbol::DimExpr> new_shape = cur_shape;
+      new_shape[1] = cur_shape[2];
+      new_shape[2] = cur_shape[3];
+      new_shape[3] = cur_shape[1];
+      context_.SetShapeOrDataForValue(
+          val, {symbol::TensorShapeOrDataDimExprs{new_shape}});
+      return;
+    }
+    if (trans_layout_type == TransLayoutType::NHWC2NCHW) {
+      std::vector<symbol::DimExpr> new_shape = cur_shape;
+      new_shape[1] = cur_shape[3];
+      new_shape[2] = cur_shape[1];
+      new_shape[3] = cur_shape[2];
+      context_.SetShapeOrDataForValue(
+          val, {symbol::TensorShapeOrDataDimExprs{new_shape}});
+      return;
+    }
+    PADDLE_THROW(common::errors::Fatal(
+        "Dead code, shouldn't run here for UpdateShapeOrDataByTransLayout!"));
+  }
+}
+
 void ShapeConstraintIRAnalysis::AddEqualCstr(const symbol::DimExpr& lhs,
                                              const symbol::DimExpr& rhs) {
   context_.AddEqualCstr(lhs, rhs);
