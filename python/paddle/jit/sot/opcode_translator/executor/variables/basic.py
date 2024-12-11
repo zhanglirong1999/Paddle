@@ -1069,8 +1069,9 @@ class SliceVariable(VariableBase):
     def make_stringified_guard(self) -> list[StringifiedExpression]:
         frame_value_tracer = self.tracker.trace_value_from_frame()
         result = [
-            StringifiedExpression(
-                "isinstance({}, slice)",
+            FasterStringifiedExpression(
+                "id(type({{}})) == id(slice)",
+                paddle.framework.core.TypeMatchGuard(slice),
                 [frame_value_tracer],
                 frame_value_tracer.free_vars,
             ),
