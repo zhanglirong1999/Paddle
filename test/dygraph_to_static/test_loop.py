@@ -470,6 +470,7 @@ def loop_with_inner_mutate_list(x):
         a = []
         a.append(x)
         a.append(x + 1)
+        a.append(None)
         out += a[0]
         # After the loop, a is [x, x], which will be flattened to 2 elements
     return out

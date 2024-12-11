@@ -743,7 +743,7 @@ class LoopVar:
             return create_loop_var_like(while_op, next_var)
         if is_sequence(next_var):
             return map_structure(
-                lambda var: create_loop_var_like(while_op, var),
+                lambda var: self.infer_type_with_next_var(var, while_op),
                 next_var,
             )
         return LoopVar(self.curr_var, next_var, self.block_arg)
