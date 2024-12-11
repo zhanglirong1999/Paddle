@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "paddle/fluid/pybind/pir.h"
+#include "paddle/fluid/pybind/pir_utils.h"
 
 #include <Python.h>
 #include <algorithm>
@@ -210,35 +211,6 @@ std::string GetValueInfo(Value v) {
   return ss.str();
 }
 
-phi::DataType GetTensorDtype(Type type) {
-  if (!type) {
-    PADDLE_THROW(
-        common::errors::InvalidArgument("The type of value is nullptr."));
-  }
-  if (auto dense_tensor_type = type.dyn_cast<DenseTensorType>()) {
-    return dialect::TransToPhiDataType(dense_tensor_type.dtype());
-  } else if (auto sparse_coo_tensor_type =
-                 type.dyn_cast<SparseCooTensorType>()) {
-    return dialect::TransToPhiDataType(sparse_coo_tensor_type.dtype());
-  } else if (auto sparse_csr_tensor_type =
-                 type.dyn_cast<SparseCsrTensorType>()) {
-    return dialect::TransToPhiDataType(sparse_csr_tensor_type.dtype());
-  } else if (auto select_rows = type.dyn_cast<SelectedRowsType>()) {
-    return dialect::TransToPhiDataType(select_rows.dtype());
-  } else if (auto dense_array = type.dyn_cast<DenseTensorArrayType>()) {
-    return dialect::TransToPhiDataType(dense_array.dtype());
-  } else {
-    PADDLE_THROW(common::errors::InvalidArgument(
-        "Currently, we can only get phi::DataType from DenseTensorType and "
-        "SelectedRowsType, DenseTensorArrayType,SparseCooTensorType or "
-        "SparseCsrTensorType."));
-  }
-}
-
-phi::DataType GetValueDtype(Value value) {
-  return GetTensorDtype(value.type());
-}
-
 py::object Clone(const Program &self, IrMapping *p_mapper = nullptr) {
   IrMapping mapper;
   if (p_mapper == nullptr) {
@@ -274,7 +246,7 @@ pir::Value AppendDataOp(pir::Block *block,
        paddle::dialect::IntArrayAttribute::get(
            ctx, phi::IntArray(phi::vectorize(GetValueDims(value))))},
       {"dtype",
-       paddle::dialect::DataTypeAttribute::get(ctx, GetValueDtype(value))},
+       paddle::dialect::DataTypeAttribute::get(ctx, pir::GetValueDtype(value))},
       {"place", PlaceAttribute::get(ctx, phi::Place())}};
   std::vector<pir::Type> output_types{value.type()};
   pir::Operation *operation =
@@ -1427,7 +1399,7 @@ void BindValue(py::module *m) {
           })
       .def_property(
           "dtype",
-          [](Value self) { return GetValueDtype(self); },
+          [](Value self) { return pir::GetValueDtype(self); },
           [](Value self, phi::DataType dtype) {
             PADDLE_THROW(common::errors::InvalidArgument(
                 "can't set dtype when building static graph"));
@@ -2299,7 +2271,7 @@ static void inline CreateVariableIfNotExist(
       phi::DeviceContextPool &pool = phi::DeviceContextPool::Instance();
       const phi::DeviceContext *dev_ctx = nullptr;
       dev_ctx = pool.Get(exe->GetPlace());
-      dev_ctx->Alloc(tensor_temp, GetValueDtype(value));
+      dev_ctx->Alloc(tensor_temp, pir::GetValueDtype(value));
     }
   }
   return;

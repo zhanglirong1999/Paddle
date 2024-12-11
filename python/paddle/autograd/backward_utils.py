@@ -330,7 +330,11 @@ class State:
 def _check_vjp_dynamic_shape(op, inputs):
     for items in inputs:
         for item in items:
-            if item.initialized() and -1 in item.shape:
+            if (
+                item.is_dense_tensor_type()
+                and item.initialized()
+                and -1 in item.shape
+            ):
                 return True
 
 
