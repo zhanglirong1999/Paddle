@@ -273,7 +273,9 @@ double Expr::get_constant() const {
                         "%s is not constant! Please check.", *this));
   auto *vi = As<IntImm>();
   auto *vf = As<FloatImm>();
+  auto *vu = As<UIntImm>();
   if (vi) return vi->value;
+  if (vu) return vu->value;
   return vf->value;
 }
 
