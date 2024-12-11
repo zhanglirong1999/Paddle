@@ -1435,6 +1435,49 @@ Tensor eye_decomp(const paddle::Scalar& num_rows,
 
   return ConverToOrig<T>(res, dtype);
 }
+
+template <typename T>
+Tensor diag_decomp(const Tensor& x,
+                   const int& offset = 0,
+                   const float& padding_value = 0.0) {
+  Tensor cast_x = ConverToMT<T>(x);
+  int64_t rank = cast_x.dims().size();
+  Tensor res;
+  if (rank == 1) {
+    std::vector<int64_t> x_dims = cast_x.shape();
+    int64_t n = x_dims[0];
+    int64_t m = n + std::abs(offset);
+
+    Tensor result =
+        full<T>({m, m}, padding_value, cast_x.dtype(), cast_x.place());
+    Tensor padding = full<T>(
+        {std::abs(offset)}, padding_value, cast_x.dtype(), cast_x.place());
+
+    Tensor x_padding =
+        unsqueeze<T>(roll<T>(concat<T>({cast_x, padding}, 0), {-offset}), {1});
+    Tensor indices = unsqueeze<T>(
+        roll<T>(backend::arange<T>(0, m, 1, DataType::INT64, cast_x.place()),
+                {-offset}),
+        {1});
+
+    res = put_along_axis<T>(result, indices, x_padding, 1);
+
+  } else {
+    std::vector<int64_t> x_dims = cast_x.shape();
+    int64_t n = x_dims[0];
+    int64_t m = x_dims[1];
+    if (offset <= -n || offset >= m) {
+      return res;
+    }
+    Tensor x_flat = reshape<T>(cast_x, {n * m});
+    int64_t start = offset >= 0 ? offset : -offset * m;
+    Tensor indices = backend::arange<T>(
+        start, n * m, m + 1, DataType::INT64, cast_x.place());
+    res = take_along_axis<T>(x_flat, indices, 0);
+  }
+  return ConverToOrig<T>(res, x.dtype());
+}
+
 }  // namespace details
 
 }  // namespace primitive
