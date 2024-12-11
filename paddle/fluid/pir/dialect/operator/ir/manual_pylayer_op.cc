@@ -128,12 +128,14 @@ void PyLayerOp::Print(pir::IrPrinter &printer) {
   printer.PrintAttributeMap(*op);
   os << " -> ";
   printer.PrintOpReturnType(*op);
-  os << "{";
+  os << " {\n";
+  printer.AddIndentation();
   for (auto &item : forward_block()) {
-    os << "\n  ";
     printer.PrintOperation(item);
+    os << "\n";
   }
-  os << "\n }";
+  printer.DecreaseIndentation();
+  os << printer.indentation() << "}";
 }
 
 void PyLayerOp::VerifySig() {
