@@ -1,4 +1,4 @@
-# Copyright (c) 2023 PaddlePaddle Authors. All Rights Reserved.
+# Copyright (c) 2024 PaddlePaddle Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,10 +21,8 @@ import paddle
 import paddle.distributed as dist
 import paddle.nn.functional as F
 from paddle import nn
-from paddle.distributed.auto_parallel.high_level_api import (
-    ToDistributedConfig,
-    to_distributed,
-)
+from paddle.distributed import to_distributed
+from paddle.distributed.auto_parallel.high_level_api import ToDistributedConfig
 
 EPOCHES = 1
 VOCAB_SIZE = 8000

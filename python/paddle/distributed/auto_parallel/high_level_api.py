@@ -21,18 +21,7 @@ import numpy as np
 
 import paddle
 import paddle.distributed as dist
-from paddle.base import (
-    default_main_program,
-)
-from paddle.base.framework import (
-    in_dygraph_mode,
-)
-from paddle.distributed.auto_parallel.static.tuner.to_distributed_api_patterns import (
-    clear_used_patterns,
-    get_pattern,
-    match_all_patterns,
-    register_used_patterns,
-)
+from paddle.base.framework import in_dygraph_mode
 
 logger = logging.getLogger(__name__)
 
@@ -85,6 +74,11 @@ def record_program_ops_pre_hook(layer, inputs):
     A pre-hook to mark op numbers before enter layer.forward.
     """
     if not in_dygraph_mode():
+        # Because ir_guard._switch_to_pir() will change default_main_program in python/paddle/__init__.py.
+        # In order to avoid errors, we import default_main_program until this hook running.
+        # After fully switching to pir, can move this import to the beginning of the file.
+        from paddle.base import default_main_program
+
         if layer._op_recorder.start < 0:
             layer._op_recorder.start = len(
                 default_main_program().global_block().ops
@@ -222,12 +216,17 @@ def record_program_ops_post_hook(layer, inputs, outputs):
     A post-hook to mark op numbers after enter layer.forward, and record corresponding ops of the layer.
     """
     if not in_dygraph_mode():
+        # Because ir_guard._switch_to_pir() will change default_main_program in python/paddle/__init__.py.
+        # In order to avoid errors, we import default_main_program until this hook running.
+        # After fully switching to pir, can move this import to the beginning of the file.
+        from paddle.base import default_main_program
+
         assert (
             layer._op_recorder.start >= 0
             and layer._op_recorder.is_valid is True
         ), f"{layer._full_name} has not recorded the start of the corresponding ops before"
         end = len(default_main_program().global_block().ops)
-        # some layers, such as llama_rotary_embedding, will not add new ops to program
+        # some layers, such as rotary_embedding, will not add new ops to program
         # assert end > layer._op_recorder.start, f"{layer._full_name} has not added new ops to the program"
         ops = []
         if end > layer._op_recorder.start:
@@ -237,6 +236,9 @@ def record_program_ops_post_hook(layer, inputs, outputs):
                 .global_block()
                 .ops[layer._op_recorder.start : layer._op_recorder.end]
             )
+        logger.debug(
+            f'start: {layer._op_recorder.start}, end: {layer._op_recorder.end}, ops: {ops}'
+        )
         layer._op_recorder.ops = ops
 
 
@@ -257,7 +259,11 @@ def to_distributed(
     device_num: int,
     node_num: int | None = 1,
     config: ToDistributedConfig | None = None,
-) -> tuple[paddle.nn.Layer, paddle.optimizer.Optimizer, paddle.io.DataLoader]:
+) -> tuple[
+    paddle.nn.Layer,
+    paddle.optimizer.Optimizer,
+    paddle.distributed.auto_parallel.ShardDataloader,
+]:
     """
     `to_distributed` can automatically convert neural networks, optimizer, and dataloader
     that do not contain any distributed code into neural networks, optimizers, and dataloader
@@ -277,9 +283,10 @@ def to_distributed(
         device_num(int): the number of devices on each node or machine.
         node_num(int|None, optional): the number of nodes or machines.
         config(ToDistributedConfig| None = None): Configs for input_spec and sequence_parallel.
-            The custom input specs specify the shape, dtype, and name information
+            The custom input specs specify the most likely shape, dtype, and name information
             of each model inputs. If it is not None, the input specs and
-            will be inferred from the custom input specs. The custom
+            will be inferred from the custom input specs. If it is None, will use default with
+            shape of [BATCH_SIZE=4, SEQ_LENGTH=1024], The custom
             input specs should be a list of `paddle.static.InputSpec`. Default: None.
             sequence_parallel indicates whether to use sequence parallel. Default: False.
 
@@ -290,15 +297,15 @@ def to_distributed(
 
     Examples:
         .. code-block:: python
+
+            >>> # doctest: +SKIP('run in distributed env')
             >>> import math
             >>> import numpy as np
             >>> import paddle
             >>> import paddle.nn.functional as F
             >>> from paddle import nn
-            >>> from paddle.distributed.auto_parallel.high_level_api import (
-            >>>     ToDistributedConfig,
-            >>>     to_distributed,
-            >>> )
+            >>> from paddle.distributed import to_distributed
+            >>> from paddle.distributed.auto_parallel.high_level_api import ToDistributedConfig
 
             >>> EPOCHES = 1
             >>> VOCAB_SIZE = 8000
@@ -309,7 +316,7 @@ def to_distributed(
             >>> SEQ_LENGTH = 1024
             >>> N_HEAD = 32
             >>> NUM_HIDDEN_LAYERS = 4
-            >>> class RandomDataset(paddle.io.Dataset):
+            >>> class RandomDataset(paddle.io.Dataset): # type: ignore[type-arg]
             ...     def __init__(self, inputs, labels, num_samples):
             ...         self.inputs = inputs
             ...         self.labels = labels
@@ -326,8 +333,7 @@ def to_distributed(
             ...         self.max_position_embeddings = max_position_embeddings
             ...         self.base = base
             ...         self.inv_freq = 1.0 / (
-            ...             self.base
-            ...             ** (
+            ...             self.base ** (
             ...                 paddle.cast(paddle.arange(0, self.dim, 2), dtype="float32")
             ...                 / self.dim
             ...             )
@@ -650,7 +656,7 @@ def to_distributed(
             ...     [BATCH_SIZE, SEQ_LENGTH], 'float32', 'input_seq', True
             ... )
             >>> dist_config = ToDistributedConfig()
-            >>> dist_config.input_spec = [input_seq_spec]
+            >>> dist_config.sequence_parallel = True
 
             >>> # wrap model, opt, dataloader by using **to_distributed**
             >>> dist_model, dist_opt, dist_loader = to_distributed(
@@ -671,7 +677,18 @@ def to_distributed(
             ...         loss.backward()
             ...         dist_opt.step()
             ...         dist_opt.clear_grad()
+            >>> # This case need to be executed in multi-card environment
+            >>> # python -m paddle.distributed.launch --gpus=0,1,2,3,4,5,6,7 {test_case}.py
     """
+    # Because some API(`paddle.randn` etc.) will be used when building pattern,
+    # In order to avoid circle import, we import get_pattern until function running.
+    from .static.tuner.to_distributed_api_patterns import (
+        clear_used_patterns,
+        get_pattern,
+        match_all_patterns,
+        register_used_patterns,
+    )
+
     logger.debug(f'input model: {model}')
     # paddle.distributed.init_parallel_env()
 
@@ -688,8 +705,13 @@ def to_distributed(
         layer._op_recorder.hooks.append(post_hook_helper)
 
     # step 1.2: call @to_static, get program, and corresponding static ops of each layer
+    custom_input_spec = (
+        config.input_spec
+        if config.input_spec
+        else [paddle.static.InputSpec([4, 1024], 'float32', 'input_seq', True)]
+    )
     static_func = paddle.jit.to_static(
-        model.forward, input_spec=config.input_spec, full_graph=True
+        model.forward, input_spec=custom_input_spec, full_graph=True
     )
     program = static_func.concrete_program.main_program
     # currently, paddle.jit.to_static has side effects that will affect model.
@@ -708,6 +730,9 @@ def to_distributed(
     op_id_to_layer = {}
     for layer in model.sublayers():
         layer_ops = layer._op_recorder.ops
+        logger.debug(
+            f'layer name: {layer.__class__.__name__}, layer_ops: {layer_ops}'
+        )
         ops_id = []
         for op in layer_ops:
             assert op in op_to_id.keys(), f"{op.name} is not in program"
@@ -715,6 +740,7 @@ def to_distributed(
             op_id_to_layer[op_id] = layer
             ops_id.append(op_id)
         ops_id_to_layer[tuple(ops_id)] = layer
+    logger.debug(f'ops_id_to_layer is: {ops_id_to_layer}')
 
     # step 1.4: pattern recogincation
     DECODER_LAYER_NAME = 'decoder_layer'
@@ -744,6 +770,7 @@ def to_distributed(
                 program_ops_dist_infos[tuple(program_ops_id)] = op_dist_info
             processed_patterns.append(program_ops_dist_infos)
         matched_programs[pattern_name] = processed_patterns
+    logger.debug(f'Matched decoder layer patterns are: {matched_programs}')
 
     # step 2: calculate the optimal parallel strategies based on the network structure
     mesh = cost_model(matched_programs, device_num, node_num)

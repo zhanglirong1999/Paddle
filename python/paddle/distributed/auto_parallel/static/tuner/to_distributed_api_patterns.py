@@ -33,6 +33,9 @@ def register_pattern(cls):
         global _ALL_PATTERNS
         pattern = cls()
         _ALL_PATTERNS[pattern.name] = pattern
+        logger.debug(
+            f'register pattern : {pattern.name}, pattern program: {pattern.program}'
+        )
 
     register()
 
