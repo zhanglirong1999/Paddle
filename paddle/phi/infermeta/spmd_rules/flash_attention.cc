@@ -274,6 +274,9 @@ SpmdInfo FlashAttInferSpmd(const DistMetaTensor& q,
   if (!IsEmpty(attn_mask_shape)) {
     attn_mask_dist_attr_dst =
         MapDims(attn_mask_dist_attr, axis_to_dim_map, attn_mask_axes);
+    if (attn_mask_shape[1] == 1) {
+      attn_mask_dist_attr_dst = UnShardTensorDims(attn_mask_dist_attr_dst, {1});
+    }
   }
 
   // TODO(liuzhenhai): process fixed_seed
@@ -527,6 +530,9 @@ SpmdInfo FlashAttInferSpmdReverse(const DistMetaTensor& q,
   if (!IsEmpty(attn_mask_shape)) {
     attn_mask_dist_attr_dst =
         MapDims(attn_mask_dist_attr, axis_to_dim_map, attn_mask_axes);
+    if (attn_mask_shape[1] == 1) {
+      attn_mask_dist_attr_dst = UnShardTensorDims(attn_mask_dist_attr_dst, {1});
+    }
   }
 
   // TODO(liuzhenhai): process fixed_seed
@@ -800,6 +806,9 @@ SpmdInfo FlashAttGradInferSpmd(const DistMetaTensor& q,
   if (!IsEmpty(attn_mask_shape)) {
     attn_mask_dist_attr_dst =
         MapDims(attn_mask_dist_attr, axis_to_dim_map, attn_mask_axes);
+    if (attn_mask_shape[1] == 1) {
+      attn_mask_dist_attr_dst = UnShardTensorDims(attn_mask_dist_attr_dst, {1});
+    }
   }
 
   // TODO(liuzhenhai): process seed and  attn_mask
