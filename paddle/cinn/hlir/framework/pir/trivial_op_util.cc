@@ -738,7 +738,7 @@ ExprTransformer RemoveOnesTransformer(const std::vector<int32_t>& ones) {
 
 ExprTransformer TransposeForsTransformer(const std::vector<int32_t>& perm) {
   const auto& f = [=](const ir::Expr& root) -> ir::Expr {
-    const auto& iters = GetNonReduceLoopVars(root);
+    const auto& iters = GetAllLoopVars(root);
     PADDLE_ENFORCE_EQ(
         iters.size(),
         perm.size(),
