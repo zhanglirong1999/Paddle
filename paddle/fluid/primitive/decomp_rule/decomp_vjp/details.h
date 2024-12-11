@@ -1835,8 +1835,8 @@ void hardsigmoid_grad(const Tensor& out,
     auto mask_gt = greater_than<T>(out, zeros);
     auto mask_lt = less_than<T>(out, one);
     auto mask = bitwise_and<T>(mask_gt, mask_lt);
-    Tensor slope_tensor = full_scalar<T>(slope, out.dtype());
-    auto res = cast<T>(mask, out.dtype()) * slope_tensor * out_grad;
+    Tensor slope_t = full_scalar<T>(slope, out.dtype());
+    auto res = cast<T>(mask, out.dtype()) * slope_t * out_grad;
     set_output<T>(res, x_grad);
   }
 }
