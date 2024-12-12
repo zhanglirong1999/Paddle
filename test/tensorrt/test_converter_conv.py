@@ -40,9 +40,11 @@ class TestConv2dTRTPattern(TensorRTBaseTest):
         self.program_config = {"feed_list": ["x"]}
         self.min_shape = {"x": [1, 3, 8, 8]}
         self.max_shape = {"x": [10, 3, 8, 8]}
-        self.enable_fp16 = True
 
-    def test_trt_result(self):
+    def test_trt_result_fp16(self):
+        self.check_trt_result(precision_mode="fp16")
+
+    def test_trt_result_fp32(self):
         self.check_trt_result()
 
 
