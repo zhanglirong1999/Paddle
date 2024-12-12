@@ -86,7 +86,7 @@ def build_dict(corpus, min_freq=3):
 
 word2id_freq, word2id_dict, id2word_dict = build_dict(corpus)
 vocab_size = len(word2id_freq)
-print("there are totoally %d different words in the corpus" % vocab_size)
+print(f"there are totoally {vocab_size} different words in the corpus")
 for _, (word, word_id) in zip(range(50), word2id_dict.items()):
     print(
         f"word {word}, its id {word_id}, its word freq {word2id_freq[word_id]}"
@@ -311,7 +311,7 @@ def train():
 
             step += 1
             mean_loss = np.mean(loss.numpy())
-            print("step %d / %d, loss %f" % (step, total_steps, mean_loss))
+            print(f"step {step} / {total_steps}, loss {mean_loss:f}")
             ret.append(mean_loss)
         return np.array(ret)
 

@@ -726,14 +726,8 @@ class AutoParallelGradChecker(AutoParallelForwardChecker):
                     atol=self.rtol,
                     err_msg=(
                         'Check eager auto parallel failed. Mismatch between eager auto parallel outputs '
-                        'and eager outputs on %s, the eager forward output tensor\'s index is : %d \n'
-                        'eager auto parallel output tensor:\n%s\n eager output tensor:\n%s\n'
-                        % (
-                            str(self.place),
-                            i,
-                            actual_forward_res[i],
-                            self.eager_forward_desire[i],
-                        )
+                        f'and eager outputs on {self.place}, the eager forward output tensor\'s index is : {i} \n'
+                        f'eager auto parallel output tensor:\n{actual_forward_res[i]}\n eager output tensor:\n{self.eager_forward_desire[i]}\n'
                     ),
                 )
 
@@ -752,14 +746,8 @@ class AutoParallelGradChecker(AutoParallelForwardChecker):
                     atol=self.rtol,
                     err_msg=(
                         'Check eager auto parallel backward failed. Mismatch between eager auto parallel grad outputs '
-                        'and eager grad outputs on %s, the eager grad output tensor\'s index is : %d \n'
-                        'eager auto parallel grad output tensor:\n%s\n eager grad output tensor:\n%s\n'
-                        % (
-                            str(self.place),
-                            i,
-                            actual_grad_res[i],
-                            self.eager_grad_desire[i],
-                        )
+                        f'and eager grad outputs on {self.place}, the eager grad output tensor\'s index is : {i} \n'
+                        f'eager auto parallel grad output tensor:\n{actual_grad_res[i]}\n eager grad output tensor:\n{self.eager_grad_desire[i]}\n'
                     ),
                 )
 

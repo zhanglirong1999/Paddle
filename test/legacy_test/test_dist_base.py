@@ -225,7 +225,7 @@ class TestDistRunnerBase:
         )
 
         device_id = int(os.getenv("FLAGS_selected_gpus", "0"))
-        eprint(type(self).__name__, "device_id: %d." % device_id)
+        eprint(type(self).__name__, f"device_id: {device_id}.")
         place = base.CUDAPlace(device_id)
 
         exe = base.Executor(place)
@@ -243,7 +243,7 @@ class TestDistRunnerBase:
             loss = exe.run(main_program, fetch_list=[avg_cost])
             loss = loss[0] if loss else None
             out_losses.append(loss)
-            print_to_err(type(self).__name__, "run step %d finished" % i)
+            print_to_err(type(self).__name__, f"run step {i} finished")
             if lr_scheduler is not None:
                 lr_scheduler.step()
 
@@ -327,7 +327,7 @@ class TestDistRunnerBase:
                 feed=feeder.feed(get_data()),
             )
             out_losses.append(float(loss))
-            print_to_err(type(self).__name__, "run step %d finished" % i)
+            print_to_err(type(self).__name__, f"run step {i} finished")
         print_to_err(type(self).__name__, "trainer run finished")
         print_to_err(type(self).__name__, f"dist losses: {out_losses}")
 
@@ -421,7 +421,7 @@ class TestDistRunnerBase:
                 feed=feeder.feed(get_data()),
             )
             out_losses.append(float(loss))
-            print_to_err(type(self).__name__, "run step %d finished" % i)
+            print_to_err(type(self).__name__, f"run step {i} finished")
         print_to_err(type(self).__name__, "trainer run finished")
 
         dump_output(out_losses)
@@ -654,7 +654,7 @@ class TestDistRunnerBase:
                 binary, fetch_list=[avg_cost.name], feed=feeder.feed(get_data())
             )
             out_losses.append(float(loss))
-            print_to_err(type(self).__name__, "run step %d finished" % i)
+            print_to_err(type(self).__name__, f"run step {i} finished")
             if lr_scheduler is not None:
                 lr_scheduler.step()
 
