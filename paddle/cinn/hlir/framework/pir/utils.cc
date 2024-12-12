@@ -409,7 +409,6 @@ bool CauseNewSymbolicShape(const ::pir::Operation& op) {
     }
     return false;
   }();
-
   return outputs_have_new_symbol;
 }
 
@@ -445,14 +444,24 @@ bool HasHandledInPass(const ::pir::Operation& op) {
 // 3. it should be handled in pd_to_cinn_pass;
 bool IsSupportInCinn(const ::pir::Operation& op) {
   const bool is_denied = IsDeniedInCinn(op);
-  const bool is_registered = IsRegisteredInCINN(op);
-  const bool is_handled = HasHandledInPass(op);
-  const bool cause_new_symbolic_shape = CauseNewSymbolicShape(op);
-  VLOG(5) << op.name() << ": IsDeniedInCinn = " << is_denied
-          << ", IsRegisteredInCINN = " << is_registered
-          << ", HasHandledInPass = " << is_handled
-          << ", CauseNewSymbolicShape = " << cause_new_symbolic_shape;
-  return !is_denied && is_registered && is_handled && !cause_new_symbolic_shape;
+  if (IsDeniedInCinn(op)) {
+    VLOG(5) << op.name() << "[id:" << op.id() << "] is denied in CINN";
+    return false;
+  }
+  if (!IsRegisteredInCINN(op)) {
+    VLOG(5) << op.name() << "[id:" << op.id() << "] isn't registered in CINN";
+    return false;
+  }
+  if (!HasHandledInPass(op)) {
+    VLOG(5) << op.name() << "[id:" << op.id() << "] isn't handled in CINN";
+    return false;
+  }
+  if (CauseNewSymbolicShape(op)) {
+    VLOG(5) << op.name() << "[id:" << op.id()
+            << "] caused new symbolic shape in CINN";
+    return false;
+  }
+  return true;
 }
 }  // namespace
 

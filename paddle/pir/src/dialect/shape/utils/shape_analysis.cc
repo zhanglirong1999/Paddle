@@ -605,7 +605,8 @@ ShapeConstraintIRAnalysis::GetShapeOrDataForValue(Value val) {
       SetSymbolForValueByStaticShape(val);
     } else {
       VLOG(3) << "InferShapeOrDataForValue,  defining_op: "
-              << val.defining_op()->name() << " id:" << val.defining_op()->id();
+              << val.defining_op()->name() << " id:" << val.defining_op()->id()
+              << " value id: " << val.impl()->id();
       InferShapeOrDataForValue(val);
     }
   }
