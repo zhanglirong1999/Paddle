@@ -464,27 +464,48 @@ class ValuePreservePass:
     def apply(self, program):
         raise RuntimeError("Not implemented.")
 
-    def __call__(self, program):
-        # create fake values for args
-        all_values = list(
-            filter(
-                lambda x: isinstance(x, Value) and not is_fake_value(x),
-                paddle.utils.flatten(self.values),
-            )
-        )
+    @staticmethod
+    def create_name_generator(prefix):
+        count = 0
 
+        def name_gen():
+            nonlocal count
+            name = f"{prefix}{count}"
+            count += 1
+            return name
+
+        return name_gen
+
+    @staticmethod
+    def attach_preserved_name(value, program, value2name, name_generator):
+        if is_fake_value(value):
+            return None
+        if value in value2name:
+            return value2name[value]
+        name = name_generator()
+        value2name[value] = name
+        paddle.base.libpaddle.pir.append_shadow_output(
+            program,
+            value,
+            name,
+            len(program.global_block().ops),
+        )
+        return name
+
+    def __call__(self, program):
+        # create preserved op for args
         value2name = ValueDict()
-        for idx, v in enumerate(all_values):
-            name = f"{ValuePreservePass.OP_NAME_PREFIX}{idx}"
-            if v in value2name:
-                continue
-            value2name[v] = name
-            paddle.base.libpaddle.pir.append_shadow_output(
-                program,
-                v,
-                name,
-                len(program.global_block().ops),
-            )
+        name_generator = ValuePreservePass.create_name_generator(
+            ValuePreservePass.OP_NAME_PREFIX
+        )
+        names = paddle.utils.map_structure(
+            lambda value: ValuePreservePass.attach_preserved_name(
+                value, program, value2name, name_generator  # noqa: F821
+            ),
+            self.values,
+        )
+        # NOTE(SigureMo): Value maybe removed in pass, don't use value2name after pass
+        del value2name
 
         # apply program pass
         program = self.apply(program)
@@ -506,21 +527,9 @@ class ValuePreservePass:
         for op in to_remove_op:
             program.global_block().remove_op(op)
 
-        # get new values
-        value2new_value = ValueDict(
-            {
-                v: name2new_value.get(name, fake_value())
-                for v, name in value2name.items()
-            }
+        self.values = paddle.utils.map_structure(
+            lambda name: name2new_value.get(name, fake_value()), names
         )
-
-        new_args = paddle.utils.map_structure(
-            lambda x: (
-                value2new_value[x] if not is_fake_value(x) else fake_value()
-            ),
-            self.values,
-        )
-        self.values = new_args
         return program
 
 
