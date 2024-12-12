@@ -1,4 +1,4 @@
-#   Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+# Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -490,6 +490,66 @@ class TestMeshgridEager(unittest.TestCase):
                 (tensor_2.grad.numpy() == tensor_eager_2.grad.numpy()).all(),
                 True,
             )
+
+
+class TestMeshgridEmptyTensor(unittest.TestCase):
+    def _get_places(self):
+        places = [base.CPUPlace()]
+        if paddle.is_compiled_with_cuda():
+            places.append(base.CUDAPlace(0))
+        return places
+
+    def _generate_inputs(self, shapes):
+        return [np.random.random(shape).astype('float64') for shape in shapes]
+
+    def _test_with_shapes(self, shapes, expected_shapes, place=None):
+        inputs = self._generate_inputs(shapes)
+
+        if place is None:  # Dygraph mode
+            with base.dygraph.guard():
+                tensors = [paddle.to_tensor(inp) for inp in inputs]
+                results = paddle.tensor.meshgrid(tensors)
+        else:  # Static mode
+            with paddle.static.program_guard(paddle.static.Program()):
+                data_tensors = [
+                    paddle.static.data(
+                        shape=shape, dtype='float64', name=f'x{i}'
+                    )
+                    for i, shape in enumerate(shapes)
+                ]
+                exe = base.Executor(place=place)
+                grid_results = paddle.tensor.meshgrid(data_tensors)
+                feed_dict = {f'x{i}': inp for i, inp in enumerate(inputs)}
+                results = exe.run(
+                    paddle.static.default_main_program(),
+                    feed=feed_dict,
+                    fetch_list=grid_results,
+                )
+
+        for result, expected_shape in zip(results, expected_shapes):
+            np.testing.assert_array_equal(result.shape, expected_shape)
+
+    def test_api_with_dygraph_empty_tensor_input(self):
+        self._test_with_shapes([(100,), (0,)], [[100, 0], [100, 0]])
+
+    def _test_api_with_static_empty_tensor_input(self, place):
+        self._test_with_shapes([(100,), (0,)], [[100, 0], [100, 0]], place)
+
+    def test_api_with_static_empty_tensor_input(self):
+        for place in self._get_places():
+            self._test_api_with_static_empty_tensor_input(place)
+
+
+class TestMeshgridEmptyTensor2(TestMeshgridEmptyTensor):
+    def test_api_with_dygraph_empty_tensor_input(self):
+        self._test_with_shapes(
+            [(0,), (0,), (0,)], [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+        )
+
+    def _test_api_with_static_empty_tensor_input(self, place):
+        self._test_with_shapes(
+            [(0,), (0,), (0,)], [[0, 0, 0], [0, 0, 0], [0, 0, 0]], place
+        )
 
 
 if __name__ == '__main__':
