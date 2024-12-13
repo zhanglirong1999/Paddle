@@ -426,7 +426,8 @@ bool AnalysisPredictor::Init(
     platform::CudaProfilerStart();
     platform::NvprofEnableRecordEvent();
 #endif
-    platform::EnableProfiler(platform::ProfilerState::kAll);
+    platform::EnableProfiler(config_.use_gpu() ? platform::ProfilerState::kAll
+                                               : platform::ProfilerState::kCPU);
   }
 
   if (!status_is_cloned_) {
