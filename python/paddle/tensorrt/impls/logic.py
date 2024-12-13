@@ -23,12 +23,18 @@ logic_type_map = {
     "pd_op.greater_than": trt.ElementWiseOperation.GREATER,
     "pd_op.less_than": trt.ElementWiseOperation.LESS,
     "pd_op.equal": trt.ElementWiseOperation.EQUAL,
+    "pd_op.logical_or": trt.ElementWiseOperation.OR,
+    "pd_op.logical_or_": trt.ElementWiseOperation.OR,
+    "pd_op.logical_and": trt.ElementWiseOperation.AND,
 }
 
 
 @converter_registry.register("pd_op.greater_than", trt_version="8.x")
 @converter_registry.register("pd_op.less_than", trt_version="8.x")
 @converter_registry.register("pd_op.equal", trt_version="8.x")
+@converter_registry.register("pd_op.logical_or", trt_version="8.x")
+@converter_registry.register("pd_op.logical_or_", trt_version="8.x")
+@converter_registry.register("pd_op.logical_and", trt_version="8.x")
 def logic_converter(network, paddle_op, inputs):
     layer_output = add_elementwise_layer(
         network, paddle_op, inputs, logic_type_map[paddle_op.name()]
