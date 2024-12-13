@@ -82,7 +82,7 @@ def c_concat(x, process_mesh, need_transpose):
 
 class PlanBase:
     def __init__(self):
-        pass
+        self.share_param_list = {}
 
     def apply(self, layer, process_mesh, shard_weight, shard_bias):
         raise NotImplementedError("Don't call the PlanBase directly.")
@@ -143,6 +143,7 @@ class ColWiseParallel(PlanBase):
         index = process_mesh.dim_names.index('mp')  # get the axis for the split
         size = len(process_mesh.shape)
         placement = [dist.Replicate() for _ in range(size)]
+        param_placements = {}
         assert isinstance(layer, paddle.nn.Layer)
         if not isinstance(layer, (paddle.nn.Linear, paddle.nn.Embedding)):
             logging.warning(
@@ -157,20 +158,39 @@ class ColWiseParallel(PlanBase):
         ):
             placement[index] = dist.Shard(1)
             assert len(layer.weight.shape) == 2
-            layer.weight = dist.shard_tensor(
-                layer.weight,
-                process_mesh,
-                placement,
-            )
+            # NOTE(zhangweilong):for share parameter, the parameter should be handled uniformly in the end
+            if (
+                self.share_param_list is not None
+                and layer.weight.name in self.share_param_list
+                and self.share_param_list[layer.weight.name] > 1
+            ):
+                param_placements.update({"weight": placement})
+            else:
+                layer.weight = dist.shard_tensor(
+                    layer.weight,
+                    process_mesh,
+                    placement,
+                )
         if hasattr(layer, "bias") and layer.bias is not None and shard_bias:
             placement[index] = dist.Shard(0)
             assert len(layer.bias.shape) == 1
-            layer.bias = dist.shard_tensor(layer.bias, process_mesh, placement)
+            # NOTE(zhangweilong):for share parameter, the parameter should be handled uniformly in the end
+            if (
+                self.share_param_list is not None
+                and layer.bias.name in self.share_param_list
+                and self.share_param_list[layer.bias.name] > 1
+            ):
+                param_placements.update({"bias": placement})
+            else:
+                layer.bias = dist.shard_tensor(
+                    layer.bias, process_mesh, placement
+                )
 
         if self.gather_output:
             layer.register_forward_post_hook(
                 self.gather_output_hook(process_mesh)
             )
+        return param_placements
 
 
 class RowWiseParallel(PlanBase):
@@ -185,7 +205,7 @@ class RowWiseParallel(PlanBase):
 
     Args:
         is_input_parallel (bool): Whether the input is a local tensor or a global tensor. If the input is a
-            global tensor, an extra split will be called. The default value is `True`，
+            global tensor, an extra split will be called. The default value is `True`,
             which means the input is a local tensor.
 
     Examples:
@@ -225,6 +245,7 @@ class RowWiseParallel(PlanBase):
         size = len(process_mesh.shape)
         placement = [dist.Replicate() for _ in range(size)]
         placement[index] = dist.Shard(0)
+        param_placements = {}
         assert isinstance(layer, paddle.nn.Layer)
         if not isinstance(layer, (paddle.nn.Linear, paddle.nn.Embedding)):
             logging.warning(
@@ -238,13 +259,22 @@ class RowWiseParallel(PlanBase):
             and shard_weight
         ):
             assert len(layer.weight.shape) == 2
-            layer.weight = dist.shard_tensor(
-                layer.weight,
-                process_mesh,
-                placement,
-            )
+            # NOTE(zhangweilong):for share parameter, the parameter should be handled uniformly in the end
+            if (
+                self.share_param_list is not None
+                and layer.weight.name in self.share_param_list
+                and self.share_param_list[layer.weight.name] > 1
+            ):
+                param_placements.update({"weight": placement})
+            else:
+                layer.weight = dist.shard_tensor(
+                    layer.weight,
+                    process_mesh,
+                    placement,
+                )
         if not self.is_input_parallel:
             layer.register_forward_pre_hook(self.split_input_hook(process_mesh))
+        return param_placements
 
 
 class PrepareLayerInput(PlanBase):
@@ -626,20 +656,35 @@ class TensorParallel(ParallelModel):
     def tensor_parallelizer_fn(self, model):
         if self.parallelize_plan is None:
             return
+        layer_param_placements = {}
+        share_param_list = {}
+        for name, layer in model.named_sublayers():
+            for param_name in list(layer._parameters.keys()):
+                param = getattr(layer, param_name)
+                if param.name not in share_param_list:
+                    share_param_list[param.name] = 1
+                    continue
+                share_param_list[param.name] += 1
         for name, layer in model.named_sublayers():
             plans = self.match_layer(name)
+            layer_param_placements[layer] = {}
             if len(plans) > 0:
                 pp_idx = getattr(layer, "pipeline_stage_index", 0)
                 for plan in plans:
                     real_plan, shard_weight, shard_bias = plan
                     for p in real_plan:
-                        p.apply(
+                        p.share_param_list = share_param_list
+                        param_placements = p.apply(
                             layer,
                             self.get_mesh(pp_idx),
                             shard_weight,
                             shard_bias,
                         )
-        return model
+                        if param_placements is not None and param_placements:
+                            layer_param_placements[layer].update(
+                                param_placements
+                            )
+        return model, layer_param_placements
 
 
 def tensor_parallel(model, optimizer=None, config=None):
