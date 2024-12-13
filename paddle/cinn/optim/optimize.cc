@@ -17,13 +17,14 @@
 #include "paddle/cinn/ir/ir_printer.h"
 #include "paddle/cinn/ir/schedule/ir_schedule_util.h"
 #include "paddle/cinn/ir/utils/ir_copy.h"
+#include "paddle/cinn/ir/utils/stmt_converter.h"
 #include "paddle/cinn/optim/call_arg_list_to_pod_value.h"
 #include "paddle/cinn/optim/cast_bool_to_int8.h"
 #include "paddle/cinn/optim/eliminate_broadcast_in_forloop.h"
 #include "paddle/cinn/optim/eliminate_invariant_loop.h"
 #include "paddle/cinn/optim/extern_call_process.h"
 #include "paddle/cinn/optim/fold_cinn_call_arguments.h"
-#include "paddle/cinn/optim/if_fusion.h"
+#include "paddle/cinn/optim/if_fusion_pass.h"
 #include "paddle/cinn/optim/insert_debug_log_callee.h"
 #include "paddle/cinn/optim/ir_simplify.h"
 #include "paddle/cinn/optim/lower_function_call_bind_vars.h"
@@ -40,6 +41,7 @@
 #include "paddle/cinn/optim/unroll_loops.h"
 #include "paddle/cinn/optim/vectorize_for_trans.h"
 #include "paddle/cinn/optim/vectorize_loops.h"
+#include "paddle/cinn/pass/pass_manager.h"
 
 namespace cinn {
 namespace optim {
@@ -55,6 +57,7 @@ ir::LoweredFunc Optimize(ir::LoweredFunc fn,
           "Expected expression 'fn' to be defined, but it is undefined."));
 
   auto copied = ir::ir_utils::IRCopy(fn);
+  if (!copied->body.As<ir::Block>()) return copied;
 
   ReplaceConstParamToInteger(&copied->body);
   // Simplify already contains CastSimplify
@@ -102,9 +105,9 @@ ir::LoweredFunc Optimize(ir::LoweredFunc fn,
   Simplify(&copied->body);
   VLOG(10) << "After Optimize Simplify:" << copied;
 
-  // TODO(liangshuhao): this pass may unexpectedly remove schedule blocks, and
-  // it actually doesn't contribute to performance, so temporarily disabled.
-  // IfFusion(&copied->body);
+  BlockPassManager pass_manager;
+  pass_manager.AddPass(CreateIfFusionPass());
+  pass_manager.Run(copied);
 
   VectorizeForTrans(&copied->body);
   VLOG(10) << "After Optimize vectorize" << copied;
