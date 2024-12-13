@@ -58,6 +58,17 @@ def get_value_name(value):
     return value.name
 
 
+def apply_general_passes(
+    program, *, enable_cse=True, enable_delete_assert_op=True
+):
+    pm = paddle.pir.PassManager(2)
+    if enable_cse:
+        pm.add_pass("common_subexpression_elimination_pass", {})
+    if enable_delete_assert_op:
+        pm.add_pass("delete_assert_op_pass", {})
+    pm.run(program)
+
+
 class NestSequence:
     """
     A wrapper class that easily to flatten and restore the nest structure of
@@ -707,8 +718,14 @@ class PartialProgramLayer:
                     pm, forward_program
                 )
                 pm.run(forward_program)
-                if cse_is_enabled():
-                    paddle.base.libpaddle.pir.apply_cse_pass(forward_program)
+
+                apply_general_passes(
+                    forward_program,
+                    enable_cse=cse_is_enabled(),
+                    enable_delete_assert_op=cinn_is_enabled(
+                        self._build_strategy, self._backend
+                    ),
+                )
 
                 # if-else pass
                 if cinn_is_enabled(self._build_strategy, self._backend):
@@ -793,9 +810,20 @@ class PartialProgramLayer:
                             forward_matched_value, kw_value
                         )
 
-                if cse_is_enabled():
-                    paddle.base.libpaddle.pir.apply_cse_pass(forward_program)
-                    paddle.base.libpaddle.pir.apply_cse_pass(backward_program)
+                apply_general_passes(
+                    forward_program,
+                    enable_cse=cse_is_enabled(),
+                    enable_delete_assert_op=cinn_is_enabled(
+                        self._build_strategy, self._backend
+                    ),
+                )
+                apply_general_passes(
+                    backward_program,
+                    enable_cse=cse_is_enabled(),
+                    enable_delete_assert_op=cinn_is_enabled(
+                        self._build_strategy, self._backend
+                    ),
+                )
                 if cinn_is_enabled(self._build_strategy, self._backend):
                     paddle.base.libpaddle.pir.apply_cinn_pass(forward_program)
                     init_backward_program_shape_analysis(

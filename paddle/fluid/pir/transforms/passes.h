@@ -52,6 +52,7 @@ USE_PIR_PASS(auto_layout_simplify_pass);
 USE_PIR_PASS(auto_layout_insert_pass);
 USE_PIR_PASS(auto_layout_pass);
 USE_PIR_PASS(common_subexpression_elimination_pass);
+USE_PIR_PASS(delete_assert_op_pass);
 USE_PIR_PASS(add_shadow_output_after_dead_parameter_pass);
 
 #ifdef PADDLE_WITH_DNNL

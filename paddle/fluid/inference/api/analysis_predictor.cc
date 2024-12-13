@@ -865,6 +865,14 @@ void AnalysisPredictor::OptimizeInferencePirProgram() {
       return pass_manager;
     };
 
+    if (config_.cinn_enabled() && !config_.custom_pass_only_) {
+      ::pir::PassManager delete_assert_op_pm(::pir::IrContext::Instance(),
+                                             config_.pm_opt_level_);
+      delete_assert_op_pm.AddPass(
+          pir::PassRegistry::Instance().Get("delete_assert_op_pass"));
+      delete_assert_op_pm.Run(pir_program_.get());
+    }
+
     if (config_.use_gpu() && config_.cinn_enabled()) {
       if (!config_.custom_pass_only_) {
         ::pir::PassManager fused_op_pm(::pir::IrContext::Instance(),
