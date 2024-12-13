@@ -779,7 +779,9 @@ def to_distributed(
     with_pp = True if "pp" in mesh.dim_names else False
     with_mp = True if "mp" in mesh.dim_names else False
     with_dp = True if "dp" in mesh.dim_names else False
-    with_sp = True if config.sequence_parallel else False
+    with_sp = (
+        True if "mp" in mesh.dim_names and config.sequence_parallel else False
+    )
 
     # step 3: processing tensor parallel if necessary, according to the optimal parallel strategies shard weight tensors in decoder blocks
     if with_mp:

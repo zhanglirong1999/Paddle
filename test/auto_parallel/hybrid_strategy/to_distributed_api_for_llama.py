@@ -613,12 +613,8 @@ class TestLlamaDecoderForSemiAutoParallel:
         paddle.set_device(self._backend)
 
     def test_to_distributed_api(self):
-        # # config: input_spec
-        input_seq_spec = paddle.static.InputSpec(
-            [BATCH_SIZE, SEQ_LENGTH], 'float32', 'input_seq', True
-        )
+        # # config: sequence_parallel
         dist_config = ToDistributedConfig()
-        dist_config.input_spec = [input_seq_spec]
         dist_config.sequence_parallel = True
 
         # # wrap model by using **to_distributed**
