@@ -638,4 +638,9 @@ if(WITH_CUDNN_FRONTEND)
   list(APPEND third_party_deps extern_cudnn_frontend)
 endif()
 
+if(WITH_OPENVINO)
+  include(external/openvino)
+  list(APPEND third_party_deps extern_openvino)
+endif()
+
 add_custom_target(third_party ALL DEPENDS ${third_party_deps})
