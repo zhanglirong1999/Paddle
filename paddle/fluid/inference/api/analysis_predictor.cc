@@ -115,6 +115,7 @@
 #include "paddle/fluid/pir/transforms/general/common_subexpression_elimination_pass.h"
 #include "paddle/fluid/pir/transforms/general/constant_folding_pass.h"
 #include "paddle/fluid/pir/transforms/general/dead_code_elimination_pass.h"
+#include "paddle/fluid/pir/transforms/general/delete_assert_op_pass.h"
 #include "paddle/fluid/pir/transforms/general/inplace_pass.h"
 #include "paddle/fluid/pir/transforms/general/params_sync_among_devices_pass.h"
 #include "paddle/fluid/pir/transforms/general/remove_shadow_feed_pass.h"
@@ -877,8 +878,7 @@ void AnalysisPredictor::OptimizeInferencePirProgram() {
     if (config_.cinn_enabled() && !config_.custom_pass_only_) {
       ::pir::PassManager delete_assert_op_pm(::pir::IrContext::Instance(),
                                              config_.pm_opt_level_);
-      delete_assert_op_pm.AddPass(
-          pir::PassRegistry::Instance().Get("delete_assert_op_pass"));
+      delete_assert_op_pm.AddPass(pir::CreateDeleteAssertOpPass());
       delete_assert_op_pm.Run(pir_program_.get());
     }
 
