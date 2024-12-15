@@ -1034,7 +1034,7 @@ class ASTStaticFunction(StaticFunction[_InputT, _RetT]):
         # if specific the `input_spec`, the length of program_cache will always 1,
         # else, return the last one.
         cached_program_len = len(self._program_cache)
-        # If specific `input_spec`, apply convertion from dygraph layers into static Program.
+        # If specific `input_spec`, apply conversion from dygraph layers into static Program.
         # NOTE(jiabin): is_prim_infer indicates this method called by paddle.jit.save and it is worked in prim mode
 
         desired_input_spec = input_spec
