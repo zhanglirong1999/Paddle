@@ -57,7 +57,7 @@ class TrtSubGraphExtractPass : public pir::Pass {
     auto& block = module_op.block();
 
     std::vector<GroupOpsVec> groups =
-        ::pir::DetectSubGraphs(&block, IsSupportedByTRT);
+        ::pir::SubgraphDetector(&block, IsSupportedByTRT)();
     AddStatistics(groups.size());
     for (auto& group_ops : groups) {
       if (group_ops.size() < static_cast<size_t>(FLAGS_trt_min_group_size)) {
