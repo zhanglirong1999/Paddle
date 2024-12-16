@@ -1179,11 +1179,10 @@ struct PD_INFER_DECL AnalysisConfig {
 
   // Padding related
   bool use_fc_padding_{true};
-#ifdef PADDLE_WITH_OPENVINO
+
   // OpenVINO related.
   bool use_openvino_{false};
   Precision openvino_inference_precision_{Precision::kFloat32};
-#endif
 
   // TensorRT related.
   bool use_tensorrt_{false};
