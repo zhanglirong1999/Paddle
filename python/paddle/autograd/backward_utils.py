@@ -434,16 +434,18 @@ def inverse_sort_op(old_ops):
     # pending edges for its grad_op
 
     pending_count = collections.defaultdict(int)
-    ops_set = set(old_ops)
+    ops = []
+    [ops.append(x) for x in old_ops if x not in ops]
+    ops_set = set(ops)
     sorted_list = []
-    for op in ops_set:
+    for op in ops:
         for x in get_real_op_inputs(op):
             if not pir.is_fake_value(x) and x.get_defining_op() in ops_set:
                 pending_count[x.get_defining_op()] += 1
 
     queue = collections.deque()
 
-    for op in ops_set:
+    for op in ops:
         if pending_count[op] == 0:
             queue.append(op)
 
@@ -456,7 +458,7 @@ def inverse_sort_op(old_ops):
             if pending_count[x_op] == 0:
                 queue.append(x_op)
 
-    if len(sorted_list) != len(ops_set):
+    if len(sorted_list) != len(ops):
         raise ValueError(
             "inverse_sort_op wrong, sorted_list size is not equal to origin_list size"
         )
