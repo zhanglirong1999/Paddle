@@ -894,6 +894,7 @@ void AnalysisPredictor::OptimizeInferencePirProgram() {
         // Infer symbol shape for all ops before fused pass
         fused_op_pm.AddPass(pir::CreateShapeOptimizationPass());
         const std::vector<std::string> FusedOpPasses{// Operator fusion pass
+                                                     "map_op_to_another_pass",
                                                      "conv2d_bn_fuse_pass",
                                                      "conv2d_add_act_fuse_pass",
                                                      "conv2d_add_fuse_pass"};
