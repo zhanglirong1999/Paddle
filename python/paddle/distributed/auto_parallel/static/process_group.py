@@ -245,7 +245,7 @@ class ProcessGroup:
                 alltoall_tmp = paddle.empty(
                     shape=[self.nranks, self.nranks], dtype="int32"
                 )
-                paddle._legacy_C_ops.alltoall(
+                paddle._legacy_C_ops.all_to_all(
                     alltoall_tmp, 'use_calc_stream', True, 'ring_id', ring_id
                 )
                 paddle.device.cuda.synchronize()
