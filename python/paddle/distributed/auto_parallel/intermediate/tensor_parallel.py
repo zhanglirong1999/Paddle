@@ -31,7 +31,8 @@ if TYPE_CHECKING:
 
 
 def c_split(x, process_mesh, need_transpose):
-    index = process_mesh.dim_names.index('mp')  # get the axis for the split
+    mp_index = process_mesh.dim_names.index('mp')  # get the axis for the split
+    dp_index = process_mesh.dim_names.index('dp')
     if isinstance(x, tuple):
         target_x = x[0]
     else:
@@ -43,7 +44,18 @@ def c_split(x, process_mesh, need_transpose):
     placements = target_x.placements
     if placements is None:
         placements = [dist.Replicate() for _ in range(len(process_mesh.shape))]
-    placements[index] = dist.Shard(0)
+    if placements[dp_index] == dist.Shard(0):
+        # NOTE(zhangwl):if shard(0) , input shape should be [b,s,h]
+        split_dims = dist.Shard(1)
+    elif placements[dp_index] == dist.Shard(1):
+        # NOTE(zhangwl):if shard(1) , input shape should be [s,b,h]
+        split_dims = dist.Shard(0)
+    else:
+        logging.warning(
+            f"parallel api don't know {target_x.shape} which dimension is batch, default is to cut to the 0th dimension"
+        )
+        split_dims = dist.Shard(0)
+    placements[mp_index] = split_dims
     target_x = dist.reshard(target_x, process_mesh, placements)
     if isinstance(x, tuple):
         x = list(x)
@@ -235,7 +247,7 @@ class RowWiseParallel(PlanBase):
         self.is_input_parallel = is_input_parallel
 
     def split_input_hook(self, process_mesh):
-        def split_hook(layer, input, output):
+        def split_hook(layer, input):
             return c_split(input, process_mesh, False)
 
         return split_hook
