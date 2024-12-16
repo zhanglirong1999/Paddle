@@ -361,6 +361,7 @@ class CacheKey:
                 with_hook,
                 is_train,
                 self._pir_flags,
+                use_pir_api(),
             )
         )
 
