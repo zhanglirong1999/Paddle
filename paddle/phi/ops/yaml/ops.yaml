@@ -2491,6 +2491,7 @@
   kernel :
     func : hardsigmoid
   backward : hardsigmoid_grad
+  interfaces : paddle::dialect::InferSymbolicShapeInterface
 
 - op : hardtanh
   args : (Tensor x, float t_min=0, float t_max=24)
