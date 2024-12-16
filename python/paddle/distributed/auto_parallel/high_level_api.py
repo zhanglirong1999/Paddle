@@ -291,9 +291,11 @@ def to_distributed(
             sequence_parallel indicates whether to use sequence parallel. Default: False.
 
     Returns:
-        model: The model in dygraph mode but contain distributed attributes.
-        optimizer: The optimizer for training and may be sharded states.
-        dataloader: The dataloader can be used in distributed training.
+        model. The model in dygraph mode but contain distributed attributes.
+
+        optimizer. The optimizer for training and may be sharded states.
+
+        dataloader. The dataloader can be used in distributed training.
 
     Examples:
         .. code-block:: python
