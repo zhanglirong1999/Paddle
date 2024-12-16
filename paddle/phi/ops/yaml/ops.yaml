@@ -1617,6 +1617,18 @@
   backward : elu_grad
   interfaces : paddle::dialect::InferSymbolicShapeInterface
 
+- op : embedding_with_scaled_gradient
+  args : (Tensor x, Tensor weight, int64_t padding_idx=-1)
+  output : Tensor
+  infer_meta :
+    func : EmbeddingInferMeta
+    param : [x, weight, padding_idx]
+  kernel :
+    func : embedding {dense, dense -> dense}
+    param : [x, weight, padding_idx]
+    data_type : weight
+  backward : embedding_with_scaled_gradient_grad
+
 - op : empty
   args : (IntArray shape, DataType dtype=DataType::FLOAT32, Place place=CPUPlace())
   output: Tensor(out)
