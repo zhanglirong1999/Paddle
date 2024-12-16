@@ -624,14 +624,14 @@ std::tuple<Tensor, Tensor> dropout_decomp(
     auto zero = full_scalar<T>(0.0, dtype_tmp, x.place());
     auto one = full_scalar<T>(1.0, dtype_tmp, x.place());
     uniform_tensor = backend::uniform<T>(
-        shape_tensor, zero, one, dtype_tmp, seed_tmp, x.place());
+        shape_tensor, zero, one, org_dtype, seed_tmp, x.place());
   } else {
     uniform_tensor = uniform<T>(
-        phi::vectorize(x.dims()), dtype_tmp, 0.0, 1.0, seed_tmp, x.place());
+        phi::vectorize(x.dims()), org_dtype, 0.0, 1.0, seed_tmp, x.place());
   }
   auto mask = cast<T>(
       greater_equal<T>(uniform_tensor,
-                       full_scalar<T>(p, dtype_tmp, uniform_tensor.place())),
+                       full_scalar<T>(p, org_dtype, uniform_tensor.place())),
       org_dtype);
   auto ones_p = full_scalar<T>(1.0 - p.to<float>(), org_dtype, x.place());
   if (upscale_in_train) {
