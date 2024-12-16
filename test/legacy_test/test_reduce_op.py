@@ -17,7 +17,7 @@ import unittest
 
 import numpy as np
 from op_test import OpTest, convert_float_to_uint16, skip_check_grad_ci
-from utils import static_guard
+from utils import dygraph_guard, static_guard
 
 import paddle
 from paddle import base
@@ -2247,16 +2247,93 @@ class TestAnyAPI(unittest.TestCase):
         paddle.enable_static()
 
 
-class TestAllZeroError(unittest.TestCase):
-    def test_errors(self):
-        with paddle.base.dygraph.guard():
+class TestAllZero(unittest.TestCase):
+    def setUp(self):
+        np.random.seed(123)
+        self.shape = [1, 0, 2]
+        self.dtypes = [
+            "bool",
+            "float32",
+            "float64",
+            "int32",
+            "complex64",
+            "complex128",
+        ]
+        self.places = [base.CPUPlace()]
+        if core.is_compiled_with_cuda():
+            self.places.append(base.CUDAPlace(0))
 
-            def test_0_size():
-                array = np.array([], dtype=np.float32)
-                x = paddle.to_tensor(np.reshape(array, [0, 0, 0]), dtype='bool')
-                paddle.all(x, axis=1)
+    def calculate_expected_result(self, x_np, axis, keepdim):
+        expected_result = np.all(x_np, axis=axis, keepdims=keepdim)
+        return expected_result
 
-            self.assertRaises(ValueError, test_0_size)
+    def check_result(
+        self, static_result, expected_result, axis, keepdim, dtype, place
+    ):
+        self.assertTrue(
+            (static_result == expected_result).all(),
+            f"Static Mode - Shape: {self.shape}, Axis: {axis}, Keepdim: {keepdim}, Dtype: {dtype}, Place: {place}",
+        )
+
+    def _test_static(self, place, axis, keepdim, dtype):
+        with static_guard():
+            with base.program_guard(
+                paddle.static.Program(), paddle.static.Program()
+            ):
+                input = paddle.static.data(
+                    name="x", shape=self.shape, dtype=dtype
+                )
+                result = paddle.all(x=input, axis=axis, keepdim=keepdim)
+                x_np = np.zeros(self.shape, dtype=dtype)
+
+                exe = base.Executor(place)
+                fetches = exe.run(
+                    feed={"x": x_np},
+                    fetch_list=[result],
+                )
+                expected_result = self.calculate_expected_result(
+                    x_np, axis, keepdim
+                )
+                self.check_result(
+                    fetches[0], expected_result, axis, keepdim, dtype, place
+                )
+
+    def _test_dygraph(self, place, axis, keepdim, dtype):
+        with dygraph_guard():
+            x_np = np.zeros(self.shape, dtype=dtype)
+            x = paddle.to_tensor(x_np)
+            dygraph_result = paddle.all(x, axis=axis, keepdim=keepdim).numpy()
+            expected_result = self.calculate_expected_result(
+                x_np, axis, keepdim
+            )
+            self.check_result(
+                dygraph_result, expected_result, axis, keepdim, dtype, place
+            )
+
+    def _test_all(self, place, axis, keepdim, dtype):
+        self._test_dygraph(place, axis, keepdim, dtype)
+        self._test_static(place, axis, keepdim, dtype)
+
+    def test_zero_size(self):
+        axes_options = [
+            None,
+            0,
+            1,
+            2,
+            -1,
+            -2,
+            (),
+            (0, 1),
+            (0, 2),
+            (1, 2),
+            (-1, -2),
+        ]
+        keepdims_options = [True, False]
+        for place in self.places:
+            for dtype in self.dtypes:
+                for axis in axes_options:
+                    for keepdim in keepdims_options:
+                        self._test_all(place, axis, keepdim, dtype)
 
 
 if __name__ == '__main__':
