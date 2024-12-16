@@ -810,6 +810,7 @@
   infer_meta :
     func : UnchangedInferMeta
     param : [out_grad]
+    spmd_rule: DropoutBwdInferSpmd
   kernel :
     func : dropout_grad
   composite : dropout_grad(mask, out_grad, p, is_test, mode, x_grad)
