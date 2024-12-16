@@ -13,14 +13,14 @@
 // limitations under the License.
 
 #include "paddle/cinn/hlir/dialect/operator/transforms/lowering_pass/collect_sym_expr.h"
-#include "paddle/cinn/hlir/dialect/operator/transforms/lowering_pass/utils.h"
+#include "paddle/cinn/hlir/framework/pir/utils.h"
 #include "paddle/fluid/pir/dialect/operator/interface/infer_symbolic_shape/infer_symbolic_shape.h"
 #include "paddle/pir/include/dialect/shape/utils/dim_expr_util.h"
 
 namespace {
-using cinn::dialect::ir::details::GetBlockOutsideInput;
 using cinn::dialect::ir::details::OpLoweringGroup;
 using cinn::dialect::ir::details::OpLoweringGroupPtr;
+using cinn::hlir::framework::pir::GetBlockOutsideInput;
 
 bool IsComplicatedDimExpr(const symbol::DimExpr& dim_expr) {
   auto lambdas = common::Overloaded{
@@ -136,7 +136,8 @@ CollectSubstituteDimExprMap(
         [&](const symbol::DimExpr& dim_expr) {
           if (dim_expr.isa<std::string>()) return false;
           for (const auto& symbol : symbol::CollectDimExprSymbols(dim_expr)) {
-            if (new_symbol_set.count(symbol) == 0) {
+            if (new_symbol_set.count(symbol) == 0 &&
+                base_dim_expr_set.count(symbol) == 0) {
               return false;
             }
           }
