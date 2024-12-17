@@ -104,9 +104,9 @@ class TestArangeTRTPattern(TensorRTBaseTest):
     def setUp(self):
         self.python_api = paddle.arange
         self.api_args = {
-            "start": np.array([0]).astype("int32"),
-            "end": np.array([6]).astype("int32"),
-            "step": np.array([1]).astype("int32"),
+            "start": np.array([0]).astype("int64"),
+            "end": np.array([6]).astype("int64"),
+            "step": np.array([1]).astype("int64"),
         }
         self.program_config = {"feed_list": []}
         self.min_shape = {}
@@ -195,7 +195,7 @@ class TestFullWithTensorTRTPattern(TensorRTBaseTest):
     def setUp(self):
         self.python_api = paddle.tensor.fill_constant
         self.api_args = {
-            "shape": np.array([1]).astype("int32"),
+            "shape": np.array([1]).astype("int64"),
             "dtype": "float32",
             "value": np.array([0.0]).astype("float32"),
         }

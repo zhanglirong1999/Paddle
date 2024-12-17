@@ -225,8 +225,8 @@ class TestNearestSizeTensorTRTPattern(TensorRTBaseTest):
             "x": x_nchw,
             "OutSize": None,
             "SizeTensor": [
-                np.array([12], dtype="int32"),
-                np.array([12], dtype="int32"),
+                np.array([12], dtype="int64"),
+                np.array([12], dtype="int64"),
             ],
             "Scale": None,
             "attrs": {
