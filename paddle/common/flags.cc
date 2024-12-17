@@ -1370,6 +1370,16 @@ PHI_DEFINE_EXPORTED_bool(enable_fusion_fallback,
                          "Whether enable fallback fusion ops in cinn.");
 
 /**
+ * CINN fusion result check FLAG
+ * Name: FLAGS_enable_fusion_result_check
+ * Since Version: 3.0 beta
+ * Value Range: bool, default=false
+ */
+PHI_DEFINE_EXPORTED_bool(enable_fusion_result_check,
+                         false,
+                         "Whether enable fusion result check in cinn.");
+
+/**
  * CINN TransposeItesr transform fusion FLAG
  * Name: FLAGS_enable_transpose_iters_in_fusion
  * Since Version: 3.0 beta
