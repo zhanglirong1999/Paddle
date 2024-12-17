@@ -52,12 +52,12 @@ void bce_loss_grad(const Tensor& input,
                    Tensor* input_grad) {
   using MT = typename phi::dtype::MPTypeTrait<T>::Type;
   if (input_grad) {
-    auto input_mt = ConverToMT<MT>(input);
+    auto input_mt = ConvertToMT<MT>(input);
     auto term = maximum<MT>((1 - input_mt) * input_mt,
                             full_scalar<MT>(1e-12, input_mt.dtype()));
     auto out_base =
-        ConverToMT<MT>(out_grad) * (input_mt - ConverToMT<MT>(label)) / term;
-    set_output<T>(ConverToOrig<T>(out_base, input.dtype()), input_grad);
+        ConvertToMT<MT>(out_grad) * (input_mt - ConvertToMT<MT>(label)) / term;
+    set_output<T>(ConvertToOrig<T>(out_base, input.dtype()), input_grad);
   }
 }
 
@@ -324,8 +324,8 @@ void gelu_grad(const Tensor& x,
   // Automatically promote to fp32 when the input type is fp16 for keeping
   // consistent with phi kernel
 
-  auto promoted_x = ConverToMT<T>(x);
-  auto promoted_out_grad = ConverToMT<T>(out_grad);
+  auto promoted_x = ConvertToMT<T>(x);
+  auto promoted_out_grad = ConvertToMT<T>(out_grad);
   if (approximate) {
     float kbeta = M_SQRT2 * M_2_SQRTPI * 0.5;
     float kkappa = 0.044715;
@@ -347,7 +347,7 @@ void gelu_grad(const Tensor& x,
     auto right_derivative = left * tanh_derivative * inner_derivative;
 
     set_output<T>(
-        ConverToOrig<T>(
+        ConvertToOrig<T>(
             promoted_out_grad * (left_derivative + right_derivative), x.type()),
         x_grad);
   } else {
@@ -358,9 +358,9 @@ void gelu_grad(const Tensor& x,
 
     auto cdf = scale<T>(scale<T>(erf<T>(kalpha_ * promoted_x), 1., 1.), 0.5);
     auto pdf = kbeta_ * exp<T>(scale<T>(promoted_x * promoted_x, -0.5));
-    set_output<T>(
-        ConverToOrig<T>(promoted_out_grad * (cdf + promoted_x * pdf), x.type()),
-        x_grad);
+    set_output<T>(ConvertToOrig<T>(promoted_out_grad * (cdf + promoted_x * pdf),
+                                   x.type()),
+                  x_grad);
   }
 }
 
@@ -849,7 +849,7 @@ void layer_norm_grad(const Tensor& x,
   auto mean_ = reshape<T>(mean, mean_var_new_shape);
   auto variance_ = reshape<T>(variance, mean_var_new_shape);
 
-  auto x_cast = ConverToMT<T>(x);
+  auto x_cast = ConvertToMT<T>(x);
   Tensor scale_cast;
   if (scale_ptr) {
     scale_cast = decomp_help.Process<T>(*scale_ptr, x_cast);
@@ -857,9 +857,9 @@ void layer_norm_grad(const Tensor& x,
 
   // cast dtype to float32 if dtype =float16 or bfloat16
 
-  auto out_grad_cast = ConverToMT<T>(out_grad);
+  auto out_grad_cast = ConvertToMT<T>(out_grad);
   if (scale_ptr) {
-    scale_cast = ConverToMT<T>(scale_cast);
+    scale_cast = ConvertToMT<T>(scale_cast);
   }
 
   auto x_sub_mean = x_cast - mean_;  // M,N
@@ -885,7 +885,7 @@ void layer_norm_grad(const Tensor& x,
         (d_mean + d_std) / decomp_help.GetNormalizedNumel<T>(d_std);
 
     auto x_grad_tmp = dx_end - d_mean_d_std;
-    x_grad_tmp = ConverToOrig<T>(x_grad_tmp, x.dtype());
+    x_grad_tmp = ConvertToOrig<T>(x_grad_tmp, x.dtype());
 
     set_output<T>(x_grad_tmp, x_grad);
   }
@@ -895,7 +895,7 @@ void layer_norm_grad(const Tensor& x,
       auto scale_grad_tmp = (x_sub_mean_mul_sqrt_var_1 * out_grad_cast)
                                 .sum(un_normalized_axis, x_cast.dtype(), true);
       scale_grad_tmp = reshape<T>(scale_grad_tmp, {-1});
-      scale_grad_tmp = ConverToOrig<T>(scale_grad_tmp, scale_ptr->dtype());
+      scale_grad_tmp = ConvertToOrig<T>(scale_grad_tmp, scale_ptr->dtype());
 
       set_output<T>(scale_grad_tmp, scale_grad);
     } else {
@@ -908,7 +908,7 @@ void layer_norm_grad(const Tensor& x,
       auto bias_grad_tmp =
           out_grad_cast.sum(un_normalized_axis, x_cast.dtype(), true);
       bias_grad_tmp = reshape<T>(bias_grad_tmp, {-1});
-      bias_grad_tmp = ConverToOrig<T>(bias_grad_tmp, bias_ptr->dtype());
+      bias_grad_tmp = ConvertToOrig<T>(bias_grad_tmp, bias_ptr->dtype());
 
       set_output<T>(bias_grad_tmp, bias_grad);
     } else {
@@ -1007,11 +1007,11 @@ void square_grad(const Tensor& x, const Tensor& out_grad, Tensor* x_grad) {
 template <typename T>
 void exp_grad(const Tensor& out, const Tensor& out_grad, Tensor* x_grad) {
   if (x_grad) {
-    Tensor out_promote = ConverToMT<T>(out);
-    Tensor out_grad_promote = ConverToMT<T>(out_grad);
+    Tensor out_promote = ConvertToMT<T>(out);
+    Tensor out_grad_promote = ConvertToMT<T>(out_grad);
 
     auto x_grad_tmp = out_promote * out_grad_promote;
-    set_output<T>(ConverToOrig<T>(x_grad_tmp, out.dtype()), x_grad);
+    set_output<T>(ConvertToOrig<T>(x_grad_tmp, out.dtype()), x_grad);
   }
 }
 
@@ -1043,11 +1043,11 @@ void silu_grad(const Tensor& x,
   if (x_grad) {
     auto one = full_scalar<T>(1.0, x.dtype());
 
-    auto x_cast = ConverToMT<T>(x);
-    auto out_cast = ConverToMT<T>(out);
-    auto out_grad_cast = ConverToMT<T>(out_grad);
+    auto x_cast = ConvertToMT<T>(x);
+    auto out_cast = ConvertToMT<T>(out);
+    auto out_grad_cast = ConvertToMT<T>(out_grad);
     auto res = out_grad_cast * sigmoid<T>(x_cast) * (one + x_cast - out_cast);
-    set_output<T>(ConverToOrig<T>(res, x.dtype()), x_grad);
+    set_output<T>(ConvertToOrig<T>(res, x.dtype()), x_grad);
   }
 }
 
@@ -1240,8 +1240,8 @@ void masked_select_grad(const Tensor& x,
                         const Tensor& out_grad,
                         Tensor* x_grad) {
   if (x_grad) {
-    auto promoted_x = ConverToMT<T>(x);
-    auto promoted_out_grad = ConverToMT<T>(out_grad);
+    auto promoted_x = ConvertToMT<T>(x);
+    auto promoted_out_grad = ConvertToMT<T>(out_grad);
 
     auto x_num = 1;
     for (size_t i = 0; i < promoted_x.shape().size(); i++) {
@@ -1406,14 +1406,14 @@ void instance_norm_grad(const Tensor& x,
   std::vector<int64_t> n_reduce_axes = decomp_helper.GetNPlusReduceAxis();
   Tensor hw = decomp_helper.GetHW(x);
 
-  auto promoted_y_grad = ConverToMT<T>(y_grad);
+  auto promoted_y_grad = ConvertToMT<T>(y_grad);
 
   Tensor x_hat;
   Tensor std_inv;
   if (scale_grad || x_grad) {
-    auto promoted_x = ConverToMT<T>(x);
-    auto promoted_saved_mean = ConverToMT<T>(saved_mean);
-    auto promoted_saved_var = ConverToMT<T>(saved_variance);
+    auto promoted_x = ConvertToMT<T>(x);
+    auto promoted_saved_mean = ConvertToMT<T>(saved_mean);
+    auto promoted_saved_var = ConvertToMT<T>(saved_variance);
 
     std::vector<int64_t> mean_new_shape{n, c};
     for (size_t i = 0; i < reduce_axes.size(); ++i) {
@@ -1433,7 +1433,7 @@ void instance_norm_grad(const Tensor& x,
                         : full<T>(IntArray({c}), 1., x.dtype(), x.place());
     auto unsqueeze_shape = get_unsqueeze_dims(scale_data_tensor, n_reduce_axes);
     auto scale_data = reshape<T>(scale_data_tensor, unsqueeze_shape);
-    auto promoted_scale = ConverToMT<T>(scale_data);
+    auto promoted_scale = ConvertToMT<T>(scale_data);
     auto tmp1 =
         is_reduce_empty
             ? promoted_y_grad
@@ -1444,19 +1444,19 @@ void instance_norm_grad(const Tensor& x,
                           .sum(reduce_axes, promoted_y_grad.dtype(), true);
     auto result = (promoted_scale * std_inv) *
                   (promoted_y_grad - tmp1 / hw - (x_hat * tmp2 / hw));
-    set_output<T>(ConverToOrig<T>(result, x.dtype()), x_grad);
+    set_output<T>(ConvertToOrig<T>(result, x.dtype()), x_grad);
   }
   // scale_grad = x_hat * y_grad.sum(n, h, w)
   if (scale_grad) {
     auto result = (promoted_y_grad * x_hat).sum(n_reduce_axes);
     auto scale_dtype = scale.get_ptr() ? scale.get().dtype() : x.dtype();
-    set_output<T>(ConverToOrig<T>(result, scale_dtype), scale_grad);
+    set_output<T>(ConvertToOrig<T>(result, scale_dtype), scale_grad);
   }
   // d_bias = y_grad.sum(n, h, w)
   if (bias_grad) {
     auto result = promoted_y_grad.sum(n_reduce_axes);
     auto scale_dtype = scale.get_ptr() ? scale.get().dtype() : x.dtype();
-    set_output<T>(ConverToOrig<T>(result, scale_dtype), bias_grad);
+    set_output<T>(ConvertToOrig<T>(result, scale_dtype), bias_grad);
   }
 }
 
@@ -1938,8 +1938,8 @@ void batch_norm_grad(const Tensor& x,
                      Tensor* bias_grad) {
   use_global_stats = is_test || use_global_stats;
 
-  Tensor x_data = ConverToMT<T>(x);
-  Tensor out_grad_data = ConverToMT<T>(out_grad);
+  Tensor x_data = ConvertToMT<T>(x);
+  Tensor out_grad_data = ConvertToMT<T>(out_grad);
 
   Tensor mean_data;
   Tensor rsqrt_var;
@@ -1975,7 +1975,7 @@ void batch_norm_grad(const Tensor& x,
         x_grad_data =
             reshape<T>(scale.get(), scale_bias_new_shape) * x_grad_data;
       }
-      x_grad_data = ConverToOrig<T>(x_grad_data, x.dtype());
+      x_grad_data = ConvertToOrig<T>(x_grad_data, x.dtype());
       set_output<T>(x_grad_data, x_grad);
     } else {
       auto part1 = rsqrt_var;
@@ -1990,7 +1990,7 @@ void batch_norm_grad(const Tensor& x,
           out_grad_data - mean_temp1 - (x_data - mean_data) * mean_temp2;
 
       auto x_grad_data = part1 * part2;
-      x_grad_data = ConverToOrig<T>(x_grad_data, x.dtype());
+      x_grad_data = ConvertToOrig<T>(x_grad_data, x.dtype());
       set_output<T>(x_grad_data, x_grad);
     }
     if (scale_grad) {
@@ -2313,8 +2313,8 @@ void group_norm_grad(const Tensor& x,
 
   int g_num = C / groups;
 
-  Tensor x_data = ConverToMT<T>(x);
-  Tensor out_grad_data = ConverToMT<T>(out_grad);
+  Tensor x_data = ConvertToMT<T>(x);
+  Tensor out_grad_data = ConvertToMT<T>(out_grad);
 
   auto shape_group = std::vector<int64_t>({N, groups, g_num});
 
@@ -2348,7 +2348,7 @@ void group_norm_grad(const Tensor& x,
     Tensor d2;
     Tensor p1;
     if (scale) {
-      scale_data = ConverToMT<T>(scale_data);
+      scale_data = ConvertToMT<T>(scale_data);
 
       d1 = (reshape<T>(sum_y_grad_mul_x * scale_data, shape_group))
                .sum(std::vector<int64_t>({2}), dtype, false);
@@ -2383,7 +2383,7 @@ void group_norm_grad(const Tensor& x,
     auto tmp_2 = reshape<T>(x_data, whole_group_shape) * p2 + p3;
     auto x_grad_data = tmp_1 + tmp_2;
     x_grad_data = reshape<T>(x_grad_data, x.shape());
-    x_grad_data = ConverToOrig<T>(x_grad_data, x.dtype());
+    x_grad_data = ConvertToOrig<T>(x_grad_data, x.dtype());
 
     set_output<T>(x_grad_data, x_grad);
   }
@@ -2782,9 +2782,9 @@ void logcumsumexp_grad(const Tensor& x,
   if (x_grad) {
     reverse = !reverse;
     Tensor tmp, lowest, x_grad_tmp;
-    Tensor x_cast = ConverToMT<T>(x);
-    Tensor out_cast = ConverToMT<T>(out);
-    Tensor out_grad_cast = ConverToMT<T>(out_grad);
+    Tensor x_cast = ConvertToMT<T>(x);
+    Tensor out_cast = ConvertToMT<T>(out);
+    Tensor out_grad_cast = ConvertToMT<T>(out_grad);
 
     const Tensor out_grad_log = log<T>(abs<T>(out_grad_cast));
     auto out_grad_dtype = out_grad_cast.dtype();
@@ -2859,7 +2859,7 @@ void logcumsumexp_grad(const Tensor& x,
       x_grad_tmp = reshape<T>(out_grad_pos - out_grad_neg, x_cast.shape());
     }
 
-    set_output<T>(ConverToOrig<T>(x_grad_tmp, x.dtype()), x_grad);
+    set_output<T>(ConvertToOrig<T>(x_grad_tmp, x.dtype()), x_grad);
   }
 }
 
@@ -2973,8 +2973,8 @@ void kthvalue_grad(const Tensor& x,
                    bool keepdim,
                    Tensor* x_grad) {
   if (x_grad) {
-    auto x_cast = ConverToMT<T>(x);
-    auto out_grad_cast = ConverToMT<T>(out_grad);
+    auto x_cast = ConvertToMT<T>(x);
+    auto out_grad_cast = ConvertToMT<T>(out_grad);
     // put_along_axis doesn't support zero dim
     if (x.dims().size() == 0) {
       by_pass<T>(out_grad, x_grad);
@@ -3020,7 +3020,7 @@ void kthvalue_grad(const Tensor& x,
         x_grad_tmp = put_along_axis<T>(zero_tensor, indices_, out_grad_, axis);
       }
     }
-    set_output<T>(ConverToOrig<T>(x_grad_tmp, x.dtype()), x_grad);
+    set_output<T>(ConvertToOrig<T>(x_grad_tmp, x.dtype()), x_grad);
   }
 }
 
@@ -3033,9 +3033,9 @@ void argsort_grad(const Tensor& indices,
                   bool stable,
                   Tensor* x_grad) {
   if (x_grad) {
-    auto indices_cast = ConverToMT<T>(indices);
-    auto x_cast = ConverToMT<T>(x);
-    auto out_grad_cast = ConverToMT<T>(out_grad);
+    auto indices_cast = ConvertToMT<T>(indices);
+    auto x_cast = ConvertToMT<T>(x);
+    auto out_grad_cast = ConvertToMT<T>(out_grad);
 
     if (axis < 0) {
       axis += x_cast.dims().size();
@@ -3052,7 +3052,7 @@ void argsort_grad(const Tensor& indices,
     x_grad_tmp =
         put_along_axis<T>(zero_tensor, indices_cast, out_grad_cast, axis);
 
-    set_output<T>(ConverToOrig<T>(x_grad_tmp, x.dtype()), x_grad);
+    set_output<T>(ConvertToOrig<T>(x_grad_tmp, x.dtype()), x_grad);
   }
 }
 
@@ -3200,8 +3200,8 @@ void kron_grad(const Tensor& x,
   }
   if (y_grad) {
     Tensor zero = full<T>({1}, 0, DataType::INT32, y.place());
-    auto x_cast = ConverToMT<T>(x);
-    auto out_grad_cast = ConverToMT<T>(out_grad);
+    auto x_cast = ConvertToMT<T>(x);
+    auto out_grad_cast = ConvertToMT<T>(out_grad);
     Tensor out_grad_tmp;
     Tensor y_grad_tmp;
 
@@ -3279,7 +3279,7 @@ void kron_grad(const Tensor& x,
         }
       }
       y_grad_tmp = backend::reshape<T>(
-          ConverToOrig<T>(out_grad_tmp, out_grad.dtype()), shape64<T>(y));
+          ConvertToOrig<T>(out_grad_tmp, out_grad.dtype()), shape64<T>(y));
     } else {
       auto x_shape = x_cast.shape();
       auto y_shape = y.shape();
@@ -3305,7 +3305,7 @@ void kron_grad(const Tensor& x,
 
       tile_grad<T>(y_, out_grad_tmp, IntArray(x_dim), &y_grad_tmp);
       y_grad_tmp =
-          reshape<T>(ConverToOrig<T>(y_grad_tmp, y.dtype()), y.shape());
+          reshape<T>(ConvertToOrig<T>(y_grad_tmp, y.dtype()), y.shape());
     }
     set_output<T>(y_grad_tmp, y_grad);
   }
@@ -3318,11 +3318,11 @@ void take_along_axis_grad(const Tensor& arr,
                           int axis,
                           Tensor* arr_grad) {
   if (arr_grad) {
-    auto arr_cast = ConverToMT<T>(arr);
-    auto out_grad_cast = ConverToMT<T>(out_grad);
+    auto arr_cast = ConvertToMT<T>(arr);
+    auto out_grad_cast = ConvertToMT<T>(out_grad);
     // put_along_axis doesn't support zero dim
     if (arr_cast.dims().size() == 0) {
-      by_pass<T>(ConverToOrig<T>(out_grad_cast, out_grad.dtype()), arr_grad);
+      by_pass<T>(ConvertToOrig<T>(out_grad_cast, out_grad.dtype()), arr_grad);
       return;
     }
 
@@ -3343,7 +3343,7 @@ void take_along_axis_grad(const Tensor& arr,
     }
     auto arr_grad_tmp =
         put_along_axis<T>(zero_tensor, indices, out_grad_cast, axis);
-    set_output<T>(ConverToOrig<T>(arr_grad_tmp, arr.dtype()), arr_grad);
+    set_output<T>(ConvertToOrig<T>(arr_grad_tmp, arr.dtype()), arr_grad);
   }
 }
 
