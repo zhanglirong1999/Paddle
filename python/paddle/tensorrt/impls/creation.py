@@ -67,37 +67,37 @@ def assign_converter(network, paddle_op, inputs):
     return identity_layer.get_output(0)
 
 
-@converter_registry.register("pd_op.assign_value_", trt_version="8.x")
 @converter_registry.register("pd_op.assign_value", trt_version="8.x")
+@converter_registry.register("pd_op.assign_value_", trt_version="8.x")
 def assign_value_converter(network, paddle_op, inputs):
     attrs = paddle_op.attrs()
     shape = attrs['shape']
     dtype = attrs['dtype']
     values = attrs['values']
 
-    dtype_map = {
+    paddle_to_np_dtype_map = {
+        paddle.float16: np.float16,
         paddle.float32: np.float32,
+        paddle.float64: np.float64,
         paddle.int32: np.int32,
+        paddle.int64: np.int64,
     }
-    np_dtype = dtype_map.get(dtype)
-    if np_dtype is None:
-        raise NotImplementedError(
-            f"assign_value_ converter does not support dtype {dtype}"
+
+    if dtype not in paddle_to_np_dtype_map:
+        raise ValueError(
+            f"Unsupported dtype {dtype} for assign_value op in TRT converter."
         )
-    # Initialize a NumPy array with zeros
-    np_values = np.zeros(shape, dtype=np_dtype)
 
-    # Flatten the NumPy array to a 1D array
-    flat_np_values = np_values.flatten()
-    # Assign values from the 'values' list to the flattened array
-    flat_np_values[: len(values)] = values
-    # Reshape the 1D array back to the original shape
-    np_values = flat_np_values.reshape(shape)
+    np_dtype = paddle_to_np_dtype_map[dtype]
 
-    constant_layer = network.add_constant(shape=tuple(shape), weights=np_values)
-    constant_layer.name = paddle_op.name()
+    arr = np.array(values, dtype=np_dtype).reshape(shape)
+    if np_dtype == np.int64:
+        arr = arr.astype(np.int32)
+    const_layer = network.add_constant(tuple(shape), arr)
+    if const_layer is None:
+        raise RuntimeError("Failed to create constant layer for assign_value.")
 
-    return constant_layer.get_output(0)
+    return const_layer.get_output(0)
 
 
 @converter_registry.register("pd_op.arange", trt_version="8.x")

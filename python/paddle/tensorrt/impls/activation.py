@@ -17,9 +17,9 @@ import tensorrt as trt
 
 from paddle.tensorrt.converter_utils import (
     add_constant_layer,
-    get_trt_plugin,
     trt_div,
     trt_min,
+    trt_pow,
     trt_prod,
     trt_sub,
     trt_sum,
@@ -60,23 +60,54 @@ def softmax_converter(network, paddle_op, inputs):
 def gelu_converter(network, paddle_op, inputs):
     input_val = inputs[0]
     approximate = paddle_op.attrs()["approximate"]
+
+    const_shape = [1] * len(input_val.shape)
+
+    def create_constant(network, const_shape, value, dtype=np.float32):
+        arr = np.array([value], dtype=dtype)
+        const_layer = network.add_constant(const_shape, arr)
+        return const_layer.get_output(0)
+
     if approximate:
-        raise RuntimeError(
-            "GeLU converter currently doesn't support fast gelu compute"
+        constant_layer_pow = create_constant(network, const_shape, 3.0)
+        constant_layer_multiply = create_constant(
+            network, const_shape, 0.044715
+        )
+        constant_layer_sqrt = create_constant(
+            network, const_shape, 0.7978845608028654
+        )
+        constant_layer_one = create_constant(network, const_shape, 1.0)
+        constant_layer_half = create_constant(network, const_shape, 0.5)
+
+        layer_pow = trt_pow(network, input_val, constant_layer_pow)
+        layer_mul = trt_prod(network, layer_pow, constant_layer_multiply)
+        layer_add = trt_sum(network, layer_mul, input_val)
+        layer_sqrt = trt_prod(network, layer_add, constant_layer_sqrt)
+
+        layer_tanh = network.add_activation(
+            layer_sqrt, trt.ActivationType.TANH
+        ).get_output(0)
+        layer_one = trt_sum(network, layer_tanh, constant_layer_one)
+        layer_cdf = trt_prod(network, layer_one, constant_layer_half)
+        y = trt_prod(network, layer_cdf, input_val)
+
+        return y
+    else:
+        constant_layer_one = create_constant(network, const_shape, 1.0)
+        constant_layer_half = create_constant(network, const_shape, 0.5)
+        constant_layer_rsqrt2 = create_constant(
+            network, const_shape, 0.70710678118
         )
 
-    plugin_name = "CustomGeluPluginDynamic"
-    type_id = trt.PluginField(
-        "type_id", np.array(0, dtype=np.int32), trt.PluginFieldType.INT32
-    )
+        layer_mul = trt_prod(network, input_val, constant_layer_rsqrt2)
+        layer_erf = network.add_unary(
+            layer_mul, trt.UnaryOperation.ERF
+        ).get_output(0)
+        layer_add = trt_sum(network, layer_erf, constant_layer_one)
+        layer_cdf = trt_prod(network, layer_add, constant_layer_half)
+        y = trt_prod(network, layer_cdf, input_val)
 
-    filed_collection = trt.PluginFieldCollection([type_id])
-    plugin_version = "1"
-
-    plugin = get_trt_plugin(plugin_name, filed_collection, plugin_version)
-
-    layer = network.add_plugin_v2([input_val], plugin)
-    return layer.get_output(0)
+        return y
 
 
 @converter_registry.register(

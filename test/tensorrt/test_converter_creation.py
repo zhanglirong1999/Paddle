@@ -76,16 +76,16 @@ class TestAssignValueInTRTPattern(TensorRTBaseTest):
                 {
                     "x": np.random.random([2, 2]).astype("int32"),
                     "dtype": paddle.int32,
-                    "values": [1.0, 1.0],
+                    "values": [1, 1, 1, 1],
                 },
             ),
             # Test case 2
             (
                 assign_value_api_case2,
                 {
-                    "x": np.random.random([2, 2]).astype("int32"),
-                    "dtype": paddle.int32,
-                    "values": [1.0, 1.0],
+                    "x": np.random.random([2, 2]).astype("float32"),
+                    "dtype": paddle.float32,
+                    "values": [1.0, 1.0, 1.0, 1.0],
                 },
             ),
         ]

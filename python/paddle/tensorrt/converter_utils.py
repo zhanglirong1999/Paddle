@@ -348,6 +348,11 @@ def trt_prod(network, a, b):
     return layer.get_output(0)
 
 
+def trt_pow(network, a, b):
+    layer = network.add_elementwise(a, b, trt.ElementWiseOperation.POW)
+    return layer.get_output(0)
+
+
 def cast_tensor(network, input_tensor, dtype):
     layer = network.add_identity(input_tensor)
     layer.set_output_type(0, dtype)
