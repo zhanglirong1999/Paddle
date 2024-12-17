@@ -257,5 +257,44 @@ class TestLogicalOr_Marker(TensorRTBaseTest):
         self.check_marker(expected_result=False)
 
 
+class TestLogicalXorTRTPattern(TensorRTBaseTest):
+    def setUp(self):
+        self.python_api = paddle.logical_xor
+
+    def test_trt_result(self):
+        self.api_args = {
+            "x": np.random.choice([True, False], size=(3,)).astype("bool"),
+            "y": np.random.choice([True, False], size=(3,)).astype("bool"),
+        }
+        self.program_config = {"feed_list": ["x", "y"]}
+        self.min_shape = {"x": [1], "y": [1]}
+        self.max_shape = {"x": [5], "y": [5]}
+        self.check_trt_result()
+
+    def test_trt_diff_shape_result(self):
+        self.api_args = {
+            "x": np.random.choice([True, False], size=(2, 3)).astype("bool"),
+            "y": np.random.choice([True, False], size=(3)).astype("bool"),
+        }
+        self.program_config = {"feed_list": ["x", "y"]}
+        self.min_shape = {"x": [1, 3], "y": [3]}
+        self.max_shape = {"x": [4, 3], "y": [3]}
+        self.check_trt_result()
+
+
+class TestLogicalXorMarker(TensorRTBaseTest):
+    def setUp(self):
+        self.python_api = paddle.logical_xor
+        self.api_args = {
+            "x": np.random.randn(3).astype("int64"),
+            "y": np.random.randn(3).astype("int64"),
+        }
+        self.program_config = {"feed_list": ["x", "y"]}
+        self.target_marker_op = "pd_op.logical_xor"
+
+    def test_trt_result(self):
+        self.check_marker(expected_result=False)
+
+
 if __name__ == '__main__':
     unittest.main()
