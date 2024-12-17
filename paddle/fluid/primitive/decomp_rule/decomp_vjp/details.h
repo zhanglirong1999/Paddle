@@ -834,16 +834,16 @@ void layer_norm_grad(const Tensor& x,
   auto bias_ptr = bias.get_ptr();
   LayerNormDecompHelper decomp_help(x, scale, bias, begin_norm_axis);
 
-  std::vector<int64_t> normlized_axis;
+  std::vector<int64_t> normalized_axis;
   std::vector<int64_t> mean_var_new_shape(mean.dims().size(), 0);
   for (int i = begin_norm_axis; i < x_dims.size(); ++i) {
     mean_var_new_shape.push_back(1);
-    normlized_axis.push_back(i);
+    normalized_axis.push_back(i);
   }
 
-  std::vector<int64_t> un_normlized_axis;
+  std::vector<int64_t> un_normalized_axis;
   for (int i = 0; i < begin_norm_axis; ++i) {
-    un_normlized_axis.push_back(i);
+    un_normalized_axis.push_back(i);
   }
 
   auto mean_ = reshape<T>(mean, mean_var_new_shape);
@@ -875,14 +875,14 @@ void layer_norm_grad(const Tensor& x,
     }
 
     auto dx_end = sqrt_var_1 * out_grad_scale;
-    auto d_mean = dx_end.sum(normlized_axis, x_cast.dtype(), true);  // M,1
+    auto d_mean = dx_end.sum(normalized_axis, x_cast.dtype(), true);  // M,1
 
     auto d_std_1 = (tmp * x_sub_mean * out_grad_scale)
-                       .sum(normlized_axis, x_cast.dtype(), true);  // M,1
+                       .sum(normalized_axis, x_cast.dtype(), true);  // M,1
     auto d_std = d_std_1 * x_sub_mean_mul_sqrt_var_1;  // M,1 * M,N = M,N
 
     auto d_mean_d_std =
-        (d_mean + d_std) / decomp_help.GetNormlizedNumel<T>(d_std);
+        (d_mean + d_std) / decomp_help.GetNormalizedNumel<T>(d_std);
 
     auto x_grad_tmp = dx_end - d_mean_d_std;
     x_grad_tmp = ConverToOrig<T>(x_grad_tmp, x.dtype());
@@ -893,7 +893,7 @@ void layer_norm_grad(const Tensor& x,
   if (scale_grad) {
     if (scale_ptr) {
       auto scale_grad_tmp = (x_sub_mean_mul_sqrt_var_1 * out_grad_cast)
-                                .sum(un_normlized_axis, x_cast.dtype(), true);
+                                .sum(un_normalized_axis, x_cast.dtype(), true);
       scale_grad_tmp = reshape<T>(scale_grad_tmp, {-1});
       scale_grad_tmp = ConverToOrig<T>(scale_grad_tmp, scale_ptr->dtype());
 
@@ -906,7 +906,7 @@ void layer_norm_grad(const Tensor& x,
   if (bias_grad) {
     if (bias_ptr) {
       auto bias_grad_tmp =
-          out_grad_cast.sum(un_normlized_axis, x_cast.dtype(), true);
+          out_grad_cast.sum(un_normalized_axis, x_cast.dtype(), true);
       bias_grad_tmp = reshape<T>(bias_grad_tmp, {-1});
       bias_grad_tmp = ConverToOrig<T>(bias_grad_tmp, bias_ptr->dtype());
 
