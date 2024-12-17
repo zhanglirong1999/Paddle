@@ -17,7 +17,6 @@ import unittest
 
 import numpy
 
-os.environ['FLAGS_group_schedule_tiling_first'] = '1'
 os.environ['FLAGS_prim_all'] = 'true'
 os.environ['FLAGS_prim_enable_dynamic'] = 'true'
 os.environ['FLAGS_print_ir'] = '1'

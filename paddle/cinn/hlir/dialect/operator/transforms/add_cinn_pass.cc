@@ -71,7 +71,6 @@ COMMON_DECLARE_bool(enable_cinn_accuracy_check);
 COMMON_DECLARE_bool(enable_fuse_parallel_matmul_pass);
 COMMON_DECLARE_bool(enable_fusion_fallback);
 COMMON_DECLARE_bool(logging_pir_py_code_dump_symbolic_dims);
-PD_DECLARE_bool(group_schedule_tiling_first);
 
 namespace cinn::dialect::ir {
 
