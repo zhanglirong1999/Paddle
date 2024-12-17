@@ -25,7 +25,7 @@ using ir::stmt::StmtRef;
 
 void FuseIfStmtWithSameCondInBlock(BlockRef block) {
   const std::vector<StmtRef>& stmts = block->stmts();
-  if (stmts.size() <= 2) return;
+  if (stmts.size() < 2) return;
 
   const auto& IsIfStmtWithSpecCond = [](const StmtRef& stmt, const Expr& cond) {
     if (!stmt.isa<IfThenElse>()) return false;
