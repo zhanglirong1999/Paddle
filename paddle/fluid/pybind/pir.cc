@@ -30,6 +30,7 @@
 #include "paddle/fluid/framework/executor.h"
 #include "paddle/fluid/framework/ir/pass.h"
 #include "paddle/fluid/framework/program_desc.h"
+#include "paddle/fluid/framework/tensor_util.h"
 #include "paddle/fluid/ir_adaptor/translator/program_translator.h"
 #include "paddle/fluid/ir_adaptor/translator/translate.h"
 #include "paddle/fluid/ir_adaptor/translator/utils.h"
@@ -635,21 +636,32 @@ void BindProgram(py::module *m) {
                   "The mode is not supported."));
             }
           })
-      .def("set_state_dict",
-           [](std::shared_ptr<Program> self,
-              const std::unordered_map<std::string, phi::DenseTensor>
-                  &state_dict,
-              const framework::Scope &scope = framework::Scope()) {
-             for (auto item : state_dict) {
-               auto var = scope.FindVar(item.first);
-               if (var == nullptr) {
-                 PADDLE_THROW(common::errors::NotFound(
-                     "The variable %s is not found.", item.first));
-               } else {
-                 *var->GetMutable<phi::DenseTensor>() = item.second;
-               }
-             }
-           })
+      .def(
+          "set_state_dict",
+          [](std::shared_ptr<Program> self,
+             const std::unordered_map<std::string, phi::DenseTensor>
+                 &state_dict,
+             const framework::Scope &scope = framework::Scope(),
+             bool copy_tensor = false) {
+            for (auto item : state_dict) {
+              auto var = scope.FindVar(item.first);
+              if (var == nullptr) {
+                PADDLE_THROW(common::errors::NotFound(
+                    "The variable %s is not found.", item.first));
+              } else {
+                if (copy_tensor) {
+                  auto *mutable_tensor = var->GetMutable<phi::DenseTensor>();
+                  paddle::framework::TensorCopy(
+                      item.second, item.second.place(), mutable_tensor);
+                } else {
+                  *var->GetMutable<phi::DenseTensor>() = item.second;
+                }
+              }
+            }
+          },
+          py::arg("state_dict"),
+          py::arg("scope"),
+          py::arg("copy_tensor") = false)
       .def(
           "_prune",
           [](Program &self, std::vector<pir::Value> output_vars) {
