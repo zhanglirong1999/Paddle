@@ -140,7 +140,7 @@ class CinnJitInstruction::FnPtrImpl {
         ps.CudaEnd(FLAGS_cinn_kernel_execution_label);
         phi::gpuGraphDestroy(graph);
         phi::gpuGraphExecDestroy(instance);
-        phi::DestoryStream(stream);
+        phi::DestroyStream(stream);
       } else {
         ((lower_func_ptr_g)cinn_kernel_info_.CX86_fn_ptr)(
             static_cast<void*>(func_args_.data()), func_args_.size(), stream);
