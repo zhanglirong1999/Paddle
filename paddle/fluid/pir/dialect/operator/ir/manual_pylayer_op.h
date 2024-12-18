@@ -49,6 +49,14 @@ class PyLayerOp : public pir::Op<PyLayerOp> {
     }
     return input_values;
   }
+
+  std::vector<pir::Value> outputs() const {
+    std::vector<pir::Value> output_values;
+    for (size_t index = 0; index < num_results(); ++index) {
+      output_values.push_back(result(index));
+    }
+    return output_values;
+  }
   pir::Value input(size_t index) const {
     PADDLE_ENFORCE_LT(
         index,
@@ -75,6 +83,7 @@ class PyLayerOp : public pir::Op<PyLayerOp> {
   void VerifyRegion();
 
   void UpdateOutput();
+  void UpdateInputOutput();
 };
 
 }  // namespace dialect

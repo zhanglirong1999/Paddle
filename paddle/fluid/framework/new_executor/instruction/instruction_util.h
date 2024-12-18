@@ -68,5 +68,8 @@ void HandleForInplaceOp(pir::Operation* op,
                         InstructionBase* instr);
 
 void ShareVarBuffer(const Variable* src_var, Variable* dst_var);
+
+std::unordered_set<pir::Value> GetInternalInputs(pir::Block* block);
+std::unordered_set<pir::Value> GetInternalOutputs(pir::Block* block);
 }  // namespace framework
 }  // namespace paddle
