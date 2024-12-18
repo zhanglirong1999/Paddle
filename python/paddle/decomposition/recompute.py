@@ -461,6 +461,12 @@ def auto_recompute(
     def _get_node_weight(value_node, placeholder_value_nodes):
         mem_sz = cal_value_node_size(value_node)
 
+        if (
+            value_node.get_defining_op().name() in tending_to_recompute_ops
+            and mem_sz == 0
+        ):
+            return 0.1
+
         # Heuristic to bias towards nodes closer to the backwards pass
         mem_sz = int(
             mem_sz * (1.1 ** max(min(dist_from_bw[value_node], 100), 1))
