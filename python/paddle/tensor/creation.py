@@ -3389,3 +3389,82 @@ def set_(
             shape = source.shape
 
         return _C_ops.set_(x, source, shape, stride, offset)
+
+
+@inplace_apis_in_dygraph_only
+def resize_(
+    x: paddle.Tensor,
+    shape: Sequence[int],
+    fill_zero: bool = False,
+    name: str | None = None,
+) -> paddle.Tensor:
+    """
+    Resize ``x`` with specified ``shape``.
+
+    Args:
+        x (Tensor): An arbitrary Tensor. The data type supports ``bfloat16``, ``float16``, ``float32``, ``float64``,
+            ``bool``, ``int8``, ``int16``, ``int32``, ``int64``, ``uint8``, ``complex64`` or ``complex128``.
+        shape (list|tuple): Define the target shape. Each element of it should be integer.
+        fill_zero (bool, optional): If the size of specified ``shape`` is greater than the original Tensor size, the
+            new Tensor will be filled with zero if ``fill_zero`` is True. Default: False, which means the filled value
+            will be undetermined.
+        name (str|None, optional): Name for the operation (optional, default is None). For more information, please refer to :ref:`api_guide_Name`.
+
+    Returns:
+        Tensor, the resized Tensor.
+
+    Examples:
+        .. code-block:: python
+
+            >>> import paddle
+
+            >>> x = paddle.to_tensor([1., 2., 3.])
+            >>> x.resize_([2, 1])
+            >>> print(x)
+            Tensor(shape=[2, 1], dtype=float32, place=Place(cpu), stop_gradient=True,
+            [[1.],
+             [2.]])
+
+            >>> x = paddle.to_tensor([1., 2., 3.])
+            >>> x.resize_([2, 3], fill_zero=True)
+            >>> print(x)
+            Tensor(shape=[2, 3], dtype=float32, place=Place(cpu), stop_gradient=True,
+            [[1., 2., 3.],
+             [0., 0., 0.]])
+
+    """
+    if in_dynamic_mode():
+        check_dtype(
+            x.dtype,
+            'x',
+            [
+                'bool',
+                'float16',
+                'uint16',
+                'float32',
+                'float64',
+                'int8',
+                'int16',
+                'int32',
+                'int64',
+                'uint8',
+                'complex64',
+                'complex128',
+            ],
+            'resize',
+        )
+        if not isinstance(shape, (list, tuple)):
+            raise ValueError(
+                f"Input (shape) should be list or tuple but received {type(shape)}"
+            )
+        new_size = math.prod(shape)
+        old_size = math.prod(x.shape)
+        if (new_size > old_size) and fill_zero:
+            repeats = -(-new_size // old_size)  # ceil division
+            flatten_x = x.flatten()
+            tmp = paddle.concat(
+                (flatten_x,) + (paddle.zeros_like(flatten_x),) * (repeats - 1)
+            )[:new_size]
+            return x.set_(tmp, shape)
+
+        return x.set_(x, shape)
