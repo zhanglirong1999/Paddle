@@ -404,6 +404,16 @@ void CheckCompileOptionImpl(cinn::common::HygonDCUArchHIP) {
 #endif
 }
 
+void CheckCompileOptionImpl(cinn::common::HygonDCUArchSYCL) {
+#ifdef CINN_WITH_SYCL
+  // Do nothing;
+#else
+  PADDLE_THROW(::common::errors::Fatal(
+      "Current CINN version does not support HygonDCU, please try to "
+      "recompile with -DWITH_ROCM."));
+#endif
+}
+
 void CheckCompileOption(cinn::common::Arch arch) {
   return std::visit([](const auto& impl) { CheckCompileOptionImpl(impl); },
                     arch.variant());

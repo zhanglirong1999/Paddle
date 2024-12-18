@@ -55,6 +55,13 @@ class CodeGenGpuHost : public CodeGenHost {
           } else {
             return CodeGenHost::Visit(op);
           }
+        },
+        [&](common::HygonDCUArchSYCL) {
+          if (op->name == runtime::intrinsic::call_sycl_kernel) {
+            return LowerGPUKernelCall(op);
+          } else {
+            return CodeGenHost::Visit(op);
+          }
         });
   }
 
