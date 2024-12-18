@@ -318,14 +318,14 @@ class ReshapeOpPattern
   bool CanUseStaticOutputShape(paddle::dialect::ReshapeOp op) const {
     std::vector<int64_t> output_shape = GetOutputShape(op);
 
-    int negtive_count = 0;
+    int negative_count = 0;
     for (auto &d : output_shape) {
       if (d < 0) {
-        negtive_count++;
+        negative_count++;
       }
     }
 
-    return negtive_count <= 1;
+    return negative_count <= 1;
   }
 };
 
