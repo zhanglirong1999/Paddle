@@ -147,10 +147,10 @@ bool CheckIterEq(const std::vector<ir::Var>& up_iter,
   return true;
 }
 
-ir::Expr CopyedReplaceExpr(const Expr& source,
+ir::Expr CopiedReplaceExpr(const Expr& source,
                            const std::vector<Var>& replaced,
                            const std::vector<Expr>& candidates) {
-  VLOG(4) << "CopyedReplaceExpr Start";
+  VLOG(4) << "CopiedReplaceExpr Start";
   VLOG(4) << "Replace Body : " << source;
   VLOG(4) << "Replace From : " << cinn::utils::Join(replaced, " ");
   VLOG(4) << "Replace To   : " << cinn::utils::Join(candidates, " ");
@@ -161,8 +161,8 @@ ir::Expr CopyedReplaceExpr(const Expr& source,
       ::common::errors::InvalidArgument(
           "In ReplaceExpr, the size of Vars to be replaced must be equal to "
           "the size of candidate Exprs! Please check."));
-  auto copyed_source = ir::ir_utils::IRCopy(source);
-  if (replaced.empty()) return copyed_source;
+  auto copied_source = ir::ir_utils::IRCopy(source);
+  if (replaced.empty()) return copied_source;
   std::map<Var, Expr, ir::CompVar> replacing_map;
   for (int i = 0; i < replaced.size(); ++i) {
     // If the Var to be replaced is equal to the candidate, we skip it.
@@ -171,9 +171,9 @@ ir::Expr CopyedReplaceExpr(const Expr& source,
     replacing_map[replaced[i]] = candidates[i];
   }
   ir::MappingVarToExprMutator mapper(replacing_map);
-  mapper(&copyed_source);
-  VLOG(4) << "CopyedReplaceExpr Result: " << copyed_source;
-  return copyed_source;
+  mapper(&copied_source);
+  VLOG(4) << "CopiedReplaceExpr Result: " << copied_source;
+  return copied_source;
 }
 
 void SubstitudeTargetExprWithDestExpr(const ir::Expr& source,
@@ -196,7 +196,7 @@ void SubstitudeTargetExprWithDestExpr(const ir::Expr& source,
 ir::Expr SubstitudeIndexVector(const Expr& source,
                                const std::vector<Var>& load_vars,
                                const std::vector<ir::Expr>& indices) {
-  return CopyedReplaceExpr(source, load_vars, indices);
+  return CopiedReplaceExpr(source, load_vars, indices);
 }
 }  // namespace ComposeUtils
 
@@ -525,7 +525,7 @@ std::vector<ir::Var> CreateInnerBlockVars(
 ExprTransformer ChangeVarTransformer(const std::vector<ir::Var>& target_vars,
                                      const std::vector<ir::Var>& dest_vars) {
   const auto& f = [=](const ir::Expr& e) -> ir::Expr {
-    return ComposeUtils::CopyedReplaceExpr(
+    return ComposeUtils::CopiedReplaceExpr(
         e,
         target_vars,
         std::vector<ir::Expr>(dest_vars.begin(), dest_vars.end()));
@@ -536,7 +536,7 @@ ExprTransformer ChangeVarTransformer(const std::vector<ir::Var>& target_vars,
 ExprTransformer ReplaceVarTransformer(const std::vector<ir::Var>& target_vars,
                                       const std::vector<ir::Expr>& dest_expr) {
   const auto& f = [=](const ir::Expr& e) -> ir::Expr {
-    return ComposeUtils::CopyedReplaceExpr(e, target_vars, dest_expr);
+    return ComposeUtils::CopiedReplaceExpr(e, target_vars, dest_expr);
   };
   return ExprTransformer(f);
 }
@@ -586,7 +586,7 @@ ExprTransformer RemoveVarInScheduleBlockRealize(const ir::Var& target_vars,
             copied_ir.As<ir::ScheduleBlockRealize>()
                 ->schedule_block.As<ir::ScheduleBlock>()
                 ->name,
-            ComposeUtils::CopyedReplaceExpr(
+            ComposeUtils::CopiedReplaceExpr(
                 copied_ir.As<ir::ScheduleBlockRealize>()
                     ->schedule_block.As<ir::ScheduleBlock>()
                     ->body,

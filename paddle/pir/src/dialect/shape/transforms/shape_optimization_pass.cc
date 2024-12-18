@@ -157,7 +157,7 @@ void CheckInferSymWithInferMeta(
 
     std::ostringstream print_stream;
 
-    // InferMeta funcs of some Ops are not corrrect now, we don't check them.
+    // InferMeta funcs of some Ops are not correct now, we don't check them.
     if (!NeedCheckInferSymbolicWithInferMeta(op->name(), i)) continue;
 
     if (res.type().isa<pir::DenseTensorType>()) {
