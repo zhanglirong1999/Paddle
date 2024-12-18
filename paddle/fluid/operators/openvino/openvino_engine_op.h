@@ -61,7 +61,7 @@ class OpenVINOEngineOp : public framework::OperatorBase {
   std::vector<std::string> input_names_;
   std::vector<std::string> output_names_;
   std::vector<std::string> runtime_input_names_;
-  std::string engine_key_ = "openvino";
+  std::string engine_key_;
   std::string model_opt_cache_dir_;
   std::string model_program_path_;
   std::string model_params_path_;
