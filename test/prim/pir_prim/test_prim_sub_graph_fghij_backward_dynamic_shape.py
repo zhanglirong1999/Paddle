@@ -231,7 +231,7 @@ class TestPrimGatherWithGrad1(TestPrimTwoWithGrad):
 
     def base_net(self, flag=None):
         if flag == "prim":
-            core._set_prim_all_enabled(True)
+            core._set_prim_backward_enabled(True)
         x = paddle.to_tensor(self.x, stop_gradient=False)
         y = paddle.to_tensor(self.y)
         if flag == "prim":
@@ -250,7 +250,7 @@ class TestPrimGatherWithGrad1(TestPrimTwoWithGrad):
         res.backward()
         x_grad = x.gradient()
         if flag == "prim":
-            core._set_prim_all_enabled(False)
+            core._set_prim_backward_enabled(False)
         return res, [x_grad]
 
 
