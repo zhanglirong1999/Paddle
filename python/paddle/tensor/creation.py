@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+import builtins
 import math
 import re
 import warnings
@@ -1489,7 +1490,12 @@ def full(
     """
 
     if dtype is None:
-        dtype = paddle.get_default_dtype()
+        if isinstance(fill_value, (bool)):
+            dtype = "bool"
+        elif isinstance(fill_value, (builtins.complex)):
+            dtype = "complex128"
+        else:
+            dtype = paddle.get_default_dtype()
 
     return fill_constant(shape=shape, dtype=dtype, value=fill_value, name=name)
 
