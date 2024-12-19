@@ -276,7 +276,19 @@ std::vector<ir::LoweredFunc> OpLowererImpl::PostProcess(
       continue;
     }
     auto tensor = tensor_map.at(op_result);
-    if (group->HasShapeOrDataExprs(op_result)) {
+    bool contain_unknown_dim = [&]() {
+      bool check = op_result && op_result.type() &&
+                   op_result.type().isa<paddle::dialect::DenseTensorType>();
+      PADDLE_ENFORCE_EQ(
+          check,
+          true,
+          phi::errors::PreconditionNotMet("cinn only support DenseTensorType"));
+      const auto dims =
+          op_result.type().dyn_cast<paddle::dialect::DenseTensorType>().dims();
+      return ::common::contain_unknown_dim(dims);
+    }();
+
+    if (contain_unknown_dim && group->HasShapeOrDataExprs(op_result)) {
       tensor->shape.clear();
       for (size_t i = 0;
            i < group->GetShapeOrDataExprs(op_result).shape().size();
