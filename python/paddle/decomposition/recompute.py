@@ -157,6 +157,8 @@ AGGRESSIVE_RECOMPUTATION = False
 # Restricts the amount of computation recompute can do.
 MAX_DIST_FROM_BW = 3
 
+MINIMUM_WEIGHT = 0.1
+
 
 def DebugPrint(*args):
     flag = os.getenv("FLAGS_print_auto_recompute_debug")
@@ -458,7 +460,24 @@ def auto_recompute(
         users = find_value_node_users(value_node)
         return not all(_is_fusible(value_node, user) for user in users)
 
-    def _get_node_weight(value_node, placeholder_value_nodes):
+    def _get_no_need_buffer_values_from_program(program):
+        need_buffer_values = backward_utils.ValueSet()
+        all_values = backward_utils.ValueSet()
+        for op in program.global_block().ops:
+            for op_operand_source in op.operands_source():
+                all_values.add(op_operand_source)
+                if op.is_no_need_buffer(op_operand_source):
+                    continue
+                need_buffer_values.add(op_operand_source)
+        no_need_buffer_values = all_values - need_buffer_values
+        return no_need_buffer_values
+
+    def _get_node_weight(
+        value_node, no_need_buffer_values, placeholder_value_nodes
+    ):
+        if value_node in no_need_buffer_values:
+            return MINIMUM_WEIGHT
+
         mem_sz = cal_value_node_size(value_node)
 
         if (
@@ -512,6 +531,7 @@ def auto_recompute(
 
     judge_fusion_loop = JudgeFusionLoop(program, unrecomputable_ops)
     forward_ops = set(program.global_block().ops[: fwd_op_end_idx + 1])
+    no_need_buffer_values = _get_no_need_buffer_values_from_program(program)
 
     for value_node in (
         required_fw_value_nodes
@@ -570,7 +590,9 @@ def auto_recompute(
             value_id_dict[value_node.id] = value_node
 
         weight = _get_node_weight(
-            value_node, placeholder_value_nodes=inputs | outputs
+            value_node,
+            no_need_buffer_values,
+            placeholder_value_nodes=inputs | outputs,
         )
 
         # Creates the weights on the "node" edge
