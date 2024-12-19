@@ -257,6 +257,32 @@ class TestLogicalOr_Marker(TensorRTBaseTest):
         self.check_marker(expected_result=False)
 
 
+class TestLogicalNotTRTPattern(TensorRTBaseTest):
+    def setUp(self):
+        self.python_api = paddle.logical_not
+        self.api_args = {
+            "x": np.random.choice([True, False], size=(2, 3)).astype("bool"),
+        }
+        self.program_config = {"feed_list": ["x"]}
+        self.min_shape = {"x": [2, 3]}
+        self.max_shape = {"x": [2, 3]}
+
+    def test_trt_result(self):
+        self.check_trt_result()
+
+
+class TestLogicalNotCase1TRTPattern(TensorRTBaseTest):
+    def setUp(self):
+        self.python_api = paddle.logical_not
+        self.api_args = {"x": np.random.random([2]).astype("bool")}
+        self.program_config = {"feed_list": ["x"]}
+        self.min_shape = {"x": [2]}
+        self.max_shape = {"x": [2]}
+
+    def test_trt_result(self):
+        self.check_trt_result()
+
+
 class TestLogicalXorTRTPattern(TensorRTBaseTest):
     def setUp(self):
         self.python_api = paddle.logical_xor

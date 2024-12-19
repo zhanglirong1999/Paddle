@@ -19,6 +19,8 @@ import sys
 import numpy as np
 import tensorrt as trt
 
+from paddle.tensorrt.util import TensorRTConfigManager
+
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.abspath(os.path.join(current_dir, os.pardir))
 if parent_dir not in sys.path:
@@ -679,3 +681,42 @@ def squeeze_trt(network, input_tensor, axes):
     reshape_layer = network.add_shuffle(input_tensor)
     reshape_layer.set_input(1, new_shape_tensor)
     return reshape_layer.get_output(0)
+
+
+def unary_op_converter(network, paddle_op, inputs):
+    from paddle.tensorrt import PrecisionMode
+
+    input_tensor = inputs[0]
+    layer = None
+    org_type = input_tensor.dtype
+
+    trt_type_mapping = {
+        trt.DataType.INT8: trt.int8,
+        trt.DataType.INT32: trt.int32,
+    }
+
+    trt_manager = TensorRTConfigManager()
+    precision_mode = trt_manager.get_precision_mode()
+
+    need_cast = org_type in [trt.DataType.INT8, trt.DataType.INT32]
+    if need_cast:
+        identity_layer = network.add_identity(input_tensor)
+        if precision_mode == PrecisionMode.FP32:
+            identity_layer.set_output_type(0, trt.float32)
+        else:
+            identity_layer.set_output_type(0, trt.float16)
+        input_tensor = identity_layer.get_output(0)
+
+    if paddle_op.name() in ["pd_op.logical_not", "pd_op.logical_not_"]:
+        layer = network.add_unary(input_tensor, trt.UnaryOperation.NOT)
+        input_tensor = layer.get_output(0)
+    else:
+        raise NotImplementedError(
+            f"Unsupported unary operation: {paddle_op.name()}"
+        )
+    if need_cast:
+        restore_layer = network.add_identity(input_tensor)
+        restore_layer.set_output_type(0, trt_type_mapping[org_type])
+        input_tensor = restore_layer.get_output(0)
+
+    return input_tensor

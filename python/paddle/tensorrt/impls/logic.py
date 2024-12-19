@@ -16,6 +16,7 @@ import tensorrt as trt
 
 from paddle.tensorrt.converter_utils import (
     add_elementwise_layer,
+    unary_op_converter,
 )
 from paddle.tensorrt.register import converter_registry
 
@@ -51,4 +52,11 @@ def not_equal_converter(network, paddle_op, inputs):
     )
     not_layer = network.add_unary(layer_output, trt.UnaryOperation.NOT)
     layer_output = not_layer.get_output(0)
+    return layer_output
+
+
+@converter_registry.register("pd_op.logical_not", trt_version="8.x")
+@converter_registry.register("pd_op.logical_not_", trt_version="8.x")
+def logic_not_converter(network, paddle_op, inputs):
+    layer_output = unary_op_converter(network, paddle_op, inputs)
     return layer_output

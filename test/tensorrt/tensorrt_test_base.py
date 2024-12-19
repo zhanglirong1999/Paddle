@@ -254,13 +254,14 @@ class TensorRTBaseTest(unittest.TestCase):
 
             # run TRTConverter(would lower group_op into tensorrt_engine_op)
             trt_config = None
+
+            input = Input(
+                min_input_shape=self.min_shape,
+                optim_input_shape=self.min_shape,
+                max_input_shape=self.max_shape,
+            )
+            trt_config = TensorRTConfig(inputs=[input])
             if precision_mode == "fp16":
-                input = Input(
-                    min_input_shape=self.min_shape,
-                    optim_input_shape=self.min_shape,
-                    max_input_shape=self.max_shape,
-                )
-                trt_config = TensorRTConfig(inputs=[input])
                 trt_config.precision_mode = PrecisionMode.FP16
 
             converter = PaddleToTensorRTConverter(
