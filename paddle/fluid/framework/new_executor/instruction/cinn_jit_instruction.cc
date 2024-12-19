@@ -159,6 +159,7 @@ class CinnJitInstruction::FnPtrImpl {
   }
 
   void InferShape(const std::vector<phi::DenseTensor*>& kernel_tensor_args,
+                  const std::vector<phi::DDim>& ir_dim,
                   int32_t input_tensor_size,
                   int32_t output_tensor_size) {
     VLOG(6) << "Start InferShape: " << cinn_kernel_info_.fn_name;
@@ -180,6 +181,7 @@ class CinnJitInstruction::FnPtrImpl {
     for (int i = 0; i < output_tensor_size; ++i) {
       DDim dim(output_tensor_shapes[i],
                kernel_tensor_args[input_tensor_size + i]->dims().size());
+      CheckDims(ir_dim[i], dim);
       kernel_tensor_args[input_tensor_size + i]->Resize(dim);
       free(output_tensor_shapes[i]);
     }
@@ -193,6 +195,29 @@ class CinnJitInstruction::FnPtrImpl {
       }
     }
     func_args_.clear();
+  }
+
+  void CheckDims(const DDim& first, const DDim& second) const {
+    PADDLE_ENFORCE_EQ(
+        first.size(),
+        second.size(),
+        phi::errors::PreconditionNotMet("The rank of dim MUST be same. "
+                                        "But get [%d] and [%d]",
+                                        first.size(),
+                                        second.size()));
+    for (size_t i = 0; i < first.size(); ++i) {
+      if (first[i] > 0) {
+        PADDLE_ENFORCE_EQ(first[i],
+                          second[i],
+                          phi::errors::PreconditionNotMet(
+                              "Dim MUST be equal"
+                              ", but Get first[%d] is [%d], second[%d] is[%d]",
+                              i,
+                              first[i],
+                              i,
+                              second[i]));
+      }
+    }
   }
 
  private:
@@ -225,7 +250,6 @@ CinnJitInstruction::CinnJitInstruction(
     auto tensor = value_exec_info->GetScope()
                       ->FindVar(var_name)
                       ->GetMutable<phi::DenseTensor>();
-
     tensor_args_.push_back(tensor);
   }
 
@@ -239,12 +263,20 @@ CinnJitInstruction::CinnJitInstruction(
   // prepare output tensors
   for (size_t i = 0; i < op->num_results(); ++i) {
     pir::Value result = op->result(i);
+    bool check = result && result.type() &&
+                 result.type().isa<paddle::dialect::DenseTensorType>();
+    PADDLE_ENFORCE_EQ(check,
+                      true,
+                      phi::errors::PreconditionNotMet(
+                          "cinn jit instruction only support DenseTensorType"));
     auto var_name = value_exec_info->GetVarName(result);
 
     auto tensor = value_exec_info->GetScope()
                       ->Var(var_name)
                       ->GetMutable<phi::DenseTensor>();
 
+    ir_dims_.push_back(
+        result.type().dyn_cast<paddle::dialect::DenseTensorType>().dims());
     tensor_args_.push_back(tensor);
     auto alloc_tensor_type =
         result.type().dyn_cast<paddle::dialect::AllocatedDenseTensorType>();
@@ -290,7 +322,7 @@ void CinnJitInstruction::Run() {
 
   if (need_update_shape) {
     fn_ptr_impl_->InferShape(
-        tensor_args_, input_tensor_size, output_tensor_size);
+        tensor_args_, ir_dims_, input_tensor_size, output_tensor_size);
   }
   for (size_t i = 0; i < tensor_args_.size(); ++i) {
     dev_ctx_->Alloc(tensor_args_[i], tensor_args_[i]->dtype());
