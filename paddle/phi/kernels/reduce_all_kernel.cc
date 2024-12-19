@@ -18,8 +18,6 @@
 #include "paddle/phi/common/complex.h"
 #include "paddle/phi/common/int_array.h"
 #include "paddle/phi/core/kernel_registry.h"
-#include "paddle/phi/core/meta_tensor.h"
-#include "paddle/phi/infermeta/unary.h"
 #include "paddle/phi/kernels/full_kernel.h"
 
 using complex64 = ::phi::dtype::complex<float>;
