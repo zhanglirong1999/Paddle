@@ -1,4 +1,4 @@
-# Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+# Copyright (c) 2024 PaddlePaddle Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -508,7 +508,7 @@ class TestMeshgridEmptyTensor(unittest.TestCase):
         if place is None:  # Dygraph mode
             with base.dygraph.guard():
                 tensors = [paddle.to_tensor(inp) for inp in inputs]
-                results = paddle.tensor.meshgrid(tensors)
+                results = paddle.meshgrid(tensors)
         else:  # Static mode
             with paddle.static.program_guard(paddle.static.Program()):
                 data_tensors = [
