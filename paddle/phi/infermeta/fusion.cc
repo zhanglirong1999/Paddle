@@ -842,6 +842,9 @@ void FcXPUInferMeta(const MetaTensor& x,
     out_shape[i] = static_cast<int>(x.dims()[i]);
   }
   out_shape[in_num_col_dims] = static_cast<int>(w.dims()[0]);
+  if (act_type == 23 /*phi::backends::xpu::Activation_t::SWISH_GLU*/) {
+    out_shape[in_num_col_dims] = out_shape[in_num_col_dims] / 2;
+  }
   out->set_dims(DDim(out_shape.data(), static_cast<int>(out_shape.size())));
   out->set_dtype(out_dtype);
   out->set_layout(x.layout());
