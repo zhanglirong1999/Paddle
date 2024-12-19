@@ -1867,5 +1867,24 @@ class TestDenseTensorToTensor(unittest.TestCase):
             self.assertEqual(x.data_ptr(), y.data_ptr())
 
 
+class TestSetDynamicAttributeToEagerTensorInstance(unittest.TestCase):
+    def test_set_dynamic_attribute_to_eager_tensor_instance_create_via_constructor(
+        self,
+    ):
+        tensor_instance = paddle.to_tensor(1.0)
+        tensor_instance._custom_id = 0
+        self.assertEqual(tensor_instance._custom_id, 0)
+        self.assertEqual(tensor_instance.__dict__["_custom_id"], 0)
+
+    def test_set_dynamic_attribute_to_eager_tensor_instance_create_via_to_pyobject(
+        self,
+    ):
+        original_tensor = paddle.to_tensor(-1.0)
+        tensor_instance = paddle.abs(original_tensor)
+        tensor_instance._custom_flag = True
+        self.assertEqual(tensor_instance._custom_flag, True)
+        self.assertEqual(tensor_instance.__dict__["_custom_flag"], True)
+
+
 if __name__ == "__main__":
     unittest.main()
