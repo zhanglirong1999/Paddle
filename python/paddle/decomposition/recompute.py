@@ -1092,19 +1092,20 @@ def find_parent_ops(value):
 
     def _find_parent_ops(value):
         parent_ops = set()
-        if value in visited:
-            return parent_ops
-        visited.add(value)
-        parent_op = value.get_defining_op()
-        if parent_op is not None:
-            parent_ops.add(parent_op)
-        else:
-            return parent_ops
-        op_inputs = parent_op.operands_source()
-        for op_input in op_inputs:
-            if not value.initialized():
+        stack = [value]
+
+        while stack:
+            current = stack.pop()
+            if current in visited:
                 continue
-            parent_ops = parent_ops | _find_parent_ops(op_input)
+            visited.add(current)
+            parent_op = current.get_defining_op()
+            if parent_op is not None:
+                parent_ops.add(parent_op)
+                op_inputs = parent_op.operands_source()
+                for op_input in op_inputs:
+                    if current.initialized():
+                        stack.append(op_input)
         return parent_ops
 
     return _find_parent_ops(value)
