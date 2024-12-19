@@ -177,7 +177,7 @@ def _process_element(hcg, dev, place, element):
                 element_gpu._share_buffer_to(element)
             _broadcast_data_help(element, element.shape, element.dtype, hcg)
     elif isinstance(element, (dict, list, tuple)):
-        return _broadcast_nested_data(hcg, place, element)
+        return _broadcast_nested_data(hcg, dev, place, element)
     else:
         _broadcast_object_list_help([element], hcg)
 
