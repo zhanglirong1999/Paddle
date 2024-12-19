@@ -38,8 +38,6 @@
 
 #include "paddle/fluid/pybind/python_callable_registry.h"
 
-#include "paddle/fluid/framework/new_executor/instruction/instruction_util.h"
-
 namespace py = pybind11;
 using paddle::dialect::ApiBuilder;
 using paddle::dialect::AssertOp;
@@ -97,20 +95,6 @@ void BindPyLayerOp(py::module* m) {
     return ApiBuilder::Instance().GetBuilder()->Build<PyLayerOp>(
         inputs, std::vector<Type>{}, -1);
   });
-  m->def("updata_pylayer_op", [](pir::Program* program) -> void {
-    std::unordered_set<pir::Value> global_block_inner_inputs;
-    global_block_inner_inputs =
-        paddle::framework::GetInternalInputs(program->block());
-
-    for (auto iter = program->block()->begin();
-         iter != program->block()->end();) {
-      pir::Operation* op_item = &(*iter);
-      ++iter;
-      if (op_item->isa<PyLayerOp>()) {
-        op_item->dyn_cast<PyLayerOp>().UpdateInputOutput();
-      }
-    }
-  });
   py::class_<PyLayerOp> pylayer_op(*m, "PyLayerOp", R"DOC(
     TODO(MarioLulab): Add some docs for pd_op.pylayer
   )DOC");
@@ -119,7 +103,6 @@ void BindPyLayerOp(py::module* m) {
            &PyLayerOp::forward_block,
            return_value_policy::reference)
       .def("update_output", &PyLayerOp::UpdateOutput)
-      .def("update_input_and_output", &PyLayerOp::UpdateInputOutput)
       .def(
           "as_operation", &PyLayerOp::operation, return_value_policy::reference)
       .def("id",
