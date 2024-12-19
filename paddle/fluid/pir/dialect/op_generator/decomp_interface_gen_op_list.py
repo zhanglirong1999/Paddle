@@ -61,7 +61,6 @@ GENERATE_IMPL_DECOMP = [
     "meshgrid",
     "numel",
     "p_norm",
-    "pow",
     "reciprocal",
     "relu",
     "relu6",
