@@ -132,6 +132,7 @@ GENERATE_IMPL_VJP = [
     'tanh_grad',
     'transpose_grad',
     'unsqueeze_grad',
+    'p_norm_grad',
 ]
 
 # declare belongs to codegen, but implementation not
