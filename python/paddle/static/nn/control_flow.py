@@ -911,6 +911,23 @@ def while_loop(cond, body, loop_vars, is_test=False, name=None):
                 loop_vars, next_vars
             )
 
+            from paddle.jit.dy2static.convert_operators import (
+                to_static_variable,
+            )
+
+            def check_next_var(loop_var):
+                if not loop_var.is_variable_curr_var:
+                    return
+                if not isinstance(
+                    loop_var.next_var, paddle.pir.Value
+                ) and not isinstance(loop_var.next_var, (bool, float, int)):
+                    raise ValueError(
+                        "The loop var in the while op is variable, but the corresponding yielded var is not variable, and it is not a constant of type bool, int, or float."
+                    )
+                loop_var.next_var = to_static_variable(loop_var.next_var)
+
+            paddle.utils.map_structure(check_next_var, loop_vars)
+
             next_cond = cond(
                 *map_structure(lambda var: var.next_var, loop_vars)
             )

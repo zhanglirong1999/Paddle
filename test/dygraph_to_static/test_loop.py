@@ -485,5 +485,23 @@ class TestLoopWithInnerMutateList(Dy2StTestBase):
         np.testing.assert_allclose(dygraph_res.numpy(), static_res.numpy())
 
 
+def loop_change_value_to_int():
+    x = paddle.to_tensor(1, dtype='float32')
+    y = paddle.to_tensor(False, dtype='bool')
+    while y:
+        x = 2
+    return x
+
+
+class TestLoopChangeValueToInt(Dy2StTestBase):
+    def test_loop_change_value_to_int(self):
+        static_fn = paddle.jit.to_static(
+            loop_change_value_to_int, full_graph=True
+        )
+        static_res = static_fn()
+        dygraph_res = loop_change_value_to_int()
+        np.testing.assert_allclose(dygraph_res.numpy(), static_res.numpy())
+
+
 if __name__ == '__main__':
     unittest.main()
