@@ -173,7 +173,7 @@ class OpKernelTestMultiInputsProtoAndCheckerMaker
   }
 };
 
-class CPUKernalMultiInputsTest : public OpKernel<float> {
+class CPUKernelMultiInputsTest : public OpKernel<float> {
  public:
   void Compute(const ExecutionContext& ctx) const {
     auto xs = ctx.InputNames("xs");
@@ -258,7 +258,7 @@ REGISTER_OP_WITHOUT_GRADIENT(
     paddle::framework::OpWithKernelTest,
     paddle::framework::OpKernelTestMultiInputsProtoAndCheckerMaker);
 REGISTER_OP_CPU_KERNEL(op_multi_inputs_with_kernel,
-                       paddle::framework::CPUKernalMultiInputsTest);
+                       paddle::framework::CPUKernelMultiInputsTest);
 
 // test with multi inputs
 TEST(OpKernel, multi_inputs) {
