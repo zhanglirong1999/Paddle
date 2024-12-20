@@ -1435,7 +1435,7 @@ def save(
         if combine_params:
             if use_pir_api():
                 # NOTE(Ruting): concrete_program has been pruned when init partialProgramLayer,
-                # so we do not neet to prune again.
+                # so we do not need to prune again.
 
                 for var in concrete_program.main_program.list_vars():
                     if var.persistable:

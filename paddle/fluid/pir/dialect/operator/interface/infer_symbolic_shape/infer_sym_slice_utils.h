@@ -139,7 +139,7 @@ inline ExprVec GetSliceDims(const ExprVec &in_dims,
   for (size_t i = 0; i < axes.size(); ++i) {
     auto out_dim = ends[i] - starts[i];
     int64_t axis = axes[i];
-    // If in_dims[axis] or ends[i] have symbol, nedd get Min(in_dims[axis] -
+    // If in_dims[axis] or ends[i] have symbol, need get Min(in_dims[axis] -
     // start[i], ends[i] - start[i] )
     if (!out_dim.isa<int64_t>() &&
         (!in_dims[axis].isa<int64_t>() || !ends[i].isa<int64_t>())) {
