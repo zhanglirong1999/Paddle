@@ -130,6 +130,77 @@ std::unordered_set<ir::Var> CollectIterVars(
   return result;
 }
 
+std::unordered_map<ir::Var, int> GetVar2LoopIdxMap(
+    const ir::Expr& block, const std::vector<ir::Expr>& loops) {
+  std::unordered_map<ir::Var, int> var2loopidx;
+  auto* block_realize = block.As<ir::ScheduleBlockRealize>();
+  auto* block_node = block_realize->schedule_block.As<ir::ScheduleBlock>();
+
+  // map loop vars
+  for (int i = 0; i < loops.size(); i++) {
+    auto& loop_var = loops[i].As<ir::For>()->loop_var;
+    var2loopidx[loop_var] = i;
+  }
+
+  // map iter vars
+  for (int i = 0; i < block_node->iter_vars.size(); i++) {
+    auto& iter_var = block_node->iter_vars[i];
+    auto& iter_value = block_realize->iter_values[i];
+    if (iter_value.is_var()) {
+      var2loopidx[iter_var] = var2loopidx[iter_value.as_var_ref()];
+    }
+  }
+  return var2loopidx;
+}
+
+std::vector<ir::Expr> CollectLoads(const ir::Expr& expr) {
+  return ir::ir_utils::CollectIRNodesInOrder(
+      expr, [](const ir::Expr* x) { return x->As<ir::Load>(); });
+}
+
+/**
+ * This pair of store and load is elementwise or broadcast if the indices are
+ * injective (no reduce) and the iter vars in both's indices are in the same
+ * order (no transpose).
+ *
+ * For example, the following cases are elementwise or broadcast:
+ *    var_1[i, j, k] = var_0[i, j, k]  # elementwise
+ *    var_3[i, j, k] = var_2[0, j, 0]  # broadcast in {i, k}
+ *
+ * The following cases are not:
+ *    var_1[i, j, k] = var_0[i, k, j]  # transpose in {j, k}
+ *    var_3[0, j, k] = var_2[i, j, k]  # reduce in {i}
+ */
+bool IsElementwiseOrBroadcast(const ir::Store& dst, const ir::Load& src) {
+  auto dst_index_it = dst.indices.cbegin();
+
+  for (auto& src_index : src.indices) {
+    if (!src_index.is_index()) return false;
+    ir::IndexExpr src_index_expr = src_index.as_index().Normalize();
+    if (src_index_expr.is_constant()) continue;
+    if (!src_index_expr.is_var()) return false;
+
+    dst_index_it = std::find(dst_index_it, dst.indices.end(), src_index_expr);
+    if (dst_index_it == dst.indices.cend()) return false;
+    ++dst_index_it;
+  }
+  return true;
+}
+
+bool CheckAllElementwiseOrBroadcast(ir::IRSchedule* sch) {
+  for (auto& block : sch->GetAllBlocks()) {
+    ir::Expr store = ir::analyzer::GetStoreOfSBlock(block);
+    auto* store_node = store.As<ir::Store>();
+    for (auto& load : CollectLoads(store_node->value)) {
+      auto* load_node = load.As<ir::Load>();
+      if (!IsElementwiseOrBroadcast(*store_node, *load_node)) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 /**
  * Get the common set of broadcast axis of all schedule blocks in the graph.
  *
@@ -145,48 +216,25 @@ std::vector<int> GetCommonBroadcastAxis(ir::IRSchedule* sch) {
   bool is_first_op = true;
 
   for (auto& block : sch->GetAllBlocks()) {
-    auto* block_realize = block.As<ir::ScheduleBlockRealize>();
-    auto* block_node = block_realize->schedule_block.As<ir::ScheduleBlock>();
+    std::vector<ir::Expr> loops = sch->GetLoops(block);
+    std::unordered_map<ir::Var, int> var2loopidx =
+        GetVar2LoopIdxMap(block, loops);
 
-    // Step 1. Map iter vars to loop index
-    std::vector<ir::Expr> loops = sch->GetLoops(block_node->name);
-    std::unordered_map<ir::Var, int> var2loopidx;
-    for (int i = 0; i < loops.size(); i++) {
-      auto& loop_var = loops[i].As<ir::For>()->loop_var;
-      var2loopidx[loop_var] = i;
-    }
-    for (int i = 0; i < block_node->iter_vars.size(); i++) {
-      auto& iter_var = block_node->iter_vars[i];
-      auto& iter_value = block_realize->iter_values[i];
-      if (iter_value.is_var()) {
-        var2loopidx[iter_var] = var2loopidx[iter_value.as_var_ref()];
-      }
-    }
-
-    // Step 2. Find broadcasts in this schedule block.
     ir::Expr store = ir::analyzer::GetStoreOfSBlock(block);
     auto* store_node = store.As<ir::Store>();
     std::unordered_set<ir::Var> vars_in_store =
         CollectIterVars(store_node->indices);
 
-    std::vector<ir::Expr> loads = ir::ir_utils::CollectIRNodesInOrder(
-        store_node->value, [](const ir::Expr* x) { return x->As<ir::Load>(); });
-    for (auto& load : loads) {
+    // Visit each load in the store's value to find broadcasts.
+    for (auto& load : CollectLoads(store_node->value)) {
       auto* load_node = load.As<ir::Load>();
       std::unordered_set<ir::Var> vars_in_load =
           CollectIterVars(load_node->indices);
 
-      // Note: this tactic doesn't handle non-injective operations, such as:
-      //    output[i, j] = input[j, k]
-      // Operations of this kind are typically associated with reduction, which
-      // does not align with the purpose of this tactic.
-      for (auto& var : vars_in_load) {
-        if (vars_in_store.count(var) == 0) {
-          return {};
-        }
-      }
-
-      // Step 3. Get broadcast axis of the current op.
+      // Get broadcast axis of the load by comparing the iter_vars in the
+      // store's indices and the load's indices.
+      // Note: if an iter_var only appears in the store's indices but not the
+      // load's indices, its corresponding axis is a broadcast axis.
       std::set<int> broadcast_axis;
       for (auto& var : vars_in_store) {
         if (vars_in_load.count(var) == 0) {
@@ -197,7 +245,7 @@ std::vector<int> GetCommonBroadcastAxis(ir::IRSchedule* sch) {
         continue;
       }
 
-      // Step 4. Do set intersection to find the common broadcast axis.
+      // Do set intersection to update the common broadcast axis.
       if (is_first_op) {
         is_first_op = false;
         common_broadcast_axis.assign(broadcast_axis.begin(),
@@ -225,8 +273,9 @@ void TileBroadcastTactic::Init(ScheduleContext* context, ir::IRSchedule* sch) {
 
   // Check whether we can apply this tactic.
   // We can apply if all the following conditions are met:
-  // 1. This graph contains only trivial ops (no reduce).
-  if (!context_->config.base_info->reduce_axis.empty()) {
+  // 1. This graph contains only elementwise or broadcast ops (no reduce or
+  //    transpose).
+  if (!CheckAllElementwiseOrBroadcast(sch)) {
     return;
   }
   InitBroadcastAxisInfo(sch);
