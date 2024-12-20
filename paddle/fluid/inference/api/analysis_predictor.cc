@@ -27,6 +27,7 @@
 #include <vector>
 
 #include "paddle/common/enforce.h"
+#include "paddle/common/errors.h"
 #include "paddle/fluid/framework/feed_fetch_method.h"
 #include "paddle/fluid/framework/feed_fetch_type.h"
 #include "paddle/fluid/framework/feed_hook.h"
@@ -3025,6 +3026,11 @@ uint64_t AnalysisPredictor::TryShrinkMemory() {
 }
 
 void AnalysisPredictor::ClearIntermediateTensor() {
+  if (config_.new_ir_enabled()) {
+    PADDLE_THROW(common::errors::PreconditionNotMet(
+        "Don't need to use this API [ClearIntermediateTensor] when PIR is "
+        "enabled."));
+  }
   PADDLE_ENFORCE_NOT_NULL(inference_program_.get(),
                           common::errors::PreconditionNotMet(
                               "The inference program should be loaded first."));
@@ -3126,6 +3132,14 @@ AnalysisPredictor::~AnalysisPredictor() {  // NOLINT
       }
       framework::global_transfer_scope_key().erase(sub_scope_);
     }
+    for (auto &var_name : scope_->LocalVarNames()) {
+      auto *var = scope_->FindVar(var_name);
+      if (var->IsType<phi::DenseTensor>()) {
+        auto *tensor = var->GetMutable<phi::DenseTensor>();
+        tensor->clear();
+      }
+    }
+
     scope_->DeleteScope(sub_scope_);
   }
 
