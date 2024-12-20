@@ -95,6 +95,24 @@ class TestAddTRTPattern(TensorRTBaseTest):
         self.check_trt_result()
 
 
+class TestElementwisePowTRTPattern(TensorRTBaseTest):
+    def setUp(self):
+        self.python_api = paddle._C_ops.elementwise_pow
+        self.api_args = {
+            "x": np.random.randn(2, 3).astype(np.float32),
+            "y": np.random.randn(2, 3).astype(np.float32),
+        }
+        self.program_config = {"feed_list": ["x", "y"]}
+        self.min_shape = {"x": [1, 3], "y": [1, 3]}
+        self.max_shape = {"x": [5, 3], "y": [5, 3]}
+
+    def test_trt_result_fp16(self):
+        self.check_trt_result(precision_mode="fp16")
+
+    def test_trt_result_fp32(self):
+        self.check_trt_result()
+
+
 class TestRemainderFloatTRTPattern(TensorRTBaseTest):
     def setUp(self):
         self.python_api = paddle.remainder
