@@ -16,6 +16,7 @@
 import numpy as np
 import tensorrt as trt
 
+from paddle import pir
 from paddle.tensorrt.converter_utils import get_shape_tensor_element
 from paddle.tensorrt.register import converter_registry
 from paddle.tensorrt.util import get_trt_version_list
@@ -103,10 +104,39 @@ def bilinear_interp_converter(network, paddle_op, inputs):
 
     outsize_tensor = None
     if trt_version_float >= 8.2:
-        if len(inputs) > 1 and inputs[1] is not None:
-            output_tensor_operand = paddle_op.operands()[1].source()
-            outsize_tensor = inputs[1]
-
+        if not pir.is_fake_value(paddle_op.operands()[1].source()):
+            size_tensor_operand = paddle_op.operands()[1].source()
+            if len(inputs) > 1 and inputs[1] is not None:
+                output_tensor_operand = paddle_op.operands()[1].source()
+                outsize_tensor = inputs[1]
+        elif not pir.is_fake_value(paddle_op.operands()[2].source()):
+            size_tensor_operand = paddle_op.operands()[2].source()
+            size_tensor = inputs[2]
+            if size_tensor_operand.is_combine():
+                size_tensors = []
+                if not isinstance(size_tensor, list):
+                    size_tensors = [size_tensor]
+                else:
+                    size_tensors = size_tensor
+                if len(size_tensors) >= 2:
+                    # Extract the first two elements representing height and width
+                    outsize_h = size_tensors[0]
+                    outsize_w = size_tensors[1]
+                    outsize_tensor = network.add_concatenation(
+                        [outsize_h, outsize_w]
+                    ).get_output(0)
+            else:
+                size_tensor_shape = size_tensor_operand.source().shape
+                if size_tensor_shape.size >= 2:
+                    outsize_h = network.add_slice(
+                        size_tensor, start=[0], shape=[1], stride=[1]
+                    ).get_output(0)
+                    outsize_w = network.add_slice(
+                        size_tensor, start=[1], shape=[1], stride=[1]
+                    ).get_output(0)
+                    outsize_tensor = network.add_concatenation(
+                        [outsize_h, outsize_w]
+                    ).get_output(0)
     use_scales = True
     if outsize_tensor is not None:
         use_scales = False
