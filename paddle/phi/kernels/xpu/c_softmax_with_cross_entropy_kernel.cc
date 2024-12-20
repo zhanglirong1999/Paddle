@@ -202,7 +202,7 @@ struct CSoftmaxWithCrossEntropyFunctor<phi::XPUContext, T> {
           f);
       PADDLE_ENFORCE_XDNN_SUCCESS(ret, "reduce_max");
     }
-    comm_ctx->AllReduce(&logits_max, logits_max, BKCL_ADD, stream);
+    comm_ctx->AllReduce(&logits_max, logits_max, BKCL_MAX, stream);
 
     // step 2, obtain logit - logit_max
     {
