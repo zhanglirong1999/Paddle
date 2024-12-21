@@ -487,7 +487,7 @@ struct PirToPyCodeConverterHelper {
       const auto& args = block.args();
       return std::find(args.begin(), args.end(), value) != args.end();
     };
-    const auto IsBlockKeywardArg = [&](pir::Value value) {
+    const auto IsBlockKeywordArg = [&](pir::Value value) {
       const auto& kwargs = block.kwargs();
       for (const auto& [_, kwarg] : kwargs) {
         if (kwarg == value) return true;
@@ -499,7 +499,7 @@ struct PirToPyCodeConverterHelper {
       if (std::find(inputs.begin(), inputs.end(), value) != inputs.end())
         continue;
       if (IsBlockPositionalArg(value)) continue;
-      if (IsBlockKeywardArg(value)) continue;
+      if (IsBlockKeywordArg(value)) continue;
       inputs.push_back(value);
     }
     return inputs;
