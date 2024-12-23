@@ -24,30 +24,6 @@
 namespace cinn {
 namespace optim {
 namespace detail {
-
-template <typename PassT>
-LogicalResult PassAdaptor<PassT>::RunPipeline(
-    ir::LoweredFunc func, const std::vector<std::unique_ptr<PassT>>& passes) {
-  // TODO(Hongqing-work): Add instrumentation and AnalysisManager. Remove stmt
-  // convert after update all the backend passes.
-  func->body_block = ir::ConvertExprBlockToStmtBlock(func->body);
-  LogicalResult res = Run(func, passes);
-  func->body = ir::ConvertStmtBlockToExprBlock(func->body_block);
-  return res;
-}
-
-template LogicalResult PassAdaptor<FuncPass>::RunPipeline(
-    ir::LoweredFunc, const std::vector<std::unique_ptr<FuncPass>>&);
-
-template LogicalResult PassAdaptor<BlockPass>::RunPipeline(
-    ir::LoweredFunc, const std::vector<std::unique_ptr<BlockPass>>&);
-
-template LogicalResult PassAdaptor<StmtPass>::RunPipeline(
-    ir::LoweredFunc, const std::vector<std::unique_ptr<StmtPass>>&);
-
-template LogicalResult PassAdaptor<ExprPass>::RunPipeline(
-    ir::LoweredFunc, const std::vector<std::unique_ptr<ExprPass>>&);
-
 namespace {
 template <typename PassT, typename IRScopeRefT>
 LogicalResult RunPasses(const std::vector<std::unique_ptr<PassT>>& passes,
@@ -68,41 +44,46 @@ LogicalResult FuncPassAdaptor::Run(
   return RunPasses(passes, func);
 }
 
-namespace {
-LogicalResult RunPassesOnBlock(
+LogicalResult FuncPassAdaptor::Run(
+    ir::stmt::BlockRef block,
+    const std::vector<std::unique_ptr<FuncPass>>& passes) {
+  // Would not adapt FuncPass on block scope.
+  return LogicalResult::failure();
+}
+
+LogicalResult BlockPassAdaptor::Run(
+    ir::LoweredFunc func,
+    const std::vector<std::unique_ptr<BlockPass>>& passes) {
+  return Run(func->body_block, passes);
+}
+
+LogicalResult BlockPassAdaptor::Run(
     ir::stmt::BlockRef block,
     const std::vector<std::unique_ptr<BlockPass>>& passes) {
   std::vector<ir::stmt::StmtRef> new_stmts = block->stmts();
   for (ir::stmt::StmtRef inner_stmt : new_stmts) {
     std::vector<ir::stmt::BlockRef> inner_blocks = inner_stmt->block_fields();
     for (ir::stmt::BlockRef inner_block : inner_blocks) {
-      if (RunPassesOnBlock(inner_block, passes).failed())
-        return LogicalResult::failure();
+      if (Run(inner_block, passes).failed()) return LogicalResult::failure();
     }
     inner_stmt->set_block_fields(inner_blocks);
   }
   block->set_stmts(new_stmts);
   return RunPasses(passes, block);
 }
-}  // namespace
 
-LogicalResult FuncToBlockPassAdaptor::Run(
-    ir::LoweredFunc func,
-    const std::vector<std::unique_ptr<BlockPass>>& passes) {
-  ir::stmt::BlockRef func_block = func->body_block;
-  if (RunPassesOnBlock(func_block, passes).failed())
-    return LogicalResult::failure();
-  func->body_block = func_block;
-  return LogicalResult::success();
-}
-
-LogicalResult FuncToStmtPassAdaptor::Run(
+LogicalResult StmtPassAdaptor::Run(
     ir::LoweredFunc func,
     const std::vector<std::unique_ptr<StmtPass>>& passes) {
-  ir::stmt::BlockRef func_block = func->body_block;
+  return Run(func->body_block, passes);
+}
+
+LogicalResult StmtPassAdaptor::Run(
+    ir::stmt::BlockRef block,
+    const std::vector<std::unique_ptr<StmtPass>>& passes) {
   LogicalResult res = LogicalResult::success();
   ir::stmt::Mutate(
-      func_block,
+      block,
       [&](ir::stmt::StmtRef stmt) {},
       [&](ir::stmt::StmtRef stmt) {
         if (RunPasses(passes, stmt).failed()) {
@@ -262,14 +243,20 @@ LogicalResult StmtToExprPassAdaptor::LocalExprMutator::VisitStmt(
 #undef MUTATE_EXPR
 }  // namespace
 
-LogicalResult FuncToExprPassAdaptor::Run(
+LogicalResult ExprPassAdaptor::Run(
     ir::LoweredFunc func,
+    const std::vector<std::unique_ptr<ExprPass>>& passes) {
+  return Run(func->body_block, passes);
+}
+
+LogicalResult ExprPassAdaptor::Run(
+    ir::stmt::BlockRef block,
     const std::vector<std::unique_ptr<ExprPass>>& passes) {
   std::vector<std::unique_ptr<StmtPass>> stmt_passes;
   stmt_passes.emplace_back(std::move(std::make_unique<StmtToExprPassAdaptor>(
       [&](ir::Expr expr) { return RunPasses(passes, expr); })));
-  FuncToStmtPassAdaptor stmt_pass_adaptor;
-  return stmt_pass_adaptor.Run(func, stmt_passes);
+  StmtPassAdaptor stmt_pass_adaptor;
+  return stmt_pass_adaptor.Run(block, stmt_passes);
 }
 
 }  // namespace detail
