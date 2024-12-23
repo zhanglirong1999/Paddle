@@ -2072,6 +2072,39 @@ class OneHotOpPattern
   }
 };
 
+class InstanceNormOpPattern
+    : public pir::OpRewritePattern<paddle::dialect::InstanceNormOp> {
+ public:
+  using pir::OpRewritePattern<
+      paddle::dialect::InstanceNormOp>::OpRewritePattern;
+  bool MatchAndRewrite(paddle::dialect::InstanceNormOp op,
+                       pir::PatternRewriter &rewriter) const override {
+    if (op->HasAttribute(kCanRunTrtAttr) &&
+        op->attribute<pir::BoolAttribute>(kCanRunTrtAttr).data()) {
+      return false;
+    }
+    pir::Value x = op.operand_source(0);
+    auto x_type = x.type().dyn_cast<paddle::dialect::DenseTensorType>();
+    auto x_shape = x_type.dims();
+    if (x_shape.size() != 4) {
+      VLOG(3) << "The instance_norm op only support 4-dimensional input in "
+                 "tensorrt.";
+      return false;
+    }
+
+    pir::Value scale = op.operand_source(1);
+    pir::Value bias = op.operand_source(2);
+    if (scale.impl() == nullptr || bias.impl() == nullptr) {
+      VLOG(3) << "instance_norm op's scale and bias should not be null in "
+                 "tensorrt.";
+      return false;
+    }
+
+    op->set_attribute(kCanRunTrtAttr, rewriter.bool_attr(true));
+    return true;
+  }
+};
+
 class TrtOpMarkerPass : public pir::PatternRewritePass {
  public:
   TrtOpMarkerPass() : pir::PatternRewritePass("trt_op_marker_pass", 2) {}
@@ -2194,6 +2227,7 @@ class TrtOpMarkerPass : public pir::PatternRewritePass {
     ps.Add(std::make_unique<TanhOpPattern>(context));
     ps.Add(std::make_unique<CeluOpPattern>(context));
     ps.Add(std::make_unique<OneHotOpPattern>(context));
+    ps.Add(std::make_unique<InstanceNormOpPattern>(context));
     return ps;
   }
 };
