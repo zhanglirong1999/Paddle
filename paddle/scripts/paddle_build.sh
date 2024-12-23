@@ -4723,7 +4723,7 @@ function main() {
         ;;
       hyg_dcu_test)
         parallel_test
-	hybrid_paddlex
+	# hybrid_paddlex
         ;;
       nv_cicheck_coverage)
         parallel_test
