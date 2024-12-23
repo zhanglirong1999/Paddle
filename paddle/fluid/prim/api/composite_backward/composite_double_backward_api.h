@@ -1107,5 +1107,43 @@ void take_along_axis_double_grad(const Tensor& indices,
   }
 }
 
+template <typename T>
+void index_add_double_grad(const Tensor& index,
+                           const Tensor& out_grad,
+                           const paddle::optional<Tensor>& grad_x_grad,
+                           const paddle::optional<Tensor>& grad_add_value_grad,
+                           int axis,
+                           Tensor* grad_out_grad) {
+  if (grad_out_grad) {
+    if (grad_x_grad && grad_add_value_grad) {
+      Tensor grad_out_grad_tmp = grad_x_grad.get();
+      grad_out_grad_tmp = index_add<T>(
+          grad_out_grad_tmp, index, grad_add_value_grad.get(), axis);
+      set_output<T>(grad_out_grad_tmp, grad_out_grad);
+
+    } else if (grad_x_grad) {
+      Tensor grad_out_grad_tmp = grad_x_grad.get();
+      set_output<T>(grad_out_grad_tmp, grad_out_grad);
+
+    } else if (grad_add_value_grad) {
+      Tensor DDadd_value = grad_add_value_grad.get();
+      Tensor grad_out_grad_tmp = full<T>(common::vectorize(out_grad.dims()),
+                                         0,
+                                         DDadd_value.dtype(),
+                                         DDadd_value.place());
+      grad_out_grad_tmp =
+          index_add<T>(grad_out_grad_tmp, index, DDadd_value, axis);
+      set_output<T>(grad_out_grad_tmp, grad_out_grad);
+
+    } else {
+      Tensor grad_out_grad_tmp = full<T>(common::vectorize(out_grad.dims()),
+                                         0,
+                                         out_grad.dtype(),
+                                         out_grad.place());
+      set_output<T>(grad_out_grad_tmp, grad_out_grad);
+    }
+  }
+}
+
 }  // namespace prim
 }  // namespace paddle

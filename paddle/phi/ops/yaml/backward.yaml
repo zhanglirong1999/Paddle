@@ -1565,6 +1565,18 @@
     func : imag_grad
     data_type : complex(out_grad)
 
+- backward_op : index_add_double_grad
+  forward : index_add_grad (Tensor index, Tensor add_value, Tensor grad_out, int axis) -> Tensor(grad_x), Tensor(grad_add_value)
+  args : (Tensor index, Tensor grad_out, Tensor grad_x_grad, Tensor grad_add_value_grad, int axis)
+  output : Tensor(grad_out_grad)
+  infer_meta :
+    func : UnchangedInferMeta
+    param: [grad_out]
+  data_transform :
+    skip_transform : index
+  composite : index_add_double_grad(index, grad_out, grad_x_grad, grad_add_value_grad, axis, grad_out_grad)
+  optional: grad_x_grad, grad_add_value_grad
+
 - backward_op : index_add_grad
   forward : index_add(Tensor x, Tensor index,  Tensor add_value, int axis=0) -> Tensor(out)
   args : (Tensor index, Tensor add_value, Tensor out_grad, int axis)
@@ -1575,6 +1587,7 @@
     func : index_add_grad
     data_type : out_grad
   inplace : (out_grad -> x_grad)
+  backward : index_add_double_grad
 
 - backward_op : index_put_double_grad
   forward : index_put_grad (Tensor x, Tensor[] indices, Tensor value, Tensor grad_out, bool accumulate=false) -> Tensor(grad_x), Tensor(grad_value)
