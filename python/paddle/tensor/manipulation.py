@@ -6106,6 +6106,17 @@ def repeat_interleave(
     Returns a new tensor which repeats the ``x`` tensor along dimension ``axis`` using
     the entries in ``repeats`` which is a int or a Tensor.
 
+    The image illustrates a typical case of the repeat_interleave operation.
+    Given a tensor ``[[1, 2, 3], [4, 5, 6]]``, with the repeat counts ``repeats = [3, 2, 1]`` and parameter ``axis = 1``, it means that the elements in the 1st column are repeated 3 times, the 2nd column is repeated 2 times, and the 3rd column is repeated 1 time.
+
+    The final output is a 2D tensor: ``[[1, 1, 1, 2, 2, 3], [4, 4, 4, 5, 5, 6]]``.
+
+    .. image:: https://githubraw.cdn.bcebos.com/PaddlePaddle/docs/develop/docs/images/api_legend/repeat_interleave.png
+        :width: 500
+        :alt: legend of repeat_interleave API
+        :align: center
+
+
     Args:
         x (Tensor): The input Tensor to be operated. The data of ``x`` can be one of float32, float64, int32, int64.
         repeats (Tensor|int): The number of repetitions for each element. repeats is broadcasted to fit the shape of the given axis.
