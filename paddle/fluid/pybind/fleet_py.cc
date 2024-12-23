@@ -81,6 +81,7 @@ void BindDistFleetWrapper(py::module* m) {
       .def("pull_fl_strategy", &FleetWrapper::PullFlStrategy)
       .def("revert", &FleetWrapper::Revert)
       .def("set_date", &FleetWrapper::SetDate)
+      .def("print_table_stat", &FleetWrapper::PrintTableStat)
       .def("check_save_pre_patch_done", &FleetWrapper::CheckSavePrePatchDone);
 }
 

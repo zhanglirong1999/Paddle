@@ -273,7 +273,9 @@ class BrpcPsClient : public PSClient {
                                                size_t num,
                                                bool is_training);
 
-  virtual std::future<int32_t> PrintTableStat(uint32_t table_id);
+  virtual std::future<int32_t> PrintTableStat(uint32_t table_id,
+                                              uint16_t pass_id,
+                                              size_t threshold);
 
   virtual std::future<int32_t> Barrier(size_t table_id, uint32_t barrier_type);
 

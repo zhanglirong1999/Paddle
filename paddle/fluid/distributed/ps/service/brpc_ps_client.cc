@@ -439,7 +439,9 @@ int FlClientBrpcClosure::check_response(size_t request_idx, int cmd_id) {
   return 0;
 }
 
-std::future<int32_t> BrpcPsClient::PrintTableStat(uint32_t table_id) {
+std::future<int32_t> BrpcPsClient::PrintTableStat(uint32_t table_id,
+                                                  uint16_t pass_id,
+                                                  size_t threshold) {
   size_t request_call_num = _server_channels.size();
   DownpourBrpcClosure *closure = new DownpourBrpcClosure(
       request_call_num, [request_call_num, table_id](void *done) {

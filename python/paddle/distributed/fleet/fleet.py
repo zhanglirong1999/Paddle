@@ -1421,6 +1421,27 @@ class Fleet:
 
     @is_non_distributed_check
     @inited_runtime_handler
+    def print_table_stat(self, table_id: int, pass_id: int, threshold: float):
+        """
+        Print stat info of table_id for gpups table, format: tableid, feasign size, mf size.
+
+        Args:
+
+            table_id (int): The id of table.
+            pass_id (int): The id of pass.
+            threshold (float): The threshold of print.
+
+        Examples:
+
+            .. code-block:: text
+
+                fleet.print_table_stat(0,6,600000)
+
+        """
+        self._runtime_handle._print_table_stat(table_id, pass_id, threshold)
+
+    @is_non_distributed_check
+    @inited_runtime_handler
     def shrink(self, threshold: int | None = None) -> None:
         self._runtime_handle._shrink(threshold)
 
