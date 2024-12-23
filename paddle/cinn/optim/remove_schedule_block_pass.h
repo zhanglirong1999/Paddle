@@ -1,4 +1,4 @@
-// Copyright (c) 2021 CINN Authors. All Rights Reserved.
+// Copyright (c) 2024 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,17 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/**
- * This file implements the strategy to remove the unnecessary nested block.
- */
 #pragma once
-#include <vector>
+#include "paddle/cinn/pass/pass.h"
 
-#include "paddle/cinn/common/common.h"
-#include "paddle/cinn/ir/ir.h"
-#include "paddle/common/enforce.h"
 namespace cinn {
 namespace optim {
+class RemoveScheduleBlockPass : public BlockPass {
+ public:
+  RemoveScheduleBlockPass() : BlockPass("remove_schedule_block") {}
+  LogicalResult Run(ir::stmt::BlockRef block) override;
+};
 
 /**
  * Removes ScheduleBlock nodes from the IR tree.
@@ -44,17 +43,17 @@ namespace optim {
  * Examples:
  * 1. Basic ScheduleBlock removal:
  *    Input IR:
- *      ScheduleBlockRealize {
+ *      ScheduleBlock {
  *        iter_vars: [i, j]
  *        iter_values: [0, 1]
- *        ScheduleBlock {
+ *        body {
  *          body: A[i, j] = B[i, j] + C[i, j]
  *        }
  *      }
  *    Output IR:
  *      A[0, 1] = B[0, 1] + C[0, 1]
  */
-void RemoveScheduleBlock(ir::Expr *expr);
+std::unique_ptr<BlockPass> CreateRemoveScheduleBlockPass();
 
 }  // namespace optim
 }  // namespace cinn

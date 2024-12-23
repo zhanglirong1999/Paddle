@@ -31,7 +31,7 @@
 #include "paddle/cinn/optim/lower_intrin.h"
 #include "paddle/cinn/optim/map_extern_call.h"
 #include "paddle/cinn/optim/rearrange_load_instruction.h"
-#include "paddle/cinn/optim/remove_schedule_block.h"
+#include "paddle/cinn/optim/remove_schedule_block_pass.h"
 #include "paddle/cinn/optim/replace_const_param_to_integer.h"
 #include "paddle/cinn/optim/replace_cross_block_reduction.h"
 #include "paddle/cinn/optim/replace_cross_thread_reduction.h"
@@ -122,7 +122,8 @@ ir::LoweredFunc Optimize(ir::LoweredFunc fn,
   Simplify(&copied->body);
   VLOG(10) << "After Optimize Simplify" << copied;
 
-  RemoveScheduleBlock(&copied->body);
+  pass_manager.AddPass(CreateRemoveScheduleBlockPass());
+  pass_manager.Run(copied);
   VLOG(10) << "After RemoveScheduleBlock:" << copied;
 
   LowerIntrin(&copied->body, target);

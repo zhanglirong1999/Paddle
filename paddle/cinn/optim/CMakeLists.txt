@@ -24,7 +24,7 @@ gather_srcs(
   lower_intrin.cc
   cast_bool_to_int8.cc
   var_mod_simplify.cc
-  remove_schedule_block.cc
+  remove_schedule_block_pass.cc
   replace_cross_block_reduction.cc
   replace_cross_thread_reduction.cc
   replace_mod_to_max.cc
