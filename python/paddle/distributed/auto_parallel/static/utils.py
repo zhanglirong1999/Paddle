@@ -64,6 +64,7 @@ partition_skip_op_list = [
     "cf.tuple_push",
     "cf.tuple_pop",
     "cf.stack_create",
+    "cf.has_elements",
 ]
 
 
