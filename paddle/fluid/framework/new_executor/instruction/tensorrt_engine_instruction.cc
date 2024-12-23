@@ -421,7 +421,7 @@ void TensorRTEngineInstruction::BindInputTensor(
   auto dev_place = dev_ctx_->GetPlace();
   const int num_bindings = trt_engine_->GetNbBindings();
   int binding_offset = 0;
-  nvinfer1::IExecutionContext *trt_context = nullptr;
+  [[maybe_unused]] nvinfer1::IExecutionContext *trt_context = nullptr;
   // Initialize context and get offset by profile index
   trt_context = trt_engine_->context();
   binding_offset = trt_engine_->GetBindingsOffset();
@@ -597,7 +597,7 @@ void TensorRTEngineInstruction::BindOutputTensor(
     int *runtime_batch) {
   int binding_offset = 0;
   const int num_bindings = trt_engine_->GetNbBindings();
-  nvinfer1::IExecutionContext *trt_context = nullptr;
+  [[maybe_unused]] nvinfer1::IExecutionContext *trt_context = nullptr;
   // Initialize context and get offset by profile index
   trt_context = trt_engine_->context();
   binding_offset = trt_engine_->GetBindingsOffset();
