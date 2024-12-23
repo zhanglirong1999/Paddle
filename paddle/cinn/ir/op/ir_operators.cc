@@ -509,8 +509,8 @@ static IndexExpr SimplifyDiv(const IndexExpr &lhs, const IndexExpr &rhs) {
 
     // (expr1 * c1 * c2 + expr2 * c1 * c3) / c1 ===> expr1 * c2 + expr2 * c3.
     if (lhsAdd) {
-      int64_t llhsFactor = lhsAdd->a().as_index().GetLargestMutiplyPart();
-      int64_t lrhsFactor = lhsAdd->b().as_index().GetLargestMutiplyPart();
+      int64_t llhsFactor = lhsAdd->a().as_index().GetLargestMultiplyPart();
+      int64_t lrhsFactor = lhsAdd->b().as_index().GetLargestMultiplyPart();
       if (llhsFactor % rhsConst->value == 0 &&
           lrhsFactor % rhsConst->value == 0) {
         return lhsAdd->a().as_index() / rhsConst->value +
@@ -565,8 +565,8 @@ static IndexExpr SimplifyMod(const IndexExpr &lhs, const IndexExpr &rhs) {
 
     // (expr1 * c1 * c2+ expr2 * c3) % c1 ===> expr2 * c3 % c1.
     if (lhsAdd) {
-      int64_t llhsFactor = lhsAdd->a().as_index().GetLargestMutiplyPart();
-      int64_t lrhsFactor = lhsAdd->b().as_index().GetLargestMutiplyPart();
+      int64_t llhsFactor = lhsAdd->a().as_index().GetLargestMultiplyPart();
+      int64_t lrhsFactor = lhsAdd->b().as_index().GetLargestMultiplyPart();
       if (llhsFactor % rhsConst->value == 0)
         return lhsAdd->b().as_index() % rhsConst->value;
       if (lrhsFactor % rhsConst->value == 0)
@@ -574,11 +574,12 @@ static IndexExpr SimplifyMod(const IndexExpr &lhs, const IndexExpr &rhs) {
     }
 
     // expr1 * (c1 * c2) % c1 ===> 0.
-    if (lhs.GetLargestMutiplyPart() % rhsConst->value == 0) return IndexExpr(0);
+    if (lhs.GetLargestMultiplyPart() % rhsConst->value == 0)
+      return IndexExpr(0);
 
     // expr1 % (c1 * c2) % c1 ===> expr1 % c1.
     if (lhsMod) {
-      int64_t llhsFactor = lhsMod->b().as_index().GetLargestMutiplyPart();
+      int64_t llhsFactor = lhsMod->b().as_index().GetLargestMultiplyPart();
       if (llhsFactor % rhsConst->value == 0)
         return lhsMod->a().as_index() % rhsConst->value;
     }

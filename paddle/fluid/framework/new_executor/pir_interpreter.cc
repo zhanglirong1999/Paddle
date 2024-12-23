@@ -1413,7 +1413,7 @@ void PirInterpreter::CalculateLastLiveOps() {
   }
   VLOG(4) << "var_ref_count_.size() : " << var_ref_count_.size();
   for (size_t i = 0; i < last_live_ops_.size(); ++i) {
-    std::set<size_t> minumum_last_live_ops;
+    std::set<size_t> minimum_last_live_ops;
     for (size_t item : last_live_ops_[i]) {
       bool not_before_any = true;
       // find the op that is not executed before any
@@ -1429,11 +1429,11 @@ void PirInterpreter::CalculateLastLiveOps() {
         VLOG(6) << "last live op of var " << i << " "
                 << value_exe_info_->GetNameById(static_cast<int>(i)) << " : "
                 << item << " " << vec_instruction_base_[item]->Name();
-        minumum_last_live_ops.insert(item);
+        minimum_last_live_ops.insert(item);
         vec_instruction_base_[item]->AddGCCheckVar(i);
       }
     }
-    last_live_ops_[i] = minumum_last_live_ops;
+    last_live_ops_[i] = minimum_last_live_ops;
     var_ref_count_[i] = static_cast<int>(last_live_ops_[i].size());
   }
   VLOG(4) << "shrink the last_live_ops list for all vars in skip_gc_vars";

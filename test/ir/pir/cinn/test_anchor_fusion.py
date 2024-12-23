@@ -108,7 +108,7 @@ class TestAnchorFusion(unittest.TestCase):
             x = paddle.ones((16, 32, 64, 128))
             return (x,)
 
-        # This case can't be fused to one kernel because muti-downstream
+        # This case can't be fused to one kernel because multi-downstream
         # transpose op will sink currently.
         self.check_accuracy_and_kernel_num(init, func)
 

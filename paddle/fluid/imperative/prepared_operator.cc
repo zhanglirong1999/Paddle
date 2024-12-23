@@ -271,7 +271,7 @@ PreparedOp PrepareImpl(
       if (is_xpu_kp_support) {
         auto expected_kernel_key_backend = expected_kernel_key.backend();
         expected_kernel_key.set_backend(phi::Backend::KPS);
-        VLOG(3) << "modifing XPU KP kernel: " << phi_kernel_name
+        VLOG(3) << "modifying XPU KP kernel: " << phi_kernel_name
                 << ", using_kernel_key:" << expected_kernel_key;
 
         if (!phi_kernel_factory.HasKernel(phi_kernel_name,

@@ -842,7 +842,7 @@ void ProgramInterpreter::Convert(
   // in this case, a is the input of op1 and op2, we only need to check
   // a after op2, because op2 always uses a after op1.
   for (size_t i = 0; i < last_live_ops_.size(); ++i) {
-    std::set<size_t> minumum_last_live_ops;
+    std::set<size_t> minimum_last_live_ops;
     for (size_t item : last_live_ops_[i]) {
       bool not_before_any = true;
       // find the op that is not executed before any
@@ -858,14 +858,14 @@ void ProgramInterpreter::Convert(
         VLOG(8) << "last live op of var " << i << " "
                 << var_scope_.GetNameById(static_cast<int>(i)) << " : " << item
                 << " " << vec_instruction_[item].OpBase()->Type();
-        minumum_last_live_ops.insert(item);
+        minimum_last_live_ops.insert(item);
         if (!(var_scope_.VarDesc(static_cast<int>(i)) &&
               var_scope_.VarDesc(static_cast<int>(i))->Persistable())) {
           vec_instruction_[item].AddGCCheckVar(i);
         }
       }
     }
-    last_live_ops_[i] = minumum_last_live_ops;
+    last_live_ops_[i] = minimum_last_live_ops;
     vec_meta_info[i].var_ref_count_ =
         static_cast<int>(last_live_ops_[i].size());
   }

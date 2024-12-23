@@ -404,14 +404,14 @@ const IndexExpr IndexExpr::operand(int32_t i) const {
   return get()->operand(i).as_index();
 }
 
-int64_t IndexExpr::GetLargestMutiplyPart() const {
+int64_t IndexExpr::GetLargestMultiplyPart() const {
   switch (node_type()) {
     case cinn::ir::IrNodeTy::_Var_:
       return 1;
     case cinn::ir::IrNodeTy::Div: {
       if (operand(1).type().is_index_type()) {
-        int64_t lhsDiv = operand(0).GetLargestMutiplyPart();
-        int64_t rhsDiv = operand(1).GetLargestMutiplyPart();
+        int64_t lhsDiv = operand(0).GetLargestMultiplyPart();
+        int64_t rhsDiv = operand(1).GetLargestMultiplyPart();
         if (lhsDiv % rhsDiv == 0) return std::abs(lhsDiv / rhsDiv);
       }
       return 1;
@@ -421,13 +421,13 @@ int64_t IndexExpr::GetLargestMutiplyPart() const {
       return std::abs(int_imm->value);
     }
     case cinn::ir::IrNodeTy::Mul: {
-      return operand(0).GetLargestMutiplyPart() *
-             operand(1).GetLargestMutiplyPart();
+      return operand(0).GetLargestMultiplyPart() *
+             operand(1).GetLargestMultiplyPart();
     }
     case cinn::ir::IrNodeTy::Add:
     case cinn::ir::IrNodeTy::Mod: {
-      return std::gcd(operand(0).GetLargestMutiplyPart(),
-                      operand(1).GetLargestMutiplyPart());
+      return std::gcd(operand(0).GetLargestMultiplyPart(),
+                      operand(1).GetLargestMultiplyPart());
     }
   }
   PADDLE_THROW(::common::errors::Unimplemented("Unsupported type of expr: %s",

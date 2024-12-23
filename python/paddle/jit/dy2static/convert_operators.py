@@ -506,11 +506,11 @@ def _run_paddle_cond(
             "Unsupported return type of true_fn and false_fn in cond", str(e)
         ):
             raise Dygraph2StaticException(
-                f"Your if/else have different return type. TODO: add link to modifty. {e}"
+                f"Your if/else have different return type. TODO: add link to modify. {e}"
             )
         if re.search("Incompatible return values of", str(e)):
             raise Dygraph2StaticException(
-                f"Your if/else have different number of return value. TODO: add link to modifty. {e}"
+                f"Your if/else have different number of return value. TODO: add link to modify. {e}"
             )
         raise e
     get_args = lambda: helper.get(union_name)

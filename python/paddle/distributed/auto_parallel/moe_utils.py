@@ -261,7 +261,7 @@ def _dist_reshape(
 ):
     """
     Reshape the local tensors of the dist tensor on each rank,
-    and mannualy set the process_mesh and placements of the output.
+    and manually set the process_mesh and placements of the output.
     """
     tgt_global_shape = infer_positive_shape(dist_tensor.shape, global_shape)
     tgt_local_shape = _cal_local_shape(tgt_global_shape, mesh, placements)

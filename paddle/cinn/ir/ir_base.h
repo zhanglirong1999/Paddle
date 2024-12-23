@@ -499,7 +499,7 @@ struct IndexExpr : public IrNodeRef {
 
   Type type() const { return p_->type(); }
 
-  int64_t GetLargestMutiplyPart() const;
+  int64_t GetLargestMultiplyPart() const;
 
   IndexExpr Normalize() const;
 
