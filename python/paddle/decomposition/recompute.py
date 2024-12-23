@@ -50,7 +50,7 @@ _PADDLE_DTYPE_2_NBYTES = {
 DEFAULT_RECOMPUTABLE_OPS: list[str] = [
     "pd_op.full_int_array",
     "pd_op.full",
-    "pd_op.sum",
+    # "pd_op.sum",
     "pd_op.divide",
     "pd_op.subtract",
     "pd_op.add",
@@ -81,11 +81,12 @@ DEFAULT_RECOMPUTABLE_OPS: list[str] = [
     "pd_op.squeeze",
     "pd_op.unsqueeze",
     "pd_op.transpose",
-    "pd_op.prod",
+    # "pd_op.prod",
     "pd_op.log",
     "pd_op.log1p",
     "pd_op.logit",
-    "pd_op.max",
+    # "pd_op.max",
+    # "pd_op.min",
     "pd_op.expand_as",
     "pd_op.split",
     "pd_op.arange",
@@ -163,7 +164,7 @@ MINIMUM_WEIGHT = 0.1
 def DebugPrint(*args):
     flag = os.getenv("FLAGS_print_auto_recompute_debug")
     if flag and str(flag).lower() in ("1", "true"):
-        print(*args)
+        print(*args, flush=True)
 
 
 class JudgeFusionLoop:
