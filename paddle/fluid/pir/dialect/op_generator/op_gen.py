@@ -80,6 +80,8 @@ need_export_symbol_op_list = [
     'MatmulGradOp',
 ]
 
+cache_grad_op_shape_black_list = {"fused_attention"}
+
 # =====================================
 # String Template for h file code gen
 # =====================================
@@ -1343,6 +1345,7 @@ def AutoCodeGen(
             and op_info.backward_name
             and not op_info.is_sparse_op
             and all_op_info_items[op_info.backward_name].kernel_map is not None
+            and op_info.op_phi_name[0] not in cache_grad_op_shape_black_list
         ):
             op_interfaces += [
                 "paddle::dialect::CacheGradOpSymbolicShapeInterface"

@@ -151,7 +151,7 @@ void InferSymbolicShapeContext::SetSymbolForValueByStaticShape(Value val) {
     std::vector<symbol::DimExpr> static_shape;
     for (int i = 0; i < type_info.dims().size(); ++i) {
       int dim = type_info.dims()[i];
-      if (dim > 0) {
+      if (dim >= 0) {
         static_shape.emplace_back(dim);
       } else {
         static_shape.emplace_back(GetNextSymName());
