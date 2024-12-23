@@ -8145,11 +8145,11 @@ def device_guard(device: str | None = None) -> Generator[None, None, None]:
         if device == "cpu":
             raise ValueError("Should not set device id for cpu.")
     if (
-        device not in ["cpu", "gpu", "xpu", "", None]
+        device not in ["cpu", "gpu", "dcu", "xpu", "", None]
         and device not in core.get_all_custom_device_type()
     ):
         raise ValueError(
-            "The Attr(device) should be 'cpu', 'xpu', 'gpu' or custom device, and it can also be empty string or None "
+            "The Attr(device) should be 'cpu', 'xpu', 'dcu', 'gpu' or custom device, and it can also be empty string or None "
             f"when there is no need to specify device. But received {device}"
         )
     if index:
@@ -8226,7 +8226,12 @@ def _get_paddle_place(place):
 
     # GPU
     available_gpu_place = re.match(r"gpu:\d+", place)
-    if place == "gpu_pinned" or place == "gpu" or available_gpu_place:
+    if (
+        place == "gpu_pinned"
+        or place == "gpu"
+        or place == "dcu"
+        or available_gpu_place
+    ):
         if not core.is_compiled_with_cuda():
             raise ValueError(
                 f"The device should not be {available_gpu_place.group()}, since PaddlePaddle is "
@@ -8234,7 +8239,7 @@ def _get_paddle_place(place):
             )
         if place == "gpu_pinned":
             return core.CUDAPinnedPlace()
-        elif place == "gpu":
+        elif place == "gpu" or place == "dcu":
             return core.CUDAPlace(0)
         else:
             place_info_list = place.split(":", 1)
