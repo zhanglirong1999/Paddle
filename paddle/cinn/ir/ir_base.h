@@ -461,13 +461,11 @@ struct Expr : public IrNodeRef {
 
   bool is_index() const;
 
-  //! `is_index_tmp` is used to judge whether the expr is a index temporary.
-  bool is_index_tmp() const;
-
   IndexExpr as_index();
   const IndexExpr as_index() const;
 
   Expr& set_index(bool flag);
+  const Expr& set_index(bool flag) const;
 
   operator Var();
 
@@ -478,11 +476,13 @@ struct IndexExpr : public IrNodeRef {
  public:
   IndexExpr() = default;
   IndexExpr(const IndexExpr& other) : IrNodeRef(other.ptr()) {}
-  IndexExpr(IrNode* p) : IrNodeRef(p) {}  // NOLINT
-  IndexExpr(const Expr& e);               // NOLINT
+  IndexExpr(IrNode* p) : IrNodeRef(p) { p->set_index(true); }  // NOLINT
+  IndexExpr(const Expr& e);                                    // NOLINT
 
   explicit IndexExpr(int32_t x) : IrNodeRef(new IntImm(Int(32), x)) {}
   explicit IndexExpr(int64_t x) : IrNodeRef(new IntImm(Int(64), x)) {}
+
+  explicit IndexExpr(Type t, int64_t x) : IrNodeRef(new IntImm(t, x)) {}
 
   bool is_var() const;
   _Var_* as_var();

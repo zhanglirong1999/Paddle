@@ -182,6 +182,7 @@ void SubstitudeTargetExprWithDestExpr(const ir::Expr& source,
   VLOG(4) << "SubstitideExpr Start";
   VLOG(5) << "Substitide Body : " << *body;
   ir::Expr new_dest = dest;
+  optim::Simplify(&new_dest);
   if (source.type() != dest.type()) {
     VLOG(4) << "Cast the dest" << dest << " to type" << source.type();
     new_dest = ir::Cast::Make(source.type(), dest);

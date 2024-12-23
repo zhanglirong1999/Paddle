@@ -202,7 +202,6 @@ static void MergeMulModInsertElements(
 }
 
 static std::optional<ir::IndexExpr> MergeMulModInner(
-    SymbolicExprAnalyzer *analyzer,
     const ir::IndexExpr &mult_expr,
     const ir::IndexExpr &mod_l_expr,
     const ir::IndexExpr &mod_r_expr) {
@@ -278,8 +277,7 @@ static std::optional<ir::IndexExpr> MergeMulModInner(
   return std::nullopt;
 }
 
-ir::IndexExpr MergeMulMod(SymbolicExprAnalyzer *analyzer,
-                          const ir::IndexExpr &base) {
+ir::IndexExpr MergeMulMod(const ir::IndexExpr &base) {
   ir::IndexExpr simplified_base = base.Normalize();
   std::vector<ir::IndexExpr> elems = GetFlattenExprs<ir::Add>(simplified_base);
   std::list<ir::IndexExpr> mult_exprs;
@@ -298,7 +296,7 @@ ir::IndexExpr MergeMulMod(SymbolicExprAnalyzer *analyzer,
     bool inner_find_opt = false;
     while (mult_it != mult_exprs.end()) {
       auto ret = MergeMulModInner(
-          analyzer, *mult_it, search_mod_it->first, search_mod_it->second);
+          *mult_it, search_mod_it->first, search_mod_it->second);
       if (ret.has_value()) {
         inner_find_opt = true;
         auto temp_mod_it = search_mod_it;
@@ -357,10 +355,6 @@ Expr IndiceToAbsOffset(const std::vector<Expr> &shape,
                         "The size of shape should be less than or "
                         "equal to the size of indices."));
   Expr res(0);
-  ir::TryElevateInt32ToInt64(shape);
-  common::cas_intervals_t var_intervals =
-      common::CollectVarIntervalsOfExprs(indices);
-  common::SymbolicExprAnalyzer analyzer{var_intervals};
 
   for (int32_t i = 0; i < shape.size(); i++) {
     PADDLE_ENFORCE_EQ(
@@ -372,22 +366,21 @@ Expr IndiceToAbsOffset(const std::vector<Expr> &shape,
             i,
             shape[i].type()));
 
+    // if(VerifyIndex(shape[i]))shape[i].set_index(true);
+    // if(VerifyIndex(indices[i]))indices[i].set_index(true);
+
     Expr indice_cast = indices[i];
     optim::SimplifyCast(&indice_cast);
-    if (res.defined()) {
-      res = RampRelatedAdd(RampRelatedMul(res, shape[i]), indice_cast);
-      if (res.is_index_tmp()) {
-        res.set_index(true);
-        res = res.as_index().Normalize();
-      }
-    } else {
-      res = indice_cast;
+    res = RampRelatedAdd(RampRelatedMul(res, shape[i]), indice_cast);
+    if (res.is_index()) {
+      res = res.as_index().Normalize();
     }
 
     if (i > 0) {
-      if (res.is_index_tmp()) {
-        res.set_index(true);
-        res = MergeMulMod(&analyzer, res).Normalize();
+      if (res.is_index()) {
+        res = MergeMulMod(res).Normalize();
+      } else {
+        VLOG(8) << "**** expr is not index ****: " << res;
       }
     }
   }
@@ -660,10 +653,11 @@ bool ComparePriority(const ir::IndexExpr &lhs, const ir::IndexExpr &rhs) {
     if (auto rhsVar = rhs.As<ir::_Var_>())
       return std::make_tuple(lhsVar->name.length(), lhsVar->name) <=
              std::make_tuple(rhsVar->name.length(), rhsVar->name);
+
   auto lhsLen = lhs.length();
   auto rhsLen = rhs.length();
   if (lhsLen < rhsLen) return false;
-  // Add < Mul < Div < Mod.
+  // Add < Mul < Div < Mod < Min < Max < Load.
   else if (lhsLen == rhsLen)
     return lhs.node_type() <= rhs.node_type();
   else
@@ -694,6 +688,10 @@ bool IsSumPartialBySymbol(const ir::IndexExpr &expr,
       return IsSumPartialBySymbol(expr.operand(0), symbol);
     }
     case ir::IrNodeTy::Mod:
+    case ir::IrNodeTy::Min:
+    case ir::IrNodeTy::Max:
+    case ir::IrNodeTy::Load:
+    case ir::IrNodeTy::Cast:
       return false;
     default:
       PADDLE_THROW(::common::errors::InvalidArgument(
@@ -771,6 +769,11 @@ bool IsDivisiblieBySymbol(const ir::IndexExpr &expr,
       if (ty != expr.node_type()) return false;
       return IsDivisiblieBySymbol(expr.operand(0), symbol, expr.node_type());
     }
+    case ir::IrNodeTy::Min:
+    case ir::IrNodeTy::Max:
+    case ir::IrNodeTy::Load:
+    case ir::IrNodeTy::Cast:
+      return false;
     default:
       PADDLE_THROW(::common::errors::InvalidArgument(
           "Unsupported type of expr in IsDivisiblieBySymbol which is: %s",
@@ -828,6 +831,35 @@ bool IsNegatedIndexExpr(const ir::IndexExpr &candidate,
       expr = mul->a();
       return true;
     }
+  }
+  return false;
+}
+
+bool VerifyIndex(const ir::Expr &expr) {
+  switch (expr.node_type()) {
+    case ir::IrNodeTy::_Var_:
+    case ir::IrNodeTy::IntImm: {
+      if (expr.type().is_index_type()) return true;
+      return false;
+    }
+    case ir::IrNodeTy::Cast:
+      return VerifyIndex(expr->operand(0));
+    case ir::IrNodeTy::Load: {
+      bool is_index = true;
+      auto load_op = expr.As<ir::Load>();
+      for (const auto &indice : load_op->indices) {
+        if (!VerifyIndex(indice)) return false;
+      }
+      return true;
+    }
+    case ir::IrNodeTy::Add:
+    case ir::IrNodeTy::Sub:
+    case ir::IrNodeTy::Mul:
+    case ir::IrNodeTy::Div:
+    case ir::IrNodeTy::Mod:
+    case ir::IrNodeTy::Max:
+    case ir::IrNodeTy::Min:
+      return VerifyIndex(expr->operand(0)) && VerifyIndex(expr->operand(1));
   }
   return false;
 }

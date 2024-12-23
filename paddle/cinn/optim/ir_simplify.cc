@@ -258,6 +258,36 @@ struct SimplifyIfThenElseMutator : public ir::IRMutator<> {
   }
 };
 
+struct SimplifySelectMutator : public ir::IRMutator<> {
+  void operator()(Expr* x) { ir::IRMutator<>::Visit(x, x); }
+
+  using ir::IRMutator<>::Visit;
+
+  void Visit(const Select* op, Expr* expr) override {
+    auto* node = expr->As<ir::Select>();
+    node->condition = cinn::common::AutoSimplify(node->condition);
+
+    auto* condition_int = node->condition.As<ir::IntImm>();
+    auto* condition_uint = node->condition.As<ir::UIntImm>();
+
+    // not deterministic
+    if (!condition_int && !condition_uint) {
+      Visit(&node->true_value, &node->true_value);
+      Visit(&node->false_value, &node->false_value);
+      return;
+    }
+
+    bool value = condition_int ? condition_int->value : condition_uint->value;
+    if (value) {
+      *expr = op->true_value;
+      Visit(expr, expr);
+    } else {
+      *expr = op->false_value;
+      Visit(expr, expr);
+    }
+  }
+};
+
 struct ReplaceFracWithDivMutator : public ir::IRMutator<> {
   void operator()(Expr* x) { ir::IRMutator<>::Visit(x, x); }
 
@@ -468,7 +498,7 @@ void Simplify(Expr* expr) {
   SimplifyLoadMutator()(expr);
   SimplifyStoreMutator()(expr);
   SimplifyIfThenElseMutator()(expr);
-
+  SimplifySelectMutator()(expr);
   cinn::common::cas_intervals_t var_intervals;
   SimplifyNoPureMathMutator mutator(var_intervals);
   mutator(expr);

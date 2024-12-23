@@ -61,7 +61,6 @@ ir::IndexExpr IterMapToExprNormalizer::ConvertIterSplit(ir::IterSplit* expr) {
     Visit(&(mark->source), &(mark->source));
     source = mark->source;
   }
-
   // quick branch
   if (IsZero(expr->scale) || IsOne(expr->extent))
     return ir::Zero(expr->extent.type());
@@ -89,7 +88,7 @@ void IterMapRewriter::Visit(const ir::_Var_* op, Expr* expr) {
 void IterMapRewriter::Visit(const ir::Add* op, Expr* expr) {
   auto a = op->a();
   auto b = op->b();
-
+  VLOG(10) << "in visit add: " << a << " " << b;
   Visit(&a);
   Visit(&b);
 
@@ -103,7 +102,6 @@ void IterMapRewriter::Visit(const ir::Add* op, Expr* expr) {
 
   Expr ret = ir::ir_utils::IRCopy(ToIterSum(a));
   ir::IterSum* ret_sum = ret.As<ir::IterSum>();
-
   if (auto b_sum = b.As<ir::IterSum>()) {
     AddToLhs(ret_sum, *b_sum, 1);
   } else if (auto b_split = b.As<ir::IterSplit>()) {
@@ -112,12 +110,13 @@ void IterMapRewriter::Visit(const ir::Add* op, Expr* expr) {
     ret_sum->base = ret_sum->base + b.as_index();
   }
   *expr = ret;
+  VLOG(10) << "out visit add";
 }
 
 void IterMapRewriter::Visit(const ir::Sub* op, Expr* expr) {
   auto a = op->a();
   auto b = op->b();
-
+  VLOG(10) << "in visit sub: " << a << " " << b;
   Visit(&a);
   Visit(&b);
 
@@ -139,12 +138,13 @@ void IterMapRewriter::Visit(const ir::Sub* op, Expr* expr) {
   }
 
   *expr = ret;
+  VLOG(10) << "out visit sub";
 }
 
 void IterMapRewriter::Visit(const ir::Mul* op, Expr* expr) {
   auto a = op->a();
   auto b = op->b();
-
+  VLOG(10) << "in visit mul: " << a << " " << b;
   Visit(&a);
   Visit(&b);
 
@@ -176,12 +176,14 @@ void IterMapRewriter::Visit(const ir::Mul* op, Expr* expr) {
   }
 
   *expr = ret;
+  VLOG(10) << "out visit mul";
 }
 
 void IterMapRewriter::Visit(const ir::Div* op, Expr* expr) {
   auto a = op->a();
   auto b = op->b();
 
+  VLOG(10) << "in visit div: " << a << " " << b;
   Visit(&a);
   Visit(&b);
 
@@ -197,21 +199,19 @@ void IterMapRewriter::Visit(const ir::Div* op, Expr* expr) {
         "Division of iter and iter is not supported"));
     return;
   }
-
   auto ret = ir::ir_utils::IRCopy(a);
-
   auto preprocessed = PreprocessDividend(ret);
   auto preprocessed_sum = preprocessed.As<ir::IterSum>();
 
   ret = SplitDivConst(preprocessed_sum->args[0], preprocessed_sum->base, b);
-
   *expr = ret;
+  VLOG(10) << "out visit div";
 }
 
 void IterMapRewriter::Visit(const ir::Mod* op, Expr* expr) {
   auto a = op->a();
   auto b = op->b();
-
+  VLOG(10) << "in visit mod: " << a << " " << b;
   Visit(&a);
   Visit(&b);
 
@@ -236,6 +236,7 @@ void IterMapRewriter::Visit(const ir::Mod* op, Expr* expr) {
   ret = SplitModConst(preprocessed_sum->args[0], preprocessed_sum->base, b);
 
   *expr = ret;
+  VLOG(10) << "out visit mod";
 }
 
 Expr IterMapRewriter::PreprocessDividend(const Expr& dividend) {
@@ -471,7 +472,6 @@ std::optional<Expr> IterMapRewriter::TryFuse(const Expr& expr) {
       return opt.value();
     }
   }
-
   // Select iter with smallest scale as base iter.
   std::vector<bool> visited(iter_sum->args.size(), false);
   int base_index = FindBaseSplit(*iter_sum, visited, Expr(), -1);
@@ -484,7 +484,6 @@ std::optional<Expr> IterMapRewriter::TryFuse(const Expr& expr) {
   ir::IndexExpr expected_scale = base_scale;
   int first_possible_unit_extent_pos =
       FindFirstPossibleUnitExtentIndex(*iter_sum);
-
   // Find iter with same scale as expected_scale and update expected_scale.
   // e.g. i * 32 + j * 8 + k * 1, Extent(i, j, k) = 2, 4, 8.
   // first base_index = 2, expected_scale = 1. means select k as base iter.
@@ -493,7 +492,7 @@ std::optional<Expr> IterMapRewriter::TryFuse(const Expr& expr) {
   // finally matched_pos = 0, expected_scale = 32 * 2 = 64. means match i.
   // if match failed, indicates that expr is illegal and cannot be merged.
   for (size_t i = 0; i < iter_sum->args.size(); ++i) {
-    ir::IndexExpr matched_scale{nullptr};
+    ir::IndexExpr matched_scale;
     int matched_pos =
         i == 0 ? base_index
                : FindSplitWithExactScale(*iter_sum,

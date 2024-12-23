@@ -42,7 +42,12 @@ struct IRCopyVisitor : public ir::IRVisitorRequireReImpl<Expr> {
   bool copy_buffer_node;
 
   Expr Visit(const Expr* op) override {
-    bool is_index = op->is_index();
+    // Because AutoSimplify converts div to frac, VerifyIndex is temporarily
+    // added here to ensure correctness.
+    // This is essentially because visit now allows inplace modification of
+    // Expr, and then visit of IndexExpr will be prohibited, and IndexExpr's own
+    // access method will be used instead.
+    bool is_index = op->is_index() && common::VerifyIndex(*op);
     auto copy = IRVisitorRequireReImpl::Visit(op);
     return copy.set_index(is_index);
   }
@@ -469,15 +474,15 @@ struct IRCopyVisitor : public ir::IRVisitorRequireReImpl<Expr> {
   }
   Expr Visit(const ir::IterMark* op) override {
     Expr source = Visit(&(op->source));
-    Expr extent = Visit(&(op->extent));
+    IndexExpr extent = Visit(&(op->extent));
 
     return IterMark::Make(source, extent);
   }
   Expr Visit(const ir::IterSplit* op) override {
     Expr source = Visit(&(op->source));
-    Expr lower_factor = Visit(&(op->lower_factor));
-    Expr extent = Visit(&(op->extent));
-    Expr scale = Visit(&(op->scale));
+    IndexExpr lower_factor = Visit(&(op->lower_factor));
+    IndexExpr extent = Visit(&(op->extent));
+    IndexExpr scale = Visit(&(op->scale));
 
     return IterSplit::Make(source, lower_factor, extent, scale);
   }
@@ -486,7 +491,7 @@ struct IRCopyVisitor : public ir::IRVisitorRequireReImpl<Expr> {
     for (const auto& v : op->args) {
       args.push_back(Visit(&v));
     }
-    Expr base = Visit(&(op->base));
+    IndexExpr base = Visit(&(op->base));
     return IterSum::Make(args, base);
   }
 

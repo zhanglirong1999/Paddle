@@ -38,8 +38,7 @@ Expr PrecedingAxisToAbsOffset(const std::vector<Expr> &shape,
 
 Expr CastIfNeeded(Expr body, Type type);
 
-ir::IndexExpr MergeMulMod(SymbolicExprAnalyzer *analyzer,
-                          const ir::IndexExpr &base);
+ir::IndexExpr MergeMulMod(const ir::IndexExpr &base);
 
 //! Substitute vars to other expressions.
 //! @param expr The expression to do modification.
@@ -336,6 +335,14 @@ bool ProveDivisible(const ir::IndexExpr &lhs, const ir::IndexExpr &rhs);
  */
 bool IsNegatedIndexExpr(const ir::IndexExpr &candidate,
                         ir::IndexExpr &expr);  // NOLINT
+
+/*!
+ * \brief Judge type of `expr` is valid type of `IndexExpr` or not.
+ * \param expr The expression to be checked.
+ * \return A boolean value indicating whether the type of `expr` is valid
+ * IndexExpr type.
+ */
+bool VerifyIndex(const ir::Expr &expr);
 
 }  // namespace common
 }  // namespace cinn

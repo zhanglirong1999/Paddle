@@ -28,24 +28,6 @@
 namespace cinn {
 namespace optim {
 
-bool ExprMathEqual(const Expr& expr1, const Expr& expr2) {
-  ir::Expr cmp_expr = common::AutoSimplify(ir::Sub::Make(expr1, expr2));
-  // This is ugly code since AutoSimplify is not powerful enough. Modify it
-  // after we make auto simplify better
-  ir::Expr simplified = common::AutoSimplify(cmp_expr);
-  int count = 0;
-  while (simplified != cmp_expr) {
-    cmp_expr = simplified;
-    simplified = common::AutoSimplify(cmp_expr);
-    ++count;
-    // Control dead loop
-    if (count >= 5) {
-      break;
-    }
-  }
-  return simplified.is_constant() && simplified.get_constant() == 0;
-}
-
 void FormalizeSingleIndex(const ir::Tensor& tensor,
                           std::vector<ir::Expr>* indices) {
   if (tensor->shape.size() > 1 && indices->size() == 1) {
@@ -150,7 +132,7 @@ class AnalyzeBufferAxis : public ir::IRMutator<> {
         buffer_name_access_same_index_expr[buffer_name];
     for (int i = 0; i < indices.size(); ++i) {
       if (index_expr.count(i)) {
-        if (!ExprMathEqual(index_expr[i], GetIndexBindExpr(indices[i]))) {
+        if (index_expr[i] != GetIndexBindExpr(indices[i])) {
           index_expr.erase(i);
         }
       }

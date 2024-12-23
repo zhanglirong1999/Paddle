@@ -37,7 +37,7 @@ struct DimExprToIrExprVisitor {
                             dim_expr,
                             /* is_reduce  = */ false,
                             /* is_symbolic_constant = */ true);
-    return x;
+    return x.set_index(true);
   }
 
   ir::Expr operator()(const Negative<DimExpr>& dim_expr) {

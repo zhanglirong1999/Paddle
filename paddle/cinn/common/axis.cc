@@ -68,7 +68,8 @@ std::string axis_name(int level) {
 std::vector<ir::Var> GenDefaultAxis(int naxis) {
   std::vector<ir::Var> axis;
   for (int i = 0; i < naxis; i++) {
-    axis.emplace_back(cinn::common::axis_name(i));
+    Var ax(cinn::common::axis_name(i));
+    axis.emplace_back(ax.set_index(true));
     PADDLE_ENFORCE_EQ(axis.back()->type().valid(),
                       true,
                       ::common::errors::InvalidArgument(
@@ -83,7 +84,7 @@ std::vector<ir::Expr> GenDefaultAxisAsExpr(int naxis) {
   auto vars = GenDefaultAxis(naxis);
   std::vector<Expr> res;
   for (auto& v : vars) {
-    res.push_back(Expr(v));
+    res.push_back(Expr(v.set_index(true)));
   }
   return res;
 }

@@ -94,6 +94,15 @@ Buffer _Buffer_::Make(Var data,
   node->offset_factor = offset_factor;
   node->target = target;
   node->dtype = dtype;
+
+  std::for_each(node->shape.begin(), node->shape.end(), [](Expr &indice) {
+    indice = indice.set_index(true).as_index().Normalize();
+  });
+  std::for_each(node->strides.begin(), node->strides.end(), [](Expr &indice) {
+    indice = indice.set_index(true).as_index().Normalize();
+  });
+  elem_offset.set_index(true);
+
   return Buffer(node);
 }
 
@@ -102,6 +111,9 @@ Buffer _Buffer_::Make(const std::string &name, const std::vector<Expr> &shape) {
   node->name = name;
   node->shape = shape;
   node->dtype = Void();
+  std::for_each(node->shape.begin(), node->shape.end(), [](Expr &indice) {
+    indice = indice.set_index(true).as_index().Normalize();
+  });
   return Buffer(node);
 }
 
@@ -125,6 +137,9 @@ void _Buffer_::BindTo(const _Tensor_ *tensor) {
           "tensor's shape is properly initialized and not empty."));
 
   shape = tensor->shape;
+  std::for_each(shape.begin(), shape.end(), [](Expr &indice) {
+    indice = indice.set_index(true).as_index().Normalize();
+  });
   binded_tensors_names_.insert(tensor->name);
 }
 void _Buffer_::Unbind(const _Tensor_ *tensor) {
@@ -192,6 +207,9 @@ Expr _BufferRange_::Make(const Expr &buffer, const std::vector<Var> &ranges) {
   auto node = make_shared<_BufferRange_>();
   node->buffer = buffer;
   node->ranges = ranges;
+  std::for_each(node->ranges.begin(), node->ranges.end(), [](Var &v) {
+    v.set_index(true);
+  });
   return Expr(node);
 }
 void _BufferRange_::Verify() const {
@@ -205,6 +223,9 @@ Expr _BufferRange_::Copy() const {
   auto node = make_shared<_BufferRange_>();
   node->buffer = buffer;
   node->ranges = ranges;
+  std::for_each(node->ranges.begin(), node->ranges.end(), [](Var &v) {
+    v.set_index(true);
+  });
   node->set_type(type());
   return Expr(node);
 }
@@ -244,6 +265,9 @@ BufferRange &BufferRange::operator=(const _BufferRange_ *x) {
   auto node = make_shared<_BufferRange_>();
   node->buffer = x->buffer;
   node->ranges = x->ranges;
+  std::for_each(node->ranges.begin(), node->ranges.end(), [](Var &v) {
+    v.set_index(true);
+  });
   node->set_type(x->type());
   *this = BufferRange(node);
   return *this;
