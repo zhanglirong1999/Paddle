@@ -163,6 +163,18 @@ class ConstantVariable(VariableBase):
             not bool(self.get_py_value()), self.graph, DummyTracker([self])
         )
 
+    def getitem(self, key):
+        track_vars: list[VariableBase] = [self]
+        if self.get_py_type() is not str:
+            raise InnerError(
+                f"getitem can only be applied to a str variable, but got {self.get_py_type()}"
+            )
+        if isinstance(key, VariableBase):
+            track_vars.append(key)
+            key = key.get_py_value()
+        retval = self.value[key]
+        return ConstantVariable(retval, self.graph, DummyTracker(track_vars))
+
     def str(self):
         return ConstantVariable(
             str(self.value), self.graph, DummyTracker([self])
