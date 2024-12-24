@@ -32,11 +32,6 @@ UE = "UE"
 unpacket = "unpacket"
 
 # These words need to be fixed
-blokc = 'blokc'
-blcok = 'blcok'
-bootom = 'bootom'
-bondary = 'bondary'
-branchs = 'branchs'
 cahe = 'cahe'
 Caculate = 'Caculate'
 caculate = 'caculate'

@@ -4297,7 +4297,7 @@ void Pad2dXPUInferMeta(const MetaTensor& x,
     out_dim = phi::make_ddim(
         {x_dims[0],
          x_dims[1],
-         x_dims[2] + paddings[2] + paddings[3],    // top bootom height
+         x_dims[2] + paddings[2] + paddings[3],    // top bottom height
          x_dims[3] + paddings[0] + paddings[1]});  // left right weight
   } else if (data_format == "NHWC") {
     out_dim = phi::make_ddim({x_dims[0],
