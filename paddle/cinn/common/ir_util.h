@@ -38,8 +38,6 @@ Expr PrecedingAxisToAbsOffset(const std::vector<Expr> &shape,
 
 Expr CastIfNeeded(Expr body, Type type);
 
-ir::IndexExpr MergeMulMod(const ir::IndexExpr &base);
-
 //! Substitute vars to other expressions.
 //! @param expr The expression to do modification.
 //! @param var_map The map from variables to the target expressions.
@@ -253,6 +251,11 @@ bool ComparePriority(const ir::IndexExpr &lhs, const ir::IndexExpr &rhs);
  * 5. `IsSumPartialBySymbol(S0 / 3, S0)` return true;
  * 6. `IsSumPartialBySymbol(S0 / 3 + S1, S0)` return true;
  * 7. `IsSumPartialBySymbol(S0 % 3, S0)` return false;
+ *
+ * Note: For performance reasons, special patterns will not be matched here.
+ * This can be allowed for extreme optimization.
+ * For example:
+ * `IsSumPartialBySymbol((S0 + S1 / 5 * 25) / 5, S1 % 5)` return false;
  *
  * \param expr The expression to be checked.
  * \param symbol  The symbol to be checked.

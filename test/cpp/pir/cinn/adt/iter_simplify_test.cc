@@ -17,6 +17,7 @@
 #include <gtest/gtest.h>
 #include "paddle/cinn/common/integer_set.h"
 #include "paddle/cinn/common/ir_util.h"
+#include "paddle/cinn/common/simplify_special_pattern.h"
 #include "paddle/cinn/ir/op/ir_operators.h"
 #include "paddle/cinn/ir/schedule/ir_schedule.h"
 #include "paddle/cinn/ir/schedule/schedule_base.h"

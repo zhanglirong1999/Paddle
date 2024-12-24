@@ -137,6 +137,19 @@ class Dim;
   macro__(For)                      \
   macro__(Schedule)                 \
   macro__(Evaluate)
+
+#define NODETY_FORALL_INDEXEXPR(macro__) \
+  macro__(IntImm)                      \
+  macro__(_Var_)                      \
+  macro__(Add)                      \
+  macro__(Sub)                      \
+  macro__(Mul)                    \
+  macro__(Div)                    \
+  macro__(Mod)                     \
+  macro__(Load)               \
+  macro__(Cast)                      \
+  macro__(Min)                 \
+  macro__(Max)
 // clang-format on
 
 //! Define IrNodeTy
@@ -501,7 +514,28 @@ struct IndexExpr : public IrNodeRef {
 
   int64_t GetLargestMultiplyPart() const;
 
-  IndexExpr Normalize() const;
+  /*
+   * Enum class OptLevel defines optimization levels for the IndexExpr
+   * normalization.
+   *
+   * Level0: only constant folding
+   *   e.g. (x + 3) + 2  ==> x + 5
+   * Level1: constant folding and sequential simplification.
+   *   e.g. x / 2 * 2 + x % 2 ==> x
+   * Level2: Each factor in the expression is attempted to be simplified with
+   * the other factors
+   *   e.g. x / 2 * 2 + y / 2 + 5 + x % 2 ==> y / 2 + x + 5
+   *
+   * Note: Because IndexExpr is generated in order, Short operand is at the
+   * end of the expression, so Level1 is usually used.
+   */
+  enum class OptLevel {
+    Level0 = 0,  // TODO(liujinnan): Only constant folding is performed
+    Level1 = 1,  // Constant folding and sequential simplification are performed
+    Level2 = 2   // Top level, simplify
+  };
+
+  IndexExpr Normalize(OptLevel level = OptLevel::Level1) const;
 
   bool IsDynamic() const;
 
