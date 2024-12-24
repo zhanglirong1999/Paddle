@@ -164,23 +164,26 @@ void where_double_grad(const Tensor& condition,
                        const paddle::optional<Tensor>& grad_y_grad,
                        Tensor* grad_out_grad) {
   if (grad_out_grad) {
+    Tensor ddout;
     if (grad_x_grad && grad_y_grad) {
       // ddz = ddx * cond + (1-cond) * ddy
-      auto condition_mask = cast<T>(condition, grad_x_grad.get().dtype());
-      auto ddout = condition_mask * grad_x_grad.get() +
-                   (1 - condition_mask) * grad_y_grad.get();
-      set_output<T>(ddout, grad_out_grad);
+      ddout = where<T>(condition, grad_x_grad.get(), grad_y_grad.get());
     } else if (grad_x_grad) {
       // ddz = ddx * cond
-      auto condition_mask = cast<T>(condition, grad_x_grad.get().dtype());
-      auto ddout = condition_mask * grad_x_grad.get();
-      set_output<T>(ddout, grad_out_grad);
+      auto zeros = full<T>(common::vectorize(grad_x_grad.get().dims()),
+                           0,
+                           grad_x_grad.get().dtype(),
+                           grad_x_grad.get().place());
+      ddout = where<T>(condition, grad_x_grad.get(), zeros);
     } else if (grad_y_grad) {
-      // ddz = (1-cond) * ddy
-      auto condition_mask = cast<T>(condition, grad_y_grad.get().dtype());
-      auto ddout = (1 - condition_mask) * grad_y_grad.get();
-      set_output<T>(ddout, grad_out_grad);
+      // ddz = (1 - cond) * ddy
+      auto zeros = full<T>(common::vectorize(grad_y_grad.get().dims()),
+                           0,
+                           grad_y_grad.get().dtype(),
+                           grad_y_grad.get().place());
+      ddout = where<T>(condition, zeros, grad_y_grad.get());
     }
+    set_output<T>(ddout, grad_out_grad);
   }
 }
 
