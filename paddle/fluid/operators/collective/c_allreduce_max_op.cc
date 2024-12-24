@@ -42,12 +42,3 @@ REGISTER_OP_WITHOUT_GRADIENT(c_allreduce_max,
                              ops::CAllReduceOp,
                              ops::CAllReduceMaxOpMaker,
                              ops::AllreduceMaxInplaceInferer)
-PD_REGISTER_STRUCT_KERNEL(c_allreduce_max,
-                          CPU,
-                          ALL_LAYOUT,
-                          ops::CAllReduceMaxCPUKernel,
-                          float,
-                          double,
-                          int,
-                          int64_t,
-                          phi::dtype::float16) {}
