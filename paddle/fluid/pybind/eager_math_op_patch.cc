@@ -1611,7 +1611,7 @@ static PyObject* tensor__floordiv__method(TensorObject* self,
   PyObject* other_obj = PyTuple_GET_ITEM(args, 0);
 
   // 1. scalar exists cases or not
-  // there is no scalar case for floordiv, but alse need to cast self_tensor
+  // there is no scalar case for floordiv, but also need to cast self_tensor
   // in need.
   if (PyFloat_Check(other_obj) || PyCheckInteger(other_obj) ||
       IsNumpyType(other_obj)) {
@@ -1701,7 +1701,7 @@ static PyObject* tensor__rfloordiv__method(TensorObject* self,
   PyObject* other_obj = PyTuple_GET_ITEM(args, 0);
 
   // 1. scalar exists cases or not
-  // there is no scalar case for rfloordiv, but alse need to cast self_tensor
+  // there is no scalar case for rfloordiv, but also need to cast self_tensor
   // in need.
   if (PyFloat_Check(other_obj) || PyCheckInteger(other_obj) ||
       IsNumpyType(other_obj)) {

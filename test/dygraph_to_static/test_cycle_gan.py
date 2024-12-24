@@ -23,7 +23,7 @@ from PIL import Image, ImageOps
 
 from paddle import base
 
-# Use GPU:0 to elimate the influence of other tasks.
+# Use GPU:0 to eliminate the influence of other tasks.
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 from dygraph_to_static_utils import (

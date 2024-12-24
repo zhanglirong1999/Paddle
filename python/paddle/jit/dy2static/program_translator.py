@@ -501,7 +501,7 @@ class StaticFunction(Generic[_InputT, _RetT]):
             if instance is None:
                 return self
             # Note(Aurelius84): To construct new instance of StaticFunction when we
-            # first encouter the bound function of layer and cache it.
+            # first encounter the bound function of layer and cache it.
             new_static_layer = self._clone()
             if (
                 isinstance(instance, layers.Layer)
