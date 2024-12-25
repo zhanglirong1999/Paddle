@@ -1636,8 +1636,11 @@ class OpTest(unittest.TestCase):
                                     )
                                 )
                                 expect_shape = outs[i].shape
+                                if np.issubdtype(outs[i].dtype, np.integer):
+                                    expect_data = outs[i].flatten().tolist()
+                                else:
+                                    expect_data = []
                                 i += 1
-                                expect_data = []
                                 if not shape_or_data.is_equal(
                                     expect_shape, expect_data
                                 ):

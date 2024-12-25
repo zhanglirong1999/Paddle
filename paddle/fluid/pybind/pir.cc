@@ -3057,64 +3057,82 @@ void BindShapeOrDataDimExprs(pybind11::module *m) {
       .def("data",
            &symbol::ShapeOrDataDimExprs::data,
            return_value_policy::reference)
-      .def("is_equal",
-           [](symbol::ShapeOrDataDimExprs &self,
-              std::vector<int64_t> expect_shape,
-              std::vector<int64_t> expect_data = {}) -> bool {
-             VLOG(3) << "Start compare shape and data.";
+      .def(
+          "is_equal",
+          [](symbol::ShapeOrDataDimExprs &self,
+             std::vector<int64_t> expect_shape,
+             std::vector<int64_t> expect_data = {}) -> bool {
+            VLOG(3) << "Start compare shape and data.";
 
-             const auto &compare_func =
-                 [&](const std::vector<int64_t> &expect,
-                     const std::vector<symbol::DimExpr> &actual) -> bool {
-               const auto print_expect_and_actual = [&]() {
-                 std::ostringstream sout;
-                 sout << "expect: [";
-                 std::copy(expect.begin(),
-                           expect.end(),
-                           std::ostream_iterator<int64_t>(sout, ","));
-                 sout << "]" << std::endl;
+            const auto &CompareFunc =
+                [&](const std::vector<int64_t> &expect,
+                    const std::vector<symbol::DimExpr> &actual,
+                    const std::string &compare_type) -> bool {
+              const auto PrintExpectAndActual = [&](const std::string &prefix) {
+                std::ostringstream sout;
+                sout << prefix << " expect: [";
+                std::copy(expect.begin(),
+                          expect.end(),
+                          std::ostream_iterator<int64_t>(sout, ","));
+                sout << "]" << std::endl;
 
-                 sout << "actual:" << actual << std::endl;
-                 LOG(ERROR) << sout.str();
-               };
+                sout << prefix << " actual:" << actual << std::endl;
+                LOG(ERROR) << sout.str();
+              };
 
-               if (actual.size() != expect.size()) {
-                 LOG(ERROR) << "expect size " << expect.size()
-                            << " is not equal to actual size " << actual.size()
-                            << " . The detailed infermation is as follows:";
-                 print_expect_and_actual();
-                 return false;
-               } else if (actual.empty()) {
-                 return true;
-               }
+              if (actual.size() != expect.size()) {
+                LOG(ERROR) << compare_type << " expect size " << expect.size()
+                           << " is not equal to actual size " << actual.size()
+                           << " . The detailed infermation is as follows:";
+                PrintExpectAndActual(compare_type);
+                return false;
+              } else if (actual.empty()) {
+                return true;
+              }
 
-               for (size_t i = 0; i < actual.size(); i++) {
-                 if (!actual.at(i).isa<int64_t>()) {
-                   print_expect_and_actual();
-                   PADDLE_THROW(common::errors::InvalidArgument(
-                       "In OpTest, only supports cases where the type of "
-                       "DimExpr "
-                       "is int64_t."));
-                   return false;
-                 }
-                 if (actual.at(i) != expect.at(i)) {
-                   LOG(ERROR) << "expect[" << i << "]: " << expect.at(i)
-                              << " is not equal to actual[" << i
-                              << "]: " << actual.at(i)
-                              << " . The detailed infermation is as follows:";
-                   print_expect_and_actual();
-                   return false;
-                 }
-               }
-               return true;
-             };
+              for (size_t i = 0; i < actual.size(); i++) {
+                if (!actual.at(i).isa<int64_t>()) {
+                  PrintExpectAndActual(compare_type);
+                  PADDLE_THROW(common::errors::InvalidArgument(
+                      "In OpTest, only supports cases where the type of "
+                      "DimExpr "
+                      "is int64_t."));
+                  return false;
+                }
+                if (actual.at(i) != expect.at(i)) {
+                  LOG(ERROR)
+                      << compare_type << " expect[" << i
+                      << "]: " << expect.at(i) << " is not equal to actual["
+                      << i << "]: " << actual.at(i)
+                      << " . The detailed infermation is as follows:";
+                  PrintExpectAndActual(compare_type);
+                  return false;
+                }
+              }
+              return true;
+            };
 
-             // compare shape
-             const std::vector<symbol::DimExpr> &actual_shape = self.shape();
-
-             // TODO(gongshaotian): compare data
-             return compare_func(expect_shape, actual_shape);
-           });
+            // compare shape
+            const std::vector<symbol::DimExpr> &actual_shape = self.shape();
+            const bool shape_status =
+                CompareFunc(expect_shape, actual_shape, "shape");
+            // compare data
+            const std::optional<std::vector<symbol::DimExpr>> &actual_data_ =
+                self.data();
+            if (actual_data_.has_value()) {
+              PADDLE_ENFORCE_LE(actual_shape.size(),
+                                1,
+                                common::errors::Unimplemented(
+                                    "Now data dim expr is not supported for "
+                                    "multi-dim shape."));
+              const std::vector<symbol::DimExpr> actual_data =
+                  actual_data_.value();
+              const bool data_status =
+                  CompareFunc(expect_data, actual_data, "data");
+              return shape_status && data_status;
+            }
+            return shape_status;
+          });
 }
 
 void BindShapeConstraintIRAnalysis(pybind11::module *m) {
