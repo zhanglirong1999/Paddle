@@ -849,6 +849,16 @@
     func : c_scatter
   traits : paddle::dialect::ForwardOnlyTrait
 
+- op : c_split
+  args : (Tensor x, int rank = 0, int nranks = 1, int ring_id = 0, bool use_model_parallel = true)
+  output : Tensor(out)
+  infer_meta :
+    func : CSplitInferMeta
+    param : [x, nranks]
+  kernel :
+    func : c_split
+    param: [x, rank, nranks, use_model_parallel]
+
 - op : calc_reduced_attn_scores
   args : (Tensor q, Tensor k, Tensor softmax_lse)
   output : Tensor(reduced_scores)
