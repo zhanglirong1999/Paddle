@@ -532,6 +532,7 @@ void PirInterpreter::UpdateSyncOpNum() {
 void PirInterpreter::UpdateNcclOpNum() {
   static std::set<std::string> nccl_op_set = {
       "pd_op.c_softmax_with_cross_entropy",
+      "pd_op.c_softmax_with_multi_label_cross_entropy",
       "pd_op.c_allgather",
       "pd_op.c_allreduce_avg",
       "pd_op.c_allreduce_max",
@@ -569,6 +570,7 @@ void PirInterpreter::UpdateNcclOpNum() {
       "pd_op.all_reduce",
       "pd_op.reduce",
       "pd_op.c_softmax_with_cross_entropy_grad",
+      "pd_op.c_softmax_with_multi_label_cross_entropy_grad",
       "pd_op.c_allgather_grad",
       "pd_op.c_allreduce_max_grad",
       "pd_op.c_allreduce_min_grad",
@@ -604,6 +606,7 @@ void PirInterpreter::UpdateNcclOpNum() {
       "pd_op.all_reduce_grad",
       "pd_op.reduce_grad",
       "pd_op.c_softmax_with_cross_entropy_",
+      "pd_op.c_softmax_with_multi_label_cross_entropy_",
       "pd_op.c_allgather_",
       "pd_op.c_allreduce_avg_",
       "pd_op.c_allreduce_max_",
@@ -641,6 +644,7 @@ void PirInterpreter::UpdateNcclOpNum() {
       "pd_op.all_reduce_",
       "pd_op.reduce_",
       "pd_op.c_softmax_with_cross_entropy_grad_",
+      "pd_op.c_softmax_with_multi_label_cross_entropy_grad_",
       "pd_op.c_allgather_grad_",
       "pd_op.c_allreduce_max_grad_",
       "pd_op.c_allreduce_min_grad_",
