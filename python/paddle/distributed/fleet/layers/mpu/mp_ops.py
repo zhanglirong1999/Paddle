@@ -255,12 +255,10 @@ class mp_allreduce_eager(PyLayer):
             group.process_group.all_reduce_on_calc_stream(tensor, op_type)
             return tensor
         else:
-            return _legacy_C_ops.c_allreduce_sum_(
+            return _C_ops.all_reduce_(
                 tensor,
-                'use_calc_stream',
-                use_calc_stream,
-                'ring_id',
                 group.id,
+                paddle.distributed.ReduceOp.SUM,
             )
 
     @staticmethod
