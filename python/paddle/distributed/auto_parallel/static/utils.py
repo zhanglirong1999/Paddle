@@ -2746,6 +2746,8 @@ def split_mesh(global_mesh: ProcessMesh, sub_mesh_dim: int):
     )
     sub_mesh_list = []
     for sub_process_ids in splitted_process_ids:
-        sub_mesh_list.append(ProcessMesh(sub_process_ids))
+        sub_mesh_list.append(
+            ProcessMesh(sub_process_ids, global_mesh.dim_names)
+        )
 
     return sub_mesh_list
