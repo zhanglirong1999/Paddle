@@ -306,6 +306,7 @@ void IrPrinter::PrintAttributeMap(const Operation& op) {
 
   // Filter out the callstack attribute
   order_attributes.erase("op_callstack");
+  order_attributes.erase("sym_shape_str");
 
   os << " {";
 
