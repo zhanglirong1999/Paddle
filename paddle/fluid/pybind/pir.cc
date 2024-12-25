@@ -594,7 +594,7 @@ void BindProgram(py::module *m) {
            })
       .def("num_ops", [](Program &self) { return self.num_ops(); })
       .def(
-          "state_dict",
+          "_state_dict",
           [](std::shared_ptr<Program> self,
              const std::string &mode = "all",
              const framework::Scope &scope = framework::Scope()) {
