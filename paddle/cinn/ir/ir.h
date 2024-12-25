@@ -530,9 +530,27 @@ struct Select : public ExprNode<Select> {
   Expr true_value;
   Expr false_value;
 
-  Select(Expr condition, Expr true_value, Expr false_value);
+  Select(Expr condition, Expr true_value, Expr false_value)
+      : ExprNode<Select>(true_value.type()),
+        condition(condition),
+        true_value(true_value),
+        false_value(false_value) {
+    PADDLE_ENFORCE_EQ(
+        true_value.type(),
+        false_value.type(),
+        ::common::errors::InvalidArgument(
+            "The type of true_value and false_value should be the same."));
+    PADDLE_ENFORCE_EQ(condition.type().is_bool(),
+                      true,
+                      ::common::errors::PreconditionNotMet(
+                          "The condition must be of boolean type."));
+    type_ = true_value.type();
+  }
 
-  static Expr Make(Expr condition, Expr true_value, Expr false_value);
+  static Expr Make(Expr condition, Expr true_value, Expr false_value) {
+    auto node = make_shared<Select>(condition, true_value, false_value);
+    return Expr(node);
+  }
 
   Type type() const override;
 

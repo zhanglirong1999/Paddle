@@ -197,9 +197,6 @@ Expr IndiceToAbsOffset(const std::vector<Expr> &shape,
             i,
             shape[i].type()));
 
-    // if(VerifyIndex(shape[i]))shape[i].set_index(true);
-    // if(VerifyIndex(indices[i]))indices[i].set_index(true);
-
     Expr indice_cast = indices[i];
     optim::SimplifyCast(&indice_cast);
     res = RampRelatedAdd(RampRelatedMul(res, shape[i]), indice_cast);
@@ -478,11 +475,10 @@ bool ComparePriority(const ir::IndexExpr &lhs, const ir::IndexExpr &rhs) {
     if (auto rhsVar = rhs.As<ir::_Var_>())
       return std::make_tuple(lhsVar->name.length(), lhsVar->name) <=
              std::make_tuple(rhsVar->name.length(), rhsVar->name);
-
   auto lhsLen = lhs.length();
   auto rhsLen = rhs.length();
   if (lhsLen < rhsLen) return false;
-  // Add < Mul < Div < Mod < Min < Max < Load.
+  // Add < Mul < Div < Mod.
   else if (lhsLen == rhsLen)
     return lhs.node_type() <= rhs.node_type();
   else
@@ -513,10 +509,6 @@ bool IsSumPartialBySymbol(const ir::IndexExpr &expr,
       return IsSumPartialBySymbol(expr.operand(0), symbol);
     }
     case ir::IrNodeTy::Mod:
-    case ir::IrNodeTy::Min:
-    case ir::IrNodeTy::Max:
-    case ir::IrNodeTy::Load:
-    case ir::IrNodeTy::Cast:
       return false;
     default:
       PADDLE_THROW(::common::errors::InvalidArgument(
@@ -594,11 +586,6 @@ bool IsDivisiblieBySymbol(const ir::IndexExpr &expr,
       if (ty != expr.node_type()) return false;
       return IsDivisiblieBySymbol(expr.operand(0), symbol, expr.node_type());
     }
-    case ir::IrNodeTy::Min:
-    case ir::IrNodeTy::Max:
-    case ir::IrNodeTy::Load:
-    case ir::IrNodeTy::Cast:
-      return false;
     default:
       PADDLE_THROW(::common::errors::InvalidArgument(
           "Unsupported type of expr in IsDivisiblieBySymbol which is: %s",

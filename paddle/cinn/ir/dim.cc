@@ -33,8 +33,6 @@ Dim _Dim_::Make(const std::string& name, const symbol::DimExpr& sym_dim) {
   n->name = name;
   n->sym_dim = sym_dim;
   n->dim_expr = common::DimExprConverter().ConvertToIrExpr(sym_dim);
-
-  n->dim_expr.set_index(true);
   n->set_type(n->dim_expr.type());
   return Dim(n);
 }

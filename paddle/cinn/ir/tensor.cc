@@ -56,16 +56,6 @@ Tensor _Tensor_::Make(const std::string &name,
   n->operation = fn;
   n->InitAxis();
 
-  std::for_each(n->shape.begin(), n->shape.end(), [](Expr &indice) {
-    indice = indice.set_index(true).as_index().Normalize();
-  });
-  std::for_each(n->domain.begin(), n->domain.end(), [](Expr &indice) {
-    indice = indice.set_index(true).as_index().Normalize();
-  });
-  std::for_each(n->reduce_axis.begin(), n->reduce_axis.end(), [](Var &v) {
-    v.set_index(true);
-  });
-
   return Tensor(n);
 }
 Tensor _Tensor_::Make(const std::string &name,
@@ -85,16 +75,6 @@ Tensor _Tensor_::Make(const std::string &name,
   n->operation = PlaceholderOp::Make(n->name, n->shape, Float(32));
   n->set_type(dtype);
   n->InitAxis();
-
-  std::for_each(n->shape.begin(), n->shape.end(), [](Expr &indice) {
-    indice = indice.set_index(true).as_index().Normalize();
-  });
-  std::for_each(n->domain.begin(), n->domain.end(), [](Expr &indice) {
-    indice = indice.set_index(true).as_index().Normalize();
-  });
-  std::for_each(n->reduce_axis.begin(), n->reduce_axis.end(), [](Var &v) {
-    v.set_index(true);
-  });
 
   return Tensor(n);
 }
@@ -128,16 +108,6 @@ Tensor _Tensor_::Make(const std::string &name,
   n->operation = fn;
   n->InitAxis();
 
-  std::for_each(n->shape.begin(), n->shape.end(), [](Expr &indice) {
-    indice = indice.set_index(true).as_index().Normalize();
-  });
-  std::for_each(n->domain.begin(), n->domain.end(), [](Expr &indice) {
-    indice = indice.set_index(true).as_index().Normalize();
-  });
-  std::for_each(n->reduce_axis.begin(), n->reduce_axis.end(), [](Var &v) {
-    v.set_index(true);
-  });
-
   return Tensor(n);
 }
 Tensor _Tensor_::Make(const std::string &name,
@@ -167,16 +137,6 @@ Tensor _Tensor_::Make(const std::string &name,
   n->operation = PlaceholderOp::Make(n->name, n->shape, Float(32));
   n->set_type(dtype);
   n->InitAxis();
-
-  std::for_each(n->shape.begin(), n->shape.end(), [](Expr &indice) {
-    indice = indice.set_index(true).as_index().Normalize();
-  });
-  std::for_each(n->domain.begin(), n->domain.end(), [](Expr &indice) {
-    indice = indice.set_index(true).as_index().Normalize();
-  });
-  std::for_each(n->reduce_axis.begin(), n->reduce_axis.end(), [](Var &v) {
-    v.set_index(true);
-  });
 
   return Tensor(n);
 }

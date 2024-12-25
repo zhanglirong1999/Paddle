@@ -36,7 +36,6 @@ using namespace ir;  // NOLINT
 Expr AutoSimplify(
     const Expr& u,
     const absl::flat_hash_map<std::string, CasInterval>& var_intervals) {
-  bool is_index = u.is_index();
   VLOG(7) << "Begin AutoSimplify: " << u;
   Expr copied = ir::ir_utils::IRCopy(u);
   if (copied.type().is_float()) {
@@ -57,7 +56,7 @@ Expr AutoSimplify(
   copied = CasSimplify(copied, s_var_intervals);
   copied = detail::ConvertCasToCinn(copied);
   VLOG(7) << "End AutoSimplify " << copied;
-  return is_index ? copied.set_index(true) : copied;
+  return copied;
 }
 
 int gcd(int a, int b) {
@@ -626,6 +625,7 @@ Expr CasSimplifyMutator::SimplifySum(Expr u) {
   if (!temp.As<Sum>()) return temp;
 
   operands = temp.As<Sum>()->operands();
+
   auto args = SimplifySumRec(operands);
   if (args.empty()) return make_const(u.type(), 0);
   if (args.size() == 1) return args[0];
@@ -1653,9 +1653,6 @@ Expr ConvertCinnToCAS(Expr expr) {
   struct Mutator : public ir::IRMutator<ir::Expr*> {
     void operator()(Expr* expr) { Visit(expr); }
     void Visit(Expr* expr) { ir::IRMutator<>::Visit(expr, expr); }
-
-    // Because indice of `Load` is simplify by IndexExpr, we just skip it.
-    void Visit(const Load* op, Expr* expr) override { return; }
 
    private:
     void Visit(const Add* op, Expr* expr) override {

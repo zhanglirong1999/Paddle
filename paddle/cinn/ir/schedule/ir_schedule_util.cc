@@ -268,13 +268,6 @@ void ReplaceExpr(Expr* source,
   if (replaced.empty()) return;
   std::map<Var, Expr, CompVar> replacing_map;
   for (int i = 0; i < replaced.size(); ++i) {
-    if (replaced[i].is_index()) {
-      PADDLE_ENFORCE_EQ(common::VerifyIndex(candidates[i]),
-                        true,
-                        ::common::errors::InvalidArgument(
-                            "In ReplaceExpr, if var is IndexExpr, candidate "
-                            "must be IndexExpr!"));
-    }
     // If the Var to be replaced is equal to the candidate, we skip it.
     if (candidates[i].is_var() && candidates[i].as_var_ref() == replaced[i])
       continue;

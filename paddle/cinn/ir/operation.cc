@@ -27,9 +27,6 @@ Operation PlaceholderOp::Make(const std::string &name,
   auto n = make_shared<PlaceholderOp>();
   n->name = name;
   n->shape = shape;
-  std::for_each(n->shape.begin(), n->shape.end(), [](Expr &indice) {
-    indice = indice.set_index(true).as_index().Normalize();
-  });
   n->set_type(dtype);
   return Operation(n);
 }
@@ -43,9 +40,6 @@ Operation PlaceholderOp::Make(const std::string &name,
   for (int i = 0; i < sym_shape.size(); i++) {
     n->shape.emplace_back(sym_shape[i]->dim_expr);
   }
-  std::for_each(n->shape.begin(), n->shape.end(), [](Expr &indice) {
-    indice = indice.set_index(true).as_index().Normalize();
-  });
   n->set_type(dtype);
   return Operation(n);
 }
@@ -71,16 +65,10 @@ Operation ComputeOp::Make(const std::string &name,
   n->axis = cinn::common::GenDefaultAxis(domain.size());
   std::vector<Expr> tmp_axis;
   for (auto &x : n->axis) {
-    tmp_axis.push_back(x.set_index(true));
+    tmp_axis.push_back(x);
   }
   n->body = {handle(tmp_axis)};
   n->reduce_axis = reduce_axis;
-  std::for_each(n->shape.begin(), n->shape.end(), [](Expr &indice) {
-    indice = indice.set_index(true).as_index().Normalize();
-  });
-  std::for_each(n->reduce_axis.begin(), n->reduce_axis.end(), [](Var &v) {
-    v.set_index(true);
-  });
   return Operation(n);
 }
 
