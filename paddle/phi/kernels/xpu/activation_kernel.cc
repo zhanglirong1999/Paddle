@@ -190,6 +190,27 @@ struct XPULeakyReluFunctor : public funcs::BaseActivationFunctor<T> {
   }
 };
 
+template <typename T>
+struct XPURoundFunctor : public funcs::BaseActivationFunctor<T> {
+  int decimals;
+  std::vector<std::pair<const char*, int*>> GetAttrs() {
+    return {{"decimals", &decimals}};
+  }
+
+  template <typename Context>
+  void operator()(const Context& dev_ctx,
+                  const DenseTensor& x,
+                  DenseTensor* out) const {
+    using XPUType = typename XPUTypeTrait<T>::Type;
+    int r = xpu::round<XPUType>(dev_ctx.x_context(),
+                                reinterpret_cast<const XPUType*>(x.data<T>()),
+                                reinterpret_cast<XPUType*>(out->data<T>()),
+                                x.numel(),
+                                decimals);
+    PADDLE_ENFORCE_XDNN_SUCCESS(r, "round");
+  }
+};
+
 template <typename T, typename Context>
 void PowKernel(const Context& dev_ctx,
                const DenseTensor& x,
@@ -580,6 +601,17 @@ void HardSwishKernel(const Context& dev_ctx,
       dev_ctx, x, out, functor);
 }
 
+template <typename T, typename Context>
+void RoundKernel(const Context& dev_ctx,
+                 const DenseTensor& x,
+                 const int decimals,
+                 DenseTensor* out) {
+  XPURoundFunctor<T> functor;
+  auto attrs = functor.GetAttrs();
+  *(attrs[0].second) = decimals;
+  ActivationXPUImpl<T, Context, XPURoundFunctor<T>>(dev_ctx, x, out, functor);
+}
+
 }  // namespace phi
 
 PD_REGISTER_KERNEL(relu,
@@ -693,6 +725,9 @@ PD_REGISTER_KERNEL(exp,
                    float,
                    phi::dtype::float16,
                    phi::dtype::bfloat16) {}
+
+PD_REGISTER_KERNEL(
+    round, XPU, ALL_LAYOUT, phi::RoundKernel, float, phi::dtype::float16) {}
 
 #define PD_REGISTER_ACTIVATION_KERNEL(name, func) \
   PD_REGISTER_KERNEL(name, XPU, ALL_LAYOUT, phi::func, float) {}
