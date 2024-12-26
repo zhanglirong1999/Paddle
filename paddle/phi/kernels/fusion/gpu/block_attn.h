@@ -3979,7 +3979,7 @@ void qkv_transpose_split(const phi::GPUContext &dev_ctx,
 }
 
 template <typename T, int VecSize>
-__global__ void write_pre_cahe_to_kv_buffer(
+__global__ void write_pre_cache_to_kv_buffer(
     T *k_buf,  // [bsz, num_head, seq_len + pre_cache_length, head_dim]
     T *v_buf,
     const T *pre_key_cache,  // [bsz, num_head, pre_cache_length, head_dim]
@@ -4152,7 +4152,7 @@ void qkv_transpose_split(
     elem_cnt = batch_size * q_head_num * pre_cache_length * size_per_head * 2;
     pack_num = elem_cnt / PackSize;
     GetNumBlocks(pack_num, &grid_size);
-    write_pre_cahe_to_kv_buffer<T, PackSize>
+    write_pre_cache_to_kv_buffer<T, PackSize>
         <<<grid_size, blocksize, 0, dev_ctx.stream()>>>(k_buf,
                                                         v_buf,
                                                         pre_key_cache,

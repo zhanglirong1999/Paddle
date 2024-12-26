@@ -160,7 +160,7 @@ ItersFusionPolicy::SearchTransformRouteFromReduce2Reduce(
   VLOG(4) << "Start search transform Route from reduce to reduce.";
   if (source.loop_iters.size() == target.loop_iters.size() &&
       source.reduce_iter_nums == target.reduce_iter_nums) {
-    // Currenly only support fusion with same iter_nums and same reduce axis
+    // Currently only support fusion with same iter_nums and same reduce axis
     // TODO(huangjiyi): Analysis fusion with different non reduce axis
     auto [source_flatten_iters, source_reduce_iters] = SplitReduceIters(source);
     auto [target_flatten_iters, target_reduce_iters] = SplitReduceIters(target);

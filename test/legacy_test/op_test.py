@@ -1652,7 +1652,7 @@ class OpTest(unittest.TestCase):
             pass
 
     def _infer_and_compare_symbol(self, place):
-        """Don't caculate the program, only infer the shape of var"""
+        """Don't calculate the program, only infer the shape of var"""
 
         kernel_sig = self.get_kernel_signature(place)
         program = paddle.static.Program()

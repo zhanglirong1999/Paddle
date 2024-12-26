@@ -690,7 +690,7 @@ void EagerGradientAccumulator::SumGrad(std::shared_ptr<VariableWrapper> var,
     dst_var->SetType(framework::proto::VarType::SELECTED_ROWS);
   }
 
-  // Increase curent count
+  // Increase current count
   IncreaseCurCnt();
 }
 

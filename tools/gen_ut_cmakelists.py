@@ -218,7 +218,7 @@ class DistUTPortManager:
     def reset_current_port(self, port=None):
         self.dist_ut_port = 21200 if port is None else port
 
-    def get_currnt_port(self):
+    def get_current_port(self):
         return self.dist_ut_port
 
     def gset_port(self, test_name, port):
@@ -387,7 +387,7 @@ class CMakeGenerator:
 
     def parse_csvs(self):
         '''
-        parse csv files, return the lists of craeted or modified files
+        parse csv files, return the lists of created or modified files
         '''
         self.modified_or_created_files = []
         for c in self.current_dirs:

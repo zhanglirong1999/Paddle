@@ -33,22 +33,9 @@ UE = "UE"
 unpacket = "unpacket"
 
 # These words need to be fixed
-cahe = 'cahe'
-Caculate = 'Caculate'
-caculate = 'caculate'
-calcualtion = 'calcualtion'
-checkings = 'checkings'
 childs = 'childs'
-Cound = 'Cound'
-coule = 'coule'
-craete = 'craete'
-craeted = 'craeted'
 Creater = 'Creater'
 creater = 'creater'
-Currenly = 'Currenly'
-curent = 'curent'
-currnt = 'currnt'
-Costum = 'Costum'
 dateset = 'dateset'
 dota = 'dota'
 Datas = 'Datas'

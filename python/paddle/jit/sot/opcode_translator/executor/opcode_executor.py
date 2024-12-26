@@ -2324,7 +2324,7 @@ class OpcodeExecutor(OpcodeExecutorBase):
         for_iter_idx = self.indexof(for_iter)
         loop_body_start_idx = for_iter_idx + 1
         loop_body_end_idx = self.indexof(for_iter.jump_to)
-        curent_stack = 1
+        current_stack = 1
 
         while True:
             if loop_body_start_idx >= len(self._instructions):
@@ -2332,9 +2332,9 @@ class OpcodeExecutor(OpcodeExecutorBase):
             cur_instr = self._instructions[loop_body_start_idx]
             # do not consider jump instr
             stack_effect = calc_stack_effect(cur_instr, jump=False)
-            curent_stack += stack_effect
+            current_stack += stack_effect
             loop_body_start_idx += 1
-            if curent_stack == 0:
+            if current_stack == 0:
                 break
 
         # 2. create loop body function
