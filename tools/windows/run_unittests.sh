@@ -601,7 +601,7 @@ function run_unittest_gpu() {
 }
 
 function unittests_retry(){
-    is_retry_execuate=0
+    is_retry_execute=0
     wintest_error=1
     retry_time=3
     exec_times=0
@@ -644,13 +644,13 @@ function unittests_retry(){
                 done
     else
         # There are more than 30 failed unit tests, so no unit test retry
-        is_retry_execuate=1
+        is_retry_execute=1
     fi
     rm -f $tmp_dir/*
 }
 
 function show_ut_retry_result() {
-    if [[ "$is_retry_execuate" != "0" ]];then
+    if [[ "$is_retry_execute" != "0" ]];then
         failed_test_lists_ult=`echo "${failed_test_lists}"`
         echo "========================================="
         echo "There are more than 30 failed unit tests, so no unit test retry!!!"

@@ -723,7 +723,7 @@ EOF
         exec_times=0
         exec_time_array=('first' 'second' 'third')
         exec_retry_threshold=10
-        is_retry_execuate=0
+        is_retry_execute=0
         if [ -n "$failed_test_lists" ];then
             mactest_error=1
             need_retry_ut_str=$(echo "$failed_test_lists" | grep -oEi "\-.+\(" | sed 's/(//' | sed 's/- //' )
@@ -768,7 +768,7 @@ EOF
                     done
             else
                 # There are more than 10 failed unit tests, so no unit test retry
-                is_retry_execuate=1
+                is_retry_execute=1
             fi
 
         fi
@@ -868,7 +868,7 @@ set +x
         exec_time_array=('first' 'second' 'third' 'fourth')
         parallel_failed_tests_exec_retry_threshold=120
         exec_retry_threshold=30
-        is_retry_execuate=0
+        is_retry_execute=0
         rerun_ut_startTime_s=`date +%s`
         if [ -n "$failed_test_lists" ];then
             EXIT_CODE=1
@@ -883,21 +883,21 @@ set +x
                 do
                     if [[ "${exec_times}" == "0" ]] ;then
                         if [ $need_retry_ut_count -lt $parallel_failed_tests_exec_retry_threshold ];then
-                            is_retry_execuate=0
+                            is_retry_execute=0
                         else
-                            is_retry_execuate=1
+                            is_retry_execute=1
                         fi
                     elif [[ "${exec_times}" == "1" ]] ;then
                         need_retry_ut_str=$(echo "$failed_test_lists" | grep -oEi "\-.+\(.+\)" | sed 's/(.\+)//' | sed 's/- //' )
                         need_retry_ut_arr=(${need_retry_ut_str})
                         need_retry_ut_count=${#need_retry_ut_arr[@]}
                         if [ $need_retry_ut_count -lt $exec_retry_threshold ];then
-                            is_retry_execuate=0
+                            is_retry_execute=0
                         else
-                            is_retry_execuate=1
+                            is_retry_execute=1
                         fi
                     fi
-                    if [[ "$is_retry_execuate" == "0" ]];then
+                    if [[ "$is_retry_execute" == "0" ]];then
                         set +e
                         retry_unittests_record="$retry_unittests_record$failed_test_lists"
                         failed_test_lists_ult=`echo "${failed_test_lists}" |grep -Po '[^ ].*$'`
@@ -1788,7 +1788,7 @@ set +x
         exec_time_array=('first' 'second' 'third' 'fourth')
         parallel_failed_tests_exec_retry_threshold=120
         exec_retry_threshold=30
-        is_retry_execuate=0
+        is_retry_execute=0
         rerun_ut_startTime_s=`date +%s`
         if [ -n "$failed_test_lists" ];then
             if [ ${TIMEOUT_DEBUG_HELP:-OFF} == "ON" ];then
@@ -1802,21 +1802,21 @@ set +x
                 do
                     if [[ "${exec_times}" == "0" ]] ;then
                         if [ $need_retry_ut_count -lt $parallel_failed_tests_exec_retry_threshold ];then
-                            is_retry_execuate=0
+                            is_retry_execute=0
                         else
-                            is_retry_execuate=1
+                            is_retry_execute=1
                         fi
                     elif [[ "${exec_times}" == "1" ]] ;then
                         need_retry_ut_str=$(echo "$failed_test_lists" | grep -oEi "\-.+\(.+\)" | sed 's/(.\+)//' | sed 's/- //' )
                         need_retry_ut_arr=(${need_retry_ut_str})
                         need_retry_ut_count=${#need_retry_ut_arr[@]}
                         if [ $need_retry_ut_count -lt $exec_retry_threshold ];then
-                            is_retry_execuate=0
+                            is_retry_execute=0
                         else
-                            is_retry_execuate=1
+                            is_retry_execute=1
                         fi
                     fi
-                    if [[ "$is_retry_execuate" == "0" ]];then
+                    if [[ "$is_retry_execute" == "0" ]];then
                         set +e
                         retry_unittests_record="$retry_unittests_record$failed_test_lists"
                         failed_test_lists_ult=`echo "${failed_test_lists}" |grep -Po '[^ ].*$'`
@@ -1964,7 +1964,7 @@ function show_ut_retry_result() {
     else
         exec_retry_threshold_count=80
     fi
-    if [[ "$is_retry_execuate" != "0" ]]  && [[ "${exec_times}" == "0" ]] ;then
+    if [[ "$is_retry_execute" != "0" ]]  && [[ "${exec_times}" == "0" ]] ;then
         failed_test_lists_ult=`echo "${failed_test_lists}" | grep -Po '[^ ].*$'`
         echo "========================================="
         echo "There are more than ${exec_retry_threshold_count} failed unit tests in parallel test, so no unit test retry!!!"
@@ -1972,7 +1972,7 @@ function show_ut_retry_result() {
         echo "The following tests FAILED: "
         echo "${failed_test_lists_ult}"
         exit 8;
-    elif [[ "$is_retry_execuate" != "0" ]] && [[ "${exec_times}" == "1" ]];then
+    elif [[ "$is_retry_execute" != "0" ]] && [[ "${exec_times}" == "1" ]];then
         failed_test_lists_ult=`echo "${failed_test_lists}" | grep -Po '[^ ].*$'`
         echo "========================================="
         echo "There are more than 10 failed unit tests, so no unit test retry!!!"
@@ -2443,7 +2443,7 @@ set +x
         exec_times=0
         exec_time_array=('first' 'second' 'third' 'fourth')
         exec_retry_threshold=10
-        is_retry_execuate=0
+        is_retry_execute=0
         if [ -n "$failed_test_lists" ];then
             xputest_error=1
             need_retry_ut_str=$(echo "$failed_test_lists" | grep -oEi "\-.+\(" | sed 's/(//' | sed 's/- //' )
@@ -2488,7 +2488,7 @@ set +x
                     done
             else
                 # There are more than 10 failed unit tests, so no unit test retry
-                is_retry_execuate=1
+                is_retry_execute=1
             fi
 
         fi
@@ -2588,7 +2588,7 @@ set +x
         exec_time_array=('first' 'second' 'third' 'fourth')
         parallel_failed_tests_exec_retry_threshold=120
         exec_retry_threshold=30
-        is_retry_execuate=0
+        is_retry_execute=0
         rerun_ut_startTime_s=`date +%s`
         if [ -n "$failed_test_lists" ];then
             need_retry_ut_str=$(echo "$failed_test_lists" | grep -oEi "\-.+\(.+\)" | sed 's/(.\+)//' | sed 's/- //' )
@@ -2599,21 +2599,21 @@ set +x
                 do
                     if [[ "${exec_times}" == "0" ]] ;then
                         if [ $need_retry_ut_count -lt $parallel_failed_tests_exec_retry_threshold ];then
-                            is_retry_execuate=0
+                            is_retry_execute=0
                         else
-                            is_retry_execuate=1
+                            is_retry_execute=1
                         fi
                     elif [[ "${exec_times}" == "1" ]] ;then
                         need_retry_ut_str=$(echo "$failed_test_lists" | grep -oEi "\-.+\(.+\)" | sed 's/(.\+)//' | sed 's/- //' )
                         need_retry_ut_arr=(${need_retry_ut_str})
                         need_retry_ut_count=${#need_retry_ut_arr[@]}
                         if [ $need_retry_ut_count -lt $exec_retry_threshold ];then
-                            is_retry_execuate=0
+                            is_retry_execute=0
                         else
-                            is_retry_execuate=1
+                            is_retry_execute=1
                         fi
                     fi
-                    if [[ "$is_retry_execuate" == "0" ]];then
+                    if [[ "$is_retry_execute" == "0" ]];then
                         set +e
                         retry_unittests_record="$retry_unittests_record$failed_test_lists"
                         failed_test_lists_ult=`echo "${failed_test_lists}" |grep -Po '[^ ].*$'`
@@ -2989,7 +2989,7 @@ set +x
         exec_time_array=('first' 'second' 'third' 'fourth')
         parallel_failed_tests_exec_retry_threshold=120
         exec_retry_threshold=30
-        is_retry_execuate=0
+        is_retry_execute=0
         rerun_ut_startTime_s=`date +%s`
         if [ -n "$failed_test_lists" ];then
             if [ ${TIMEOUT_DEBUG_HELP:-OFF} == "ON" ];then
@@ -3003,21 +3003,21 @@ set +x
                 do
                     if [[ "${exec_times}" == "0" ]] ;then
                         if [ $need_retry_ut_count -lt $parallel_failed_tests_exec_retry_threshold ];then
-                            is_retry_execuate=0
+                            is_retry_execute=0
                         else
-                            is_retry_execuate=1
+                            is_retry_execute=1
                         fi
                     elif [[ "${exec_times}" == "1" ]] ;then
                         need_retry_ut_str=$(echo "$failed_test_lists" | grep -oEi "\-.+\(.+\)" | sed 's/(.\+)//' | sed 's/- //' )
                         need_retry_ut_arr=(${need_retry_ut_str})
                         need_retry_ut_count=${#need_retry_ut_arr[@]}
                         if [ $need_retry_ut_count -lt $exec_retry_threshold ];then
-                            is_retry_execuate=0
+                            is_retry_execute=0
                         else
-                            is_retry_execuate=1
+                            is_retry_execute=1
                         fi
                     fi
-                    if [[ "$is_retry_execuate" == "0" ]];then
+                    if [[ "$is_retry_execute" == "0" ]];then
                         set +e
                         retry_unittests_record="$retry_unittests_record$failed_test_lists"
                         failed_test_lists_ult=`echo "${failed_test_lists}" |grep -Po '[^ ].*$'`
@@ -3110,7 +3110,7 @@ set +x
         exec_time_array=('first' 'second' 'third' 'fourth')
         parallel_failed_tests_exec_retry_threshold=120
         exec_retry_threshold=30
-        is_retry_execuate=0
+        is_retry_execute=0
         rerun_ut_startTime_s=`date +%s`
         if [ -n "$failed_test_lists" ];then
             if [ ${TIMEOUT_DEBUG_HELP:-OFF} == "ON" ];then
@@ -3124,21 +3124,21 @@ set +x
                 do
                     if [[ "${exec_times}" == "0" ]] ;then
                         if [ $need_retry_ut_count -lt $parallel_failed_tests_exec_retry_threshold ];then
-                            is_retry_execuate=0
+                            is_retry_execute=0
                         else
-                            is_retry_execuate=1
+                            is_retry_execute=1
                         fi
                     elif [[ "${exec_times}" == "1" ]] ;then
                         need_retry_ut_str=$(echo "$failed_test_lists" | grep -oEi "\-.+\(.+\)" | sed 's/(.\+)//' | sed 's/- //' )
                         need_retry_ut_arr=(${need_retry_ut_str})
                         need_retry_ut_count=${#need_retry_ut_arr[@]}
                         if [ $need_retry_ut_count -lt $exec_retry_threshold ];then
-                            is_retry_execuate=0
+                            is_retry_execute=0
                         else
-                            is_retry_execuate=1
+                            is_retry_execute=1
                         fi
                     fi
-                    if [[ "$is_retry_execuate" == "0" ]];then
+                    if [[ "$is_retry_execute" == "0" ]];then
                         set +e
                         retry_unittests_record="$retry_unittests_record$failed_test_lists"
                         failed_test_lists_ult=`echo "${failed_test_lists}" |grep -Po '[^ ].*$'`

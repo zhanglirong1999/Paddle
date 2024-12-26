@@ -330,7 +330,7 @@ bool CustomGenericPlugin::supportsFormatCombination(
     PADDLE_ENFORCE_EQ(input_num + output_num,
                       format_combination.size(),
                       common::errors::InvalidArgument(
-                          "Expexted %d format_combination, but got %d.",
+                          "Expected %d format_combination, but got %d.",
                           input_num + output_num,
                           format_combination.size()));
     format_combinations.emplace_back(format_combination);

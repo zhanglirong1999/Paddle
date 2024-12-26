@@ -170,7 +170,7 @@ class PipelineZeroBubbleVirtualPipelinePass(PipelineZeroBubblePipelinePass):
         # TODO(luchang): Fix the graident explosion issue when  num_model_chunks(accumulate steps) > pp_degree
         assert (
             num_micro_batches <= pp_degree
-        ), "zbvpp now only supports accumulate steps <= pp degree. It will cause gradient expolitation when accumulate steps > pp degree."
+        ), "zbvpp now only supports accumulate steps <= pp degree. It will cause gradient exploitation when accumulate steps > pp degree."
 
         program_runtimes = self.get_attr("program_runtimes")
 
