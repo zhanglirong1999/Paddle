@@ -53,6 +53,8 @@ static StmtPattern ConvertToStmtPattern(const PatternContent& content) {
         std::make_shared<InitPatternInstr>(content.op, result.id()));
     return result;
   } else {
+    PADDLE_THROW(::common::errors::InvalidArgument(
+        "Unsupport op for fusion: %s", OpsDebugStr({content.op})));
     auto result =
         UnsupportPattern({content.op}, std::make_shared<FusionTracker>());
     result.tracker_->append(
