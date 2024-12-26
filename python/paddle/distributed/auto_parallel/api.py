@@ -2330,14 +2330,21 @@ class DistModel:
             )
             dist.fleet.init(is_collective=True)
 
-        if int(os.environ.get('FLAGS_enable_sharding_stage1_tensor_fusion', 0)):
-            if isinstance(optimizer, _ShardOptimizer) and use_pir_api():
-                shard_fn = optimizer._shard_fn
-                inner_opt = optimizer._inner_opt
-                if isinstance(optimizer._shard_fn, ShardingStage1):
-                    optimizer = ShardingOptimizerStage1(
-                        inner_opt, shard_fn, self._inner_strategy
-                    )
+        if (
+            strategy
+            and strategy.sharding.enable_stage1_tensor_fusion
+            and isinstance(optimizer, _ShardOptimizer)
+            and use_pir_api()
+        ):
+            assert isinstance(optimizer._shard_fn, ShardingStage1), (
+                "The shard_fn should be ShardingStage1 "
+                "when stage1 tensor fusion is enabled."
+            )
+            shard_fn = optimizer._shard_fn
+            inner_opt = optimizer._inner_opt
+            optimizer = ShardingOptimizerStage1(
+                inner_opt, shard_fn, self._inner_strategy
+            )
 
         self._engine = Engine(
             layer, loss, optimizer, metrics, strategy=self._inner_strategy
@@ -2724,17 +2731,35 @@ class DistModel:
                                     ] = dist_tensor
                                 dist_state_dict.pop(param)
 
-        # when tensor-fusion is enabled, the optimizer parameters are unbalanced
-        # in their sharding. We need to process the optimizer parameters to make
-        # them evenly balanced
-        if self._engine._optimizer is not None and load_sharded_model:
+        # When tensor fusion is enabled, optimizer parameters can become unbalanced in
+        # sharding. We need to either balance them or rename unbalanced parameters for each
+        # rank and directly load them.
+        enable_stage1_tensor_fusion = (
+            self._inner_strategy.sharding.enable_stage1_tensor_fusion
+            if self._inner_strategy
+            else False
+        )
+        if (
+            self._engine._optimizer is not None
+            and load_sharded_model
+            and enable_stage1_tensor_fusion
+        ):
             optimizer = self._engine._optimizer
             if isinstance(
                 optimizer,
                 paddle.static.amp.decorator.OptimizerWithMixedPrecision,
             ):
                 optimizer = optimizer._optimizer
-            if isinstance(optimizer, ShardingOptimizerStage1):
+
+            assert isinstance(
+                optimizer, ShardingOptimizerStage1
+            ), "The optimizer should be ShardingOptimizerStage1 when stage1 tensor fusion is enabled."
+
+            if self._inner_strategy.sharding.save_unbalanced_param:
+                optimizer.convert_state_dict_with_rank_unique_name(
+                    dist_state_dict
+                )
+            else:
                 optimizer.convert_state_dict_without_tensor_fusion_param(
                     dist_state_dict
                 )
@@ -2815,22 +2840,36 @@ class DistModel:
         # For sharding with tensor-fusion, we need to convert the state_dict
         # to include tensor-fusion parameters before calling set_state_dict,
         # as stored parameters are processed as if tensor-fusion is not applied
-        if self._engine._optimizer is not None:
+        # or we can choose to load the unblanced parameters directly.
+        enable_stage1_tensor_fusion = (
+            self._inner_strategy.sharding.enable_stage1_tensor_fusion
+            if self._inner_strategy
+            else False
+        )
+        if self._engine._optimizer is not None and enable_stage1_tensor_fusion:
             optimizer = self._engine._optimizer
             if isinstance(
                 optimizer,
                 paddle.static.amp.decorator.OptimizerWithMixedPrecision,
             ):
                 optimizer = optimizer._optimizer
-            if isinstance(optimizer, ShardingOptimizerStage1):
+
+            assert isinstance(
+                optimizer, ShardingOptimizerStage1
+            ), "The optimizer should be ShardingOptimizerStage1 when stage1 tensor fusion is enabled."
+
+            if self._inner_strategy.sharding.save_unbalanced_param:
+                optimizer.convert_state_dict_with_origin_name(state_dict)
+            else:
                 optimizer.convert_state_dict_with_tensor_fusion_param(
                     state_dict
                 )
-                # When using the tensor-fusion strategy, model parameters are shared with
-                # slice@ parameters. When setting the state_dict, we must copy the tensor
-                # instead of changing the handle directly, as this could cause errors in
-                # the slice@ parameters and increase memory usage.
-                copy_tensor = True
+
+            # When using the tensor-fusion strategy, model parameters are shared with
+            # slice@ parameters. When setting the state_dict, we must copy the tensor
+            # instead of changing the handle directly, as this could cause errors in
+            # the slice@ parameters and increase memory usage.
+            copy_tensor = True
 
         for k, v in state_dict.items():
             assert v.is_dist(), f"key {k} value:{v} is not a dist tensor."
@@ -2906,9 +2945,14 @@ class DistModel:
                                 for ori_p in ori_params_meta:
                                     local_state_dict.pop(ori_p + suffix)
 
-        dist_main_program.set_state_dict(
-            local_state_dict, paddle.static.global_scope()
-        )
+        if use_pir_api():
+            dist_main_program.set_state_dict(
+                local_state_dict, paddle.static.global_scope(), copy_tensor
+            )
+        else:
+            dist_main_program.set_state_dict(
+                local_state_dict, paddle.static.global_scope()
+            )
 
 
 def to_static(
