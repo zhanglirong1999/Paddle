@@ -16,7 +16,7 @@ gather_srcs(
   call_arg_list_to_pod_value.cc
   insert_debug_log_callee.cc
   lower_function_call_bind_vars.cc
-  extern_call_process.cc
+  extern_call_process_pass.cc
   map_extern_call.cc
   compute_inline_expand.cc
   buffer_assign.cc

@@ -1,4 +1,4 @@
-// Copyright (c) 2021 CINN Authors. All Rights Reserved.
+// Copyright (c) 2024 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,7 +14,8 @@
 
 #pragma once
 
-#include "paddle/cinn/ir/ir.h"
+#include "paddle/cinn/ir/stmt.h"
+#include "paddle/cinn/pass/pass.h"
 
 namespace cinn {
 namespace optim {
@@ -47,18 +48,15 @@ namespace optim {
  *    Output IR:
  *      Store(target, Call(extern_func, args, {}))
  */
-void ExternCallMultiOutputShallowStore(Expr* e);
+std::unique_ptr<BlockPass> CreateExternCallMultiOutputShallowStorePass();
 
-/*
- * Remove external call statements that are TupleGet.
- *
- * This pass is applicable in scenarios where the external call statements are
- * TupleGet.
- *
- * When applied, this pass will traverse the external call statements in the
- * block and remove the statements that are TupleGet.
- */
-void ExternCallRemoveTupleGetStatements(Expr* e);
+class ExternCallMultiOutputShallowStorePass : public BlockPass {
+ public:
+  ExternCallMultiOutputShallowStorePass()
+      : BlockPass("extern_call_multi_output_shallow_store") {}
+
+  LogicalResult Run(ir::stmt::BlockRef block) override;
+};
 
 }  // namespace optim
 }  // namespace cinn
