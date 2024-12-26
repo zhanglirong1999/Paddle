@@ -64,7 +64,7 @@ However the var's format is '{p}'."""
 def _process_conditions(conditions):
     """
     Desc:
-        Input condition expression in cmake grammer and return a string warpped by 'AND ()'.
+        Input condition expression in cmake grammar and return a string warpped by 'AND ()'.
         If the conditions string is empty, return an empty string.
     Example 1:
         Input: "LINUX"
@@ -83,7 +83,7 @@ def _process_conditions(conditions):
 def _proccess_archs(arch):
     """
     desc:
-        Input archs options and warp it with 'WITH_', 'OR' and '()' in cmakelist grammer.
+        Input archs options and warp it with 'WITH_', 'OR' and '()' in cmakelist grammar.
         The case is ignored.
         If the input is empty, return "LOCAL_ALL_ARCH".
     Example 1:
@@ -415,7 +415,7 @@ class CMakeGenerator:
     def _parse_line(self, line, curdir):
         """
         Desc:
-            Input a line in csv file and output a string in cmake grammer, adding the specified test and setting its properties.
+            Input a line in csv file and output a string in cmake grammar, adding the specified test and setting its properties.
         Example:
             Input: "test_allreduce,linux,gpu;rocm,120,DIST,test_runner.py,20071,1,PYTHONPATH=..;http_proxy=;https_proxy=,"
             Output:

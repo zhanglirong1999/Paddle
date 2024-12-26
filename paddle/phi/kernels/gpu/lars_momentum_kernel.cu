@@ -193,7 +193,7 @@ __global__ void L2NormKernel(
     g_buffer[blockIdx.x] = g_tmp;
   }
 #if CUDA_VERSION >= 11000
-  cg->sync();  // Grid sync for writring partial result to gloabl memory
+  cg->sync();  // Grid sync for writring partial result to global memory
   MT p_part_sum = threadIdx.x < gridDim.x ? p_buffer[threadIdx.x] : 0;
   MT g_part_sum = threadIdx.x < gridDim.x ? g_buffer[threadIdx.x] : 0;
   MT tmp0 = phi::funcs::BlockReduceSum<MT>(p_part_sum, FINAL_MASK);

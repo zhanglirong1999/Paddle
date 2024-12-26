@@ -165,7 +165,7 @@ TEST(OperatorDialectTest, StartupProgram) {
   size_t op_size = program->block()->size();
   // ops.size() = op size in BlockDesc + parameter_op +
   // consant_op_for_uniform
-  // + consant_op for guassian
+  // + consant_op for gaussian
   EXPECT_EQ(op_size, p.Block(0).OpSize() + program->parameters_num() + 3 + 53);
 
   std::stringstream ss;
