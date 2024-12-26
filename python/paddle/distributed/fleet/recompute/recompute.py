@@ -430,7 +430,7 @@ def _recompute_without_reentrant(
                             with paddle.autograd.saved_tensors_hooks(
                                 inner_pack, inner_unpack
                             ):
-                                unused_outputs = function(*args, **kwargs)
+                                function(*args, **kwargs)
             else:
                 with paddle.set_grad_enabled(True), paddle.amp.auto_cast(
                     enable=is_fw_autocast,
@@ -441,14 +441,14 @@ def _recompute_without_reentrant(
                 ), paddle.autograd.saved_tensors_hooks(
                     inner_pack, inner_unpack
                 ):
-                    unused_outputs = function(*args, **kwargs)
+                    function(*args, **kwargs)
 
         if x not in storage:
             raise Exception(
                 "Not supported to retrieve a tensor saved by autograd multiple times that is no need to recompute."
             )
 
-        return storage[x]
+        return storage.pop(x)
 
     with paddle.autograd.saved_tensors_hooks(pack, unpack):
         outputs = function(*args, **kwargs)
