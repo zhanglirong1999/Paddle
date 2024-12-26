@@ -262,15 +262,16 @@ bool HasSinkRoute(const SubGraphPtr& source, const SubGraphPtr& target) {
   std::unordered_set<SubGraphPtr> visited;
   std::queue<SubGraphPtr> queue;
   queue.push(source);
+  visited.insert(source);
   while (!queue.empty()) {
     SubGraphPtr cur = queue.front();
     queue.pop();
-    visited.insert(cur);
     if (cur == target) return true;
     if (cur->topo_index > target->topo_index) continue;
     for (const auto& subgraph : cur->downstreams) {
       if (visited.count(subgraph)) continue;
       queue.push(subgraph);
+      visited.insert(subgraph);
     }
   }
   return false;
@@ -281,15 +282,16 @@ bool HasLiftRoute(const SubGraphPtr& source, const SubGraphPtr& target) {
   std::unordered_set<SubGraphPtr> visited;
   std::queue<SubGraphPtr> queue;
   queue.push(source);
+  visited.insert(source);
   while (!queue.empty()) {
     SubGraphPtr cur = queue.front();
     queue.pop();
-    visited.insert(cur);
     if (cur == target) return true;
     if (source->topo_index < target->topo_index) continue;
     for (const auto& subgraph : cur->upstreams) {
       if (visited.count(subgraph)) continue;
       queue.push(subgraph);
+      visited.insert(subgraph);
     }
   }
   return false;
