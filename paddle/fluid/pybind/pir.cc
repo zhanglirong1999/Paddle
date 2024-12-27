@@ -957,6 +957,10 @@ void BindOperation(py::module *m) {
                  attr_name,
                  pir::Int32Attribute::get(pir::IrContext::Instance(), val));
            })
+      .def("erase_attr",
+           [](Operation &self, std::string &attr_name) {
+             self.erase_attribute(attr_name);
+           })
       .def("attrs",
            [](Operation &self) -> py::dict {
              py::dict attrs_dict;
