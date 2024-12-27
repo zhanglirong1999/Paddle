@@ -32,7 +32,7 @@ from ..utils.hybrid_parallel_util import (
     broadcast_sep_parameters,
     broadcast_sharding_parameters,
 )
-from ..utils.log_util import logger, sync_rotate_logger
+from ..utils.log_util import get_sync_logger, logger
 from .meta_parallel_base import MetaParallelBase
 from .parallel_layers.pp_layers import PipelineLayer
 
@@ -54,6 +54,10 @@ from paddle.distributed.fleet.utils.tensor_fusion_helper import (
 
 from .pipeline_hooks import (
     BubbleHook,
+)
+
+g_profile_pipeline_details_steps = int(
+    os.getenv("FLAGS_profile_pipeline_details_steps", "0")
 )
 
 __all__ = []
@@ -429,6 +433,8 @@ class PipelineParallel(MetaParallelBase):
                 self._layers, self.dp_group, self.accumulate_steps, True
             )
 
+        self.processed_steps = 0
+
     def register_hook(
         self, location: PipelineParallelMicroStepLocations, hook: Callable
     ):
@@ -576,6 +582,8 @@ class PipelineParallel(MetaParallelBase):
         # this strategy is inspired by:
         # https://github.com/NVIDIA/Megatron-LM/blob/main/megatron/schedules.py
 
+        if self.processed_steps < g_profile_pipeline_details_steps:
+            get_sync_logger().info("start forward_backward_pipeline")
         if static_scheduler:
             assert (
                 not self._profiling
@@ -753,6 +761,10 @@ class PipelineParallel(MetaParallelBase):
             self._p2p_helper.clear_meta_cache()
 
         self.timer_printer()
+
+        if self.processed_steps < g_profile_pipeline_details_steps:
+            get_sync_logger().info("end forward_backward_pipeline")
+        self.processed_steps += 1
         return train_loss
 
     def register_sharding_comm_overlap_hook(self, optimizer):
@@ -926,7 +938,8 @@ class PipelineParallel(MetaParallelBase):
     def _forward_step(
         self, input_tensor, micro_dataset, chunk_id=None, step_id=None
     ):
-        sync_rotate_logger().info("Before forward_step")
+        if self.processed_steps < g_profile_pipeline_details_steps:
+            get_sync_logger().info("Before forward_step")
         if self._enable_timer:
             self.timers("forward_step").start()
         if self.is_pipeline_first_stage():
@@ -984,7 +997,8 @@ class PipelineParallel(MetaParallelBase):
             self.micro_batch_id += 1
         if self._enable_timer:
             self.timers("forward_step").stop()
-        sync_rotate_logger().info("After forward_step")
+        if self.processed_steps < g_profile_pipeline_details_steps:
+            get_sync_logger().info("After forward_step")
         if self.is_pipeline_last_stage() and self._compute_loss:
             return backward_loss_tensor
         return output_tensor
@@ -994,7 +1008,8 @@ class PipelineParallel(MetaParallelBase):
     ):
         if self._enable_timer:
             self.timers("backward_step").start()
-        sync_rotate_logger().info("Before backward_step")
+        if self.processed_steps < g_profile_pipeline_details_steps:
+            get_sync_logger().info("Before backward_step")
         with paddle.amp.auto_cast(enable=False):
             self.callbacks.on_location(
                 PipelineParallelMicroStepLocations.BACKWARD_BEGIN,
@@ -1045,7 +1060,8 @@ class PipelineParallel(MetaParallelBase):
                 step_id=step_id,
             )
 
-            sync_rotate_logger().info("After backward_step")
+            if self.processed_steps < g_profile_pipeline_details_steps:
+                get_sync_logger().info("After backward_step")
             return input_tensor_grad
 
     def _check_micro_batch_data_valid(self, micro_batch_data):
@@ -1455,7 +1471,8 @@ class PipelineParallelWithInterleave(PipelineParallel):
         static_scheduler=False,
         return_micro_batch_loss=False,
     ):
-        sync_rotate_logger().info("start forward_backward_pipeline")
+        if self.processed_steps < g_profile_pipeline_details_steps:
+            get_sync_logger().info("start forward_backward_pipeline")
         # use interleave scheduling strategy.
         # this strategy is inspired by:
         # https://github.com/NVIDIA/Megatron-LM/blob/main/megatron/schedules.py
@@ -2196,7 +2213,9 @@ class PipelineParallelWithInterleave(PipelineParallel):
             self._p2p_helper.clear_meta_cache()
 
         self.timer_printer()
-        sync_rotate_logger().info("end forward_backward_pipeline")
+        if self.processed_steps < g_profile_pipeline_details_steps:
+            get_sync_logger().info("end forward_backward_pipeline")
+        self.processed_steps += 1
 
         return train_loss
 
@@ -2319,6 +2338,8 @@ class PipelineParallelWithInterleaveFthenB(PipelineParallelWithInterleave):
         compute_loss=True,
         return_micro_batch_loss=False,
     ):
+        if self.processed_steps < g_profile_pipeline_details_steps:
+            get_sync_logger().info("start forward_backward_pipeline")
         if not compute_loss:
             assert (
                 not forward_only
@@ -2481,6 +2502,10 @@ class PipelineParallelWithInterleaveFthenB(PipelineParallelWithInterleave):
             self._p2p_helper.clear_meta_cache()
 
         self.timer_printer()
+
+        if self.processed_steps < g_profile_pipeline_details_steps:
+            get_sync_logger().info("end forward_backward_pipeline")
+        self.processed_steps += 1
         return train_loss
 
 
