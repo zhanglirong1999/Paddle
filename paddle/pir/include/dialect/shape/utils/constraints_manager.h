@@ -99,7 +99,6 @@ class IR_API ConstraintsManager {
 
   const InputRangeConstraints& input_ranges() const { return input_ranges_; }
 
- private:
   void SubstituteInConstraint(const DimExpr& lhs, const DimExpr& rhs);
 
  private:
