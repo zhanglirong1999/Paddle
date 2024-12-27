@@ -123,13 +123,13 @@ class Input:
             low, high = self.input_range
             self.input_min_data = np.random.randint(
                 low, high, size=self.min_input_shape
-            )
+            ).astype(self.input_data_type)
             self.input_optim_data = np.random.randint(
                 low, high, size=self.optim_input_shape
-            )
+            ).astype(self.input_data_type)
             self.input_max_data = np.random.randint(
                 low, high, size=self.max_input_shape
-            )
+            ).astype(self.input_data_type)
         else:
             low, high = self.input_range if self.input_range else (0, 1)
             self.input_min_data = np.random.uniform(
