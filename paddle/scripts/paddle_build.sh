@@ -1162,7 +1162,7 @@ function generate_upstream_develop_api_spec() {
         echo "wget develop whl from bos! "
         mkdir -p ${PADDLE_ROOT}/build/python/dist && wget -q -P ${PADDLE_ROOT}/build/python/dist ${dev_url}
     else
-        echo "compile develop whl localy! "
+        echo "compile develop whl locally! "
         if [[ ${cmake_change} ]];then
             rm -rf ${PADDLE_ROOT}/build/third_party
         fi
