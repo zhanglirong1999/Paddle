@@ -35,15 +35,15 @@ static inline int64_t NumBlocks(const int64_t N) {
 }
 
 template <typename T, typename IndexT>
-__global__ void CaculateSoftLogitsGrad(T* logits_grad,
-                                       const IndexT* labels,
-                                       const T* smooth_weight,
-                                       const IndexT ignore_index,
-                                       const int64_t start_index,
-                                       const int64_t end_index,
-                                       const int64_t N,
-                                       const int64_t D,
-                                       const int64_t C) {
+__global__ void CalculateSoftLogitsGrad(T* logits_grad,
+                                        const IndexT* labels,
+                                        const T* smooth_weight,
+                                        const IndexT ignore_index,
+                                        const int64_t start_index,
+                                        const int64_t end_index,
+                                        const int64_t N,
+                                        const int64_t D,
+                                        const int64_t C) {
   CUDA_KERNEL_LOOP_TYPE(i, N, int64_t) {
     for (int j = 0; j < C; ++j) {
       auto real_label = labels[i * C + j];
@@ -111,7 +111,7 @@ void CSoftmaxWithMultiLabelCrossEntropyGradKernel(
   const int64_t end_index = start_index + D;
 
   if (label_type == phi::DataType::INT32) {
-    CaculateSoftLogitsGrad<T, int32_t>
+    CalculateSoftLogitsGrad<T, int32_t>
         <<<blocks_cal, threads, 0, dev_ctx.stream()>>>(logit_grad_2d.data<T>(),
                                                        labels->data<int32_t>(),
                                                        smooth_weight->data<T>(),
@@ -130,7 +130,7 @@ void CSoftmaxWithMultiLabelCrossEntropyGradKernel(
                                                    C,
                                                    sum_multi_label_loss);
   } else if (label_type == phi::DataType::INT64) {
-    CaculateSoftLogitsGrad<T, int64_t>
+    CalculateSoftLogitsGrad<T, int64_t>
         <<<blocks_cal, threads, 0, dev_ctx.stream()>>>(logit_grad_2d.data<T>(),
                                                        labels->data<int64_t>(),
                                                        smooth_weight->data<T>(),

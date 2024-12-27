@@ -85,15 +85,15 @@ __global__ void SoftMaskLabelByIndex(T* predicted_logits,
 }
 
 template <typename T, typename IndexT>
-__global__ void CaculateSoftLoss(T* loss,
-                                 const T* predict_logits,
-                                 const T* sum_exp_logits,
-                                 const IndexT* label,
-                                 const T* smooth_weight,
-                                 const int64_t ignore_index,
-                                 const int64_t N,
-                                 const int64_t C,
-                                 const bool sum_multi_label_loss) {
+__global__ void CalculateSoftLoss(T* loss,
+                                  const T* predict_logits,
+                                  const T* sum_exp_logits,
+                                  const IndexT* label,
+                                  const T* smooth_weight,
+                                  const int64_t ignore_index,
+                                  const int64_t N,
+                                  const int64_t C,
+                                  const bool sum_multi_label_loss) {
   CUDA_KERNEL_LOOP_TYPE(i, N, int64_t) {
     T tmp_loss = static_cast<T>(0);
     loss[i] = static_cast<T>(0);
@@ -272,7 +272,7 @@ struct CSoftmaxWithMultiLabelCrossEntropyFunctor<phi::GPUContext, T> {
     comm_ctx->AllReduce(&sum_exp_logits, sum_exp_logits, ncclSum, stream);
 
     if (label_type == phi::DataType::INT32) {
-      CaculateSoftLoss<T, int32_t>
+      CalculateSoftLoss<T, int32_t>
           <<<blocks, threads, 0, dev_ctx.stream()>>>(loss_2d.data<T>(),
                                                      predicted_logits.data<T>(),
                                                      sum_exp_logits.data<T>(),
@@ -284,7 +284,7 @@ struct CSoftmaxWithMultiLabelCrossEntropyFunctor<phi::GPUContext, T> {
                                                      sum_multi_label_loss);
 
     } else {
-      CaculateSoftLoss<T, int64_t>
+      CalculateSoftLoss<T, int64_t>
           <<<blocks, threads, 0, dev_ctx.stream()>>>(loss_2d.data<T>(),
                                                      predicted_logits.data<T>(),
                                                      sum_exp_logits.data<T>(),
