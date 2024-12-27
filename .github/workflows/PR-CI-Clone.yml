@@ -1,8 +1,6 @@
 name: Clone
 
 on:
-  push:
-    branches: [ "develop" ]
   pull_request_target:
     branches: [ "develop" ]
 
@@ -11,6 +9,8 @@ permissions:
 
 jobs:
   Clone:
+    # Don't run on forked repos.
+    if: github.repository_owner == 'PaddlePaddle'
     runs-on: ubuntu-latest
     steps:
     - name: Clone paddle
@@ -52,4 +52,4 @@ jobs:
         cd $WORK
         tar -zcf Paddle-action.tar.gz Paddle
         python -m pip install bce-python-sdk==0.8.74
-        python3  bos_upload.py Paddle-action.tar.gz xly-devops/PR/Paddle/${PR_ID}/${COMMIT_ID}
+        python bos_upload.py Paddle-action.tar.gz xly-devops/PR/Paddle/${PR_ID}/${COMMIT_ID}
