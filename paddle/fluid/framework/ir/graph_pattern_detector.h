@@ -280,7 +280,7 @@ class PDPattern {
  *    detector.mutable_pattern().AddEdge(node0, node1);
  *    // Create an handler, to define the behavior of treating the filtered
  *    // subgraphs that comply with the patterns.
- *    GraphPatternDetector::handle_t handler = some labmda
+ *    GraphPatternDetector::handle_t handler = some lambda
  *    // Execute the detector.
  *    detector(&graph, handler);
  */

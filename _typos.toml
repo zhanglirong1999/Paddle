@@ -4,7 +4,7 @@ extend-exclude = [
     "third_party",
     "patches",
     "build",
-    "test/dataset/imikolov_test.py"
+    "test/dataset/imikolov_test.py",
 ]
 
 [default.extend-words]
@@ -210,16 +210,6 @@ interated = 'interated'
 Iteraion = 'Iteraion'
 IIT = 'IIT'
 iy = 'iy'
-lable = 'lable'
-lamda = 'lamda'
-labmda = 'labmda'
-lastest = 'lastest'
-Lanuch = 'Lanuch'
-lanuch = 'lanuch'
-leyer = 'leyer'
-learing = 'learing'
-Leafs = 'Leafs'
-leafs = 'leafs'
 occured = 'occured'
 Ocurred = 'Ocurred'
 occures = 'occures'
