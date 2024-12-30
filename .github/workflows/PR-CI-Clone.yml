@@ -17,12 +17,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: 'recursive'
-
-    - name: Merge paddle
-      run: |
-        git fetch origin pull/${{ github.event.pull_request.number }}/merge
-        git checkout -qf FETCH_HEAD
-        git checkout -b test
+        ref: refs/pull/${{ github.event.pull_request.number }}/merge
 
     - name: Cache bos client
       id: cache_bos_client
@@ -49,6 +44,7 @@ jobs:
         PR_ID: ${{ github.event.pull_request.number }}
         COMMIT_ID: ${{ github.event.pull_request.head.sha }}
       run: |
+        git checkout -b test
         cd $WORK
         tar -zcf Paddle-action.tar.gz Paddle
         python -m pip install bce-python-sdk==0.8.74
