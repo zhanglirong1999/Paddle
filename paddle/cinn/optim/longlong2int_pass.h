@@ -13,7 +13,8 @@
 // limitations under the License.
 
 #pragma once
-#include "paddle/cinn/ir/ir.h"
+#include "paddle/cinn/ir/stmt.h"
+#include "paddle/cinn/pass/pass.h"
 
 namespace cinn {
 namespace optim {
@@ -85,6 +86,7 @@ namespace optim {
  *   }
  * }
  */
-void TryCastLonglong2Int(Expr* expr);
+void TryCastLonglong2Int(ir::stmt::BlockRef block);
+
 }  // namespace optim
 }  // namespace cinn
