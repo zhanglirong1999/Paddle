@@ -671,6 +671,7 @@ def get_grad_semantic_info(op):
         "cf.tuple_push",
         "dist_op.moe_global_mesh_tensor",
         "dist_op.moe_sub_mesh_tensors",
+        "dist_op.dist_reshape",
     ]:
         grad_semantic_info = [True for _ in range(len(get_real_op_inputs(op)))]
         if op.name() == "pd_op.if":
