@@ -146,6 +146,12 @@ Expr Sub::Make(Expr a, Expr b) {
   return Expr(node);
 }
 
+IndexExpr Sub::Make(IndexExpr a, IndexExpr b) {
+  auto node = make_shared<Sub>(a, b);
+  node->set_index(true);
+  return IndexExpr(node);
+}
+
 void Sub::Verify() const { BinaryNodeVerify(a(), b(), "Sub"); }
 
 Expr Mul::Make(Expr a, Expr b) {

@@ -19,6 +19,7 @@
 #include <unordered_set>
 
 #include "paddle/cinn/common/cas.h"
+#include "paddle/cinn/common/const_fold.h"
 #include "paddle/cinn/common/simplify_special_pattern.h"
 #include "paddle/cinn/ir/ir_mutator.h"
 #include "paddle/cinn/ir/ir_printer.h"
@@ -688,6 +689,64 @@ IndexType VerifyIndex(const ir::Expr &expr) {
     }
   }
   return IndexType::kInvalid;
+}
+
+ir::IndexExpr ConstructIndexExprByNodeType(const ir::IrNodeTy &ty,
+                                           const ir::IndexExpr &lhs,
+                                           const ir::IndexExpr &rhs,
+                                           bool simplify_flag) {
+  switch (ty) {
+    case ir::IrNodeTy::Add:
+      return simplify_flag ? lhs + rhs : ir::Add::Make(lhs, rhs);
+    case ir::IrNodeTy::Sub:
+      return simplify_flag ? lhs - rhs : ir::Sub::Make(lhs, rhs);
+    case ir::IrNodeTy::Mul:
+      return simplify_flag ? lhs * rhs : ir::Mul::Make(lhs, rhs);
+    case ir::IrNodeTy::Div:
+      return simplify_flag ? lhs / rhs : ir::Div::Make(lhs, rhs);
+    case ir::IrNodeTy::Mod:
+      return simplify_flag ? lhs % rhs : ir::Mod::Make(lhs, rhs);
+    case ir::IrNodeTy::Min:
+      return ir::Min::Make(lhs, rhs);
+    case ir::IrNodeTy::Max:
+      return ir::Max::Make(lhs, rhs);
+    default:
+      PADDLE_THROW(::common::errors::InvalidArgument(
+          "Unsupported type in Constructir::IndexExprByNodeType, which is: %s",
+          ty));
+  }
+}
+
+ir::IndexExpr ChangeSeqOfDivMod(const ir::IndexExpr &expr) {
+  switch (expr.node_type()) {
+    case ir::IrNodeTy::IntImm:
+    case ir::IrNodeTy::_Var_: {
+      return expr;
+    }
+    case ir::IrNodeTy::Add:
+    case ir::IrNodeTy::Sub:
+    case ir::IrNodeTy::Mul:
+    case ir::IrNodeTy::Div: {
+      auto lhs = ChangeSeqOfDivMod(expr.operand(0));
+      auto rhs = ChangeSeqOfDivMod(expr.operand(1));
+      return ConstructIndexExprByNodeType(expr.node_type(), lhs, rhs, false);
+    }
+    case ir::IrNodeTy::Mod: {
+      if (expr.operand(0).node_type() == ir::IrNodeTy::Div) {
+        auto div_lhs = ChangeSeqOfDivMod(expr.operand(0).operand(0));
+        auto div_rhs = ChangeSeqOfDivMod(expr.operand(0).operand(1));
+        auto mod_rhs = ChangeSeqOfDivMod(expr.operand(1));
+        return div_lhs % (div_rhs * mod_rhs) / div_rhs;
+      } else {
+        auto lhs = ChangeSeqOfDivMod(expr.operand(0));
+        auto rhs = ChangeSeqOfDivMod(expr.operand(1));
+        return ConstructIndexExprByNodeType(expr.node_type(), lhs, rhs, false);
+      }
+    }
+    default:
+      PADDLE_THROW(::common::errors::InvalidArgument(
+          "Unsupported type of expr in ChangeSeqOfDivMod which is: %s", expr));
+  }
 }
 }  // namespace common
 }  // namespace cinn

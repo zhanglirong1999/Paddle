@@ -100,6 +100,7 @@ struct Sub : public BinaryOpNode<Sub> {
   Sub(Expr a, Expr b) : BinaryOpNode<Sub>(a.type(), a, b) {}
 
   static Expr Make(Expr a, Expr b);
+  static IndexExpr Make(IndexExpr a, IndexExpr b);
 
   void Verify() const override;
 
