@@ -1283,7 +1283,7 @@ def AutoCodeGen(
     ops_name_list = []  # all op class name store in this list
     ops_declare_list = []  # all op class declare store in this list
     ops_defined_list = []  # all op class defined store in this list
-    ops_vjp_defined_list = []  # all op vjp static interface defination
+    ops_vjp_defined_list = []  # all op vjp static interface definition
 
     # (4) parse name of ops which have custom vjp rules
     custom_vjp_op_name_list = []

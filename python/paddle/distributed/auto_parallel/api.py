@@ -3302,7 +3302,7 @@ class ShardDataloader:
                 worker_init_fn=dataloader.worker_init_fn,
                 persistent_workers=dataloader._persistent_workers,
             )
-        # Note(lizhiyu): In dygraph mode, the flag "pin_memory" is defualt "True", but it decrease the speed of `AutoParallel`
+        # Note(lizhiyu): In dygraph mode, the flag "pin_memory" is default "True", but it decrease the speed of `AutoParallel`
         self._dataloader.pin_memory = False
 
     def _process_shard_dims(self, shard_dims):
