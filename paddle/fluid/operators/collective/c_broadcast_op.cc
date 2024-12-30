@@ -57,13 +57,3 @@ namespace ops = paddle::operators;
 REGISTER_OP_WITHOUT_GRADIENT(c_broadcast,
                              ops::CBroadcastOp,
                              ops::CBroadcastOpMaker);
-
-PD_REGISTER_STRUCT_KERNEL(c_broadcast,
-                          CPU,
-                          ALL_LAYOUT,
-                          ops::CBroadcastOpCPUKernel,
-                          float,
-                          double,
-                          int,
-                          int64_t,
-                          phi::dtype::float16) {}
