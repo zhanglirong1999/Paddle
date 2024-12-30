@@ -182,9 +182,11 @@ class AutoParallelRecomputePIRPass(PassBase):
         self.program_ops = list(main_program.global_block().ops)
         # 1. Get the recompute segments information form program.
         segments = self.get_segments()
-        if len(segments) == 0:
-            logger.info("No segments found in PIR recompite pass, skip pass.")
-            return
+        assert (
+            len(segments) > 0
+        ), "No segment found in the PIR recompute pass.\n \
+            Please disable 'recompute.enable' or check 'recompute()' usage in model code."
+
         # 2. Get the forward and backward OPs from program.
         fwd_ops, bwd_ops = self.get_fwd_bwd_ops()
 
