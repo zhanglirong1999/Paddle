@@ -1108,7 +1108,7 @@ class GreaterEqualOpPattern
     auto x_dtype = pir::GetDataTypeFromValue(x);
     auto y_dtype = pir::GetDataTypeFromValue(y);
     if (x_dtype.isa<pir::BoolType>() || y_dtype.isa<pir::BoolType>()) {
-      VLOG(3) << "Greate_equal op do not support bool datatype";
+      VLOG(3) << "Greater_equal op do not support bool datatype";
       return false;
     }
 #endif
