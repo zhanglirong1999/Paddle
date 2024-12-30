@@ -493,7 +493,7 @@ std::optional<Expr> IterMapRewriter::TryFuse(const Expr& expr) {
   // finally matched_pos = 0, expected_scale = 32 * 2 = 64. means match i.
   // if match failed, indicates that expr is illegal and cannot be merged.
   for (size_t i = 0; i < iter_sum->args.size(); ++i) {
-    ir::IndexExpr matched_scale{nullptr};
+    ir::IndexExpr matched_scale;
     int matched_pos =
         i == 0 ? base_index
                : FindSplitWithExactScale(*iter_sum,

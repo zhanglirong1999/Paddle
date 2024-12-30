@@ -478,7 +478,7 @@ bool ComparePriority(const ir::IndexExpr &lhs, const ir::IndexExpr &rhs) {
   auto lhsLen = lhs.length();
   auto rhsLen = rhs.length();
   if (lhsLen < rhsLen) return false;
-  // Add < Mul < Div < Mod.
+  // Add < Mul < Div < Mod < Min < Max < Cast < Load.
   else if (lhsLen == rhsLen)
     return lhs.node_type() <= rhs.node_type();
   else
@@ -509,6 +509,10 @@ bool IsSumPartialBySymbol(const ir::IndexExpr &expr,
       return IsSumPartialBySymbol(expr.operand(0), symbol);
     }
     case ir::IrNodeTy::Mod:
+    case ir::IrNodeTy::Min:
+    case ir::IrNodeTy::Max:
+    case ir::IrNodeTy::Load:
+    case ir::IrNodeTy::Cast:
       return false;
     default:
       PADDLE_THROW(::common::errors::InvalidArgument(
@@ -586,6 +590,11 @@ bool IsDivisiblieBySymbol(const ir::IndexExpr &expr,
       if (ty != expr.node_type()) return false;
       return IsDivisiblieBySymbol(expr.operand(0), symbol, expr.node_type());
     }
+    case ir::IrNodeTy::Min:
+    case ir::IrNodeTy::Max:
+    case ir::IrNodeTy::Load:
+    case ir::IrNodeTy::Cast:
+      return false;
     default:
       PADDLE_THROW(::common::errors::InvalidArgument(
           "Unsupported type of expr in IsDivisiblieBySymbol which is: %s",
@@ -647,26 +656,38 @@ bool IsNegatedIndexExpr(const ir::IndexExpr &candidate,
   return false;
 }
 
-bool VerifyIndex(const ir::Expr &expr) {
+IndexType VerifyIndex(const ir::Expr &expr) {
   switch (expr.node_type()) {
     case ir::IrNodeTy::_Var_:
-    case ir::IrNodeTy::IntImm:
-    case ir::IrNodeTy::Load: {
-      if (expr.type().is_index_type()) return true;
-      return false;
+    case ir::IrNodeTy::IntImm: {
+      return expr.type().is_index_type() ? IndexType::kValid
+                                         : IndexType::kInvalid;
     }
-    case ir::IrNodeTy::Cast:
-      return VerifyIndex(expr->operand(0));
+    case ir::IrNodeTy::Load: {
+      return expr.type().is_index_type() ? IndexType::kLoad
+                                         : IndexType::kInvalid;
+    }
+    case ir::IrNodeTy::Cast: {
+      IndexType result = VerifyIndex(expr->operand(0));
+      return result == IndexType::kValid && expr.type().is_index_type()
+                 ? IndexType::kCast
+                 : IndexType::kInvalid;
+    }
     case ir::IrNodeTy::Add:
     case ir::IrNodeTy::Sub:
     case ir::IrNodeTy::Mul:
     case ir::IrNodeTy::Div:
     case ir::IrNodeTy::Mod:
     case ir::IrNodeTy::Max:
-    case ir::IrNodeTy::Min:
-      return VerifyIndex(expr->operand(0)) && VerifyIndex(expr->operand(1));
+    case ir::IrNodeTy::Min: {
+      IndexType left = VerifyIndex(expr->operand(0));
+      IndexType right = VerifyIndex(expr->operand(1));
+      if (left == IndexType::kInvalid || right == IndexType::kInvalid)
+        return IndexType::kInvalid;
+      return std::max(left, right);
+    }
   }
-  return false;
+  return IndexType::kInvalid;
 }
 }  // namespace common
 }  // namespace cinn
