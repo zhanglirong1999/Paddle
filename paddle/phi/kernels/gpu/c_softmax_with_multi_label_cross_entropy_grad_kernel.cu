@@ -92,10 +92,10 @@ void CSoftmaxWithMultiLabelCrossEntropyGradKernel(
   if (logit_grad != softmax) {
     phi::Copy(dev_ctx, *softmax, dev_ctx.GetPlace(), false, logit_grad);
   }
-  const auto sofrmax_dims = softmax->dims();
-  const int axis = sofrmax_dims.size() - 1;
-  const int64_t N = phi::funcs::SizeToAxis<int64_t>(axis, sofrmax_dims);
-  const int64_t D = phi::funcs::SizeFromAxis<int64_t>(axis, sofrmax_dims);
+  const auto softmax_dims = softmax->dims();
+  const int axis = softmax_dims.size() - 1;
+  const int64_t N = phi::funcs::SizeToAxis<int64_t>(axis, softmax_dims);
+  const int64_t D = phi::funcs::SizeFromAxis<int64_t>(axis, softmax_dims);
 
   const auto label_dims = labels->dims();
   const int64_t C = label_dims[axis];
