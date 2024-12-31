@@ -1744,6 +1744,68 @@ class NotEqualOpPattern
   }
 };
 
+template <typename OpType>
+class BitwiseCommonOpPattern : public pir::OpRewritePattern<OpType> {
+ public:
+  using pir::OpRewritePattern<OpType>::OpRewritePattern;
+
+  bool MatchAndRewrite(OpType op,
+                       pir::PatternRewriter &rewriter) const override {
+    if (op->HasAttribute(kCanRunTrtAttr) &&
+        op->template attribute<pir::BoolAttribute>(kCanRunTrtAttr).data()) {
+      return false;
+    }
+    pir::Value input_operand = op.operand_source(0);
+    auto input_type = pir::GetDataTypeFromValue(input_operand);
+    if (!input_type.isa<pir::BoolType>()) {
+      if constexpr (std::is_same_v<OpType, paddle::dialect::BitwiseAndOp>) {
+        VLOG(3) << "the bitwise_and only supports input of BOOL.";
+      } else {
+        VLOG(3) << "the bitwise_or only supports input of BOOL.";
+      }
+      return false;
+    }
+    op->set_attribute(kCanRunTrtAttr, rewriter.bool_attr(true));
+    return true;
+  }
+};
+using BitwiseAndOpPattern =
+    BitwiseCommonOpPattern<paddle::dialect::BitwiseAndOp>;
+using BitwiseOrOpPattern = BitwiseCommonOpPattern<paddle::dialect::BitwiseOrOp>;
+
+class BitwiseNotOpPattern
+    : public pir::OpRewritePattern<paddle::dialect::BitwiseNotOp> {
+ public:
+  using pir::OpRewritePattern<paddle::dialect::BitwiseNotOp>::OpRewritePattern;
+
+  bool MatchAndRewrite(paddle::dialect::BitwiseNotOp op,
+                       pir::PatternRewriter &rewriter) const override {
+    if (op->HasAttribute(kCanRunTrtAttr) &&
+        op->attribute<pir::BoolAttribute>(kCanRunTrtAttr).data()) {
+      return false;
+    }
+
+    pir::Value input_operand = op.operand_source(0);
+    auto input_type = pir::GetDataTypeFromValue(input_operand);
+    if (input_type.isa<pir::Int8Type>() || input_type.isa<pir::UInt8Type>()) {
+      VLOG(3) << "INT8 / UINT8 type convert to TRT is not supported.";
+      return false;
+    }
+#if IS_TRT_VERSION_LT(8600)
+    pir::Value x = op.operand_source(0);
+    auto x_type = x.type().dyn_cast<paddle::dialect::DenseTensorType>();
+    auto x_shape = x_type.dims();
+    int dims = x_shape.size();
+    if (dims < 1) {
+      VLOG(3) << "BOOL type does not support 0-dim input when TensorRT < 8.6.";
+      return false;
+    }
+#endif
+    op->set_attribute(kCanRunTrtAttr, rewriter.bool_attr(true));
+    return true;
+  }
+};
+
 class FullLikeOpPattern
     : public pir::OpRewritePattern<paddle::dialect::FullLikeOp> {
  public:
@@ -2168,6 +2230,9 @@ class TrtOpMarkerPass : public pir::PatternRewritePass {
     ps.Add(std::make_unique<ArangeOpPattern>(context));
     ps.Add(std::make_unique<SignOpPattern>(context));
     ps.Add(std::make_unique<LogicalNotOpPattern>(context));
+    ps.Add(std::make_unique<BitwiseAndOpPattern>(context));
+    ps.Add(std::make_unique<BitwiseOrOpPattern>(context));
+    ps.Add(std::make_unique<BitwiseNotOpPattern>(context));
     ps.Add(std::make_unique<LogicalNot_OpPattern>(context));
     ps.Add(std::make_unique<LogicalOrOpPattern>(context));
     ps.Add(std::make_unique<LogicalOr_OpPattern>(context));
