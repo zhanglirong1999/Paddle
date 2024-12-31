@@ -1,49 +1,43 @@
 name: Check PR Template
 
 on:
-  pull_request_target:
+  pull_request:
     branches: [develop]
     types: [opened, synchronize, reopened, edited]
 
 jobs:
   check:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
     - name: Clone paddle
       uses: actions/checkout@v4
-      with:
-        ref: refs/pull/${{ github.event.pull_request.number }}/merge
 
-    - name: Cache python dependencies
-      uses: actions/cache@v4
+    - name: Setup Python
+      uses: actions/setup-python@v5
       with:
-        path: ~/.cache/pip
-        key: checkpr_pip
+        python-version: '3.13'
+        cache: 'pip'
 
-    - name: Get commit message
-      id: get_commit_message
+    - name: Install dependencies
       run: |
-        PR_BRANCH_SHA="${{ github.event.pull_request.head.sha }}"
-        git fetch origin $PR_BRANCH_SHA --depth=1
-        COMMIT_MESSAGE=$(git log -1 --format=%B $PR_BRANCH_SHA)
-        echo "commit_message=$COMMIT_MESSAGE" >> $GITHUB_ENV
+        pip install httpx
 
     - name: Check PR Template
       env:
         AGILE_PULL_ID: ${{ github.event.pull_request.number }}
-        GITHUB_API_TOKEN: ${{ secrets.PADDLE_GITHUB_API_TOKEN }}
+        GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        git checkout -b test
-        pip install httpx pymysql PyGithub
-        python tools/CheckPRTemplate.py;EXCODE=$?
+        python tools/CheckPRTemplate.py; EXCODE=$?
         echo "EXCODE: $EXCODE"
         echo "ipipe_log_param_EXCODE: $EXCODE"
         set +x
         if [[ "$EXCODE" != "0" ]];then
-        echo -e "######################################################"
-        echo -e "If you encounter a situation where the PR template does not match the error message, please use the following link to update your PR: [  https://raw.githubusercontent.com/PaddlePaddle/Paddle/develop/.github/PULL_REQUEST_TEMPLATE.md ]"
-        echo -e "##ReferenceDocumentation: ##"
-        echo -e "[ https://github.com/PaddlePaddle/Paddle/wiki/PULL-REQUEST-TEMPLATE--REFERENCE ]"
-        echo -e "[ https://github.com/PaddlePaddle/Paddle/wiki/paddle_ci_manual ]"
-        echo -e "######################################################"
+          echo -e "######################################################"
+          echo -e "If you encounter a situation where the PR template does not match the error message, please use the following link to update your PR: [  https://raw.githubusercontent.com/PaddlePaddle/Paddle/develop/.github/PULL_REQUEST_TEMPLATE.md ]"
+          echo -e "##ReferenceDocumentation: ##"
+          echo -e "[ https://github.com/PaddlePaddle/Paddle/wiki/PULL-REQUEST-TEMPLATE--REFERENCE ]"
+          echo -e "[ https://github.com/PaddlePaddle/Paddle/wiki/paddle_ci_manual ]"
+          echo -e "######################################################"
         fi
