@@ -3768,7 +3768,7 @@ struct QuantizeLinearOpTranscriber : public OpTranscriber {
   }
 };
 
-// NOTE(Dev): heleper funtions for WithXShapeGradOpTranscriber
+// NOTE(Dev): heleper functions for WithXShapeGradOpTranscriber
 static std::pair<pir::Value, pir::Value> ParseXAndOutGradValue(
     const OpDesc& op_desc,
     pir::IrContext* ctx,
