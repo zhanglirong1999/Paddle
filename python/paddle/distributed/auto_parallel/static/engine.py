@@ -804,7 +804,6 @@ class Engine:
 
         # re-run apply_mix2dist_pass to dist accumulator.
         apply_mix2dist_pass(dist_program)
-
         if mode == "train" and self._strategy.recompute.enable:
             config = copy.deepcopy(self._strategy.recompute.to_dict())
             auto_parallel_recompute_pir_pass = new_pass(

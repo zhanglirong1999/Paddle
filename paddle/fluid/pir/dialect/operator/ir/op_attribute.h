@@ -20,7 +20,6 @@
 #include "paddle/phi/core/enforce.h"
 #include "paddle/pir/include/core/builtin_attribute.h"
 #include "paddle/pir/include/core/dll_decl.h"
-#include "paddle/pir/include/core/parser/ir_parser.h"
 
 namespace paddle {
 namespace dialect {
@@ -38,8 +37,6 @@ class IR_API IntArrayAttribute : public pir::Attribute {
   bool operator<(const IntArrayAttribute &right) const {
     return storage() < right.storage();
   }
-
-  static IntArrayAttribute Parse(pir::IrParser &parser);  // NOLINT
 
   const phi::IntArray &data() const;
 
@@ -82,8 +79,6 @@ class IR_API DataTypeAttribute : public pir::Attribute {
     return storage() < right.storage();
   }
 
-  static DataTypeAttribute Parse(pir::IrParser &parser);  // NOLINT
-
   phi::DataType data() const;
 
   static std::string name() { return "a_dtype"; }
@@ -98,8 +93,6 @@ class PlaceAttribute : public pir::Attribute {
   bool operator<(const PlaceAttribute &right) const {
     return storage() < right.storage();
   }
-
-  static PlaceAttribute Parse(pir::IrParser &parser);  // NOLINT
 
   phi::Place data() const;
   static std::string name() { return "a_place"; }
@@ -116,7 +109,6 @@ class DataLayoutAttribute : public pir::Attribute {
     return storage() < right.storage();
   }
 
-  static DataLayoutAttribute Parse(pir::IrParser &parser);  // NOLINT
   phi::DataLayout data() const;
   static std::string name() { return "a_layout"; }
 };

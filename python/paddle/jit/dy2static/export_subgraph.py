@@ -18,7 +18,6 @@ import os
 from paddle import pir
 from paddle.base import core
 from paddle.base.dygraph.base import switch_to_static_graph
-from paddle.base.framework import get_flags
 from paddle.static.log_helper import get_logger
 
 _logger = get_logger(
@@ -37,9 +36,8 @@ class SubGraphRole:
 
 
 def get_saving_dir():
-    flag = "FLAGS_pir_subgraph_saving_dir"
-    value = get_flags(flag)[flag]
-    return value
+    # TODO(SigureMo): Cleanup this module in #70569
+    return ""
 
 
 class BaseExporter:
