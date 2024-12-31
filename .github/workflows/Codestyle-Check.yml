@@ -1,0 +1,42 @@
+name: Codestyle-Check
+
+on:
+  pull_request:
+    branches: [ "develop" ]
+
+jobs:
+  pre-commit:
+    if: github.repository_owner == 'PaddlePaddle'
+    runs-on: ubuntu-latest
+    env:
+      PR_ID: ${{ github.event.pull_request.number }}
+      BRANCH: develop
+
+    steps:
+      - name: Checkout base repo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+          fetch-depth: 1000
+
+      - name: Merge pr
+        run: |
+          git config --global user.name "PaddleCI"
+          git config --global user.email "paddle_ci@example.com"
+          git fetch origin pull/${PR_ID}/head
+          git checkout -b test FETCH_HEAD
+          git merge --no-edit ${BRANCH}
+
+      - name: Setup python3.8
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.8'
+          cache: 'pip'
+
+      - name: Check pre-commit
+        run: |
+          pip --disable-pip-version-check install --upgrade pip
+          set +e
+          bash -x tools/codestyle/pre_commit.sh;EXCODE=$?
+          echo "ipipe_log_param_EXCODE: $EXCODE"
+          exit $EXCODE
