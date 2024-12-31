@@ -1127,10 +1127,15 @@ def _complete_op_dist_attr(program, block=None):
                 tmp_attr = operand.dist_attr()
                 if tmp_attr is None:
                     operand_attrs.append(pir.Attribute())
+                    value_mesh = None
+                    tmp_op_dist_attr = operand.get_defining_op().dist_attr
+                    if tmp_op_dist_attr is not None:
+                        value_mesh = tmp_op_dist_attr.process_mesh
                 else:
                     operand_attrs.append(tmp_attr)
-                    if tmp_attr.process_mesh not in meshes:
-                        meshes.append(tmp_attr.process_mesh)
+                    value_mesh = tmp_attr.process_mesh
+                if value_mesh is not None and value_mesh not in meshes:
+                    meshes.append(value_mesh)
 
             for result in op.results():
                 tmp_attr = result.dist_attr()

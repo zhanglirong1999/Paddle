@@ -139,6 +139,74 @@ static PyObject *static_api_moe_sub_mesh_tensors(PyObject *self,
   }
 }
 
+static PyObject *static_api_dtensor_from_local(PyObject *self,
+                                               PyObject *args,
+                                               PyObject *kwargs) {
+  try {
+    VLOG(6) << "Add dtensor_from_local op into program";
+    VLOG(8) << "args count: " << (PyTuple_Size(args) / 2);
+
+    // Get Value from args
+    PyObject *input_obj = PyTuple_GET_ITEM(args, 0);
+    auto input = CastPyArg2Value(input_obj, "dtensor_from_local", 0);
+
+    PyObject *process_mesh_obj = PyTuple_GET_ITEM(args, 1);
+    auto process_mesh = CastPyArg2ProcessMesh(process_mesh_obj, 1);
+
+    PyObject *placements_obj = PyTuple_GET_ITEM(args, 2);
+    auto placements = CastPyArg2VectorOfPlacement(placements_obj, 2);
+
+    int64_t ndim = GetValueDims(input).size();
+    auto res = CvtPlacements(placements, ndim);
+
+    // Call ir static api
+    auto static_api_out = dialect::dtensor_from_local(
+        input, process_mesh, std::get<0>(res), std::get<1>(res));
+
+    return ToPyObject(static_api_out);
+  } catch (...) {
+    ThrowExceptionToPython(std::current_exception());
+    return nullptr;
+  }
+}
+
+static PyObject *dtensor_from_local(PyObject *self,
+                                    PyObject *args,
+                                    PyObject *kwargs) {
+  // Todo: support dygraph mode
+  VLOG(6) << "Call static_api_abs";
+  return static_api_dtensor_from_local(self, args, kwargs);
+}
+
+static PyObject *static_api_dtensor_to_local(PyObject *self,
+                                             PyObject *args,
+                                             PyObject *kwargs) {
+  try {
+    VLOG(6) << "Add dtensor_from_local op into program";
+    VLOG(8) << "args count: " << (PyTuple_Size(args) / 2);
+
+    // Get Value from args
+    PyObject *input_obj = PyTuple_GET_ITEM(args, 0);
+    auto input = CastPyArg2Value(input_obj, "dtensor_from_local", 0);
+
+    // Call ir static api
+    auto static_api_out = paddle::dialect::dtensor_to_local(input);
+
+    return ToPyObject(static_api_out);
+  } catch (...) {
+    ThrowExceptionToPython(std::current_exception());
+    return nullptr;
+  }
+}
+
+static PyObject *dtensor_to_local(PyObject *self,
+                                  PyObject *args,
+                                  PyObject *kwargs) {
+  // Todo: support dygraph mode
+  VLOG(6) << "Call static_api_dtensor_to_local";
+  return static_api_dtensor_to_local(self, args, kwargs);
+}
+
 static PyObject *static_api_moe_global_mesh_tensor(PyObject *self,
                                                    PyObject *args,
                                                    PyObject *kwargs) {
@@ -252,6 +320,14 @@ static PyMethodDef DistOpsAPI[] = {
      (PyCFunction)(void (*)(void))static_api_reshard,
      METH_VARARGS | METH_KEYWORDS,
      "C++ interface function for reshard."},
+    {"dtensor_from_local",
+     (PyCFunction)(void (*)(void))dtensor_from_local,
+     METH_VARARGS | METH_KEYWORDS,
+     "C++ interface function for dtensor_from_local."},
+    {"dtensor_to_local",
+     (PyCFunction)(void (*)(void))dtensor_to_local,
+     METH_VARARGS | METH_KEYWORDS,
+     "C++ interface function for dtensor_to_local."},
     {"moe_sub_mesh_tensors",
      (PyCFunction)(void (*)(void))static_api_moe_sub_mesh_tensors,
      METH_VARARGS | METH_KEYWORDS,

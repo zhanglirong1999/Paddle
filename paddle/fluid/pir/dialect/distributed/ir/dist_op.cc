@@ -311,6 +311,198 @@ void ReshardOp::Build(pir::Builder& builder,
   ::pir::PassStopGradientsDefaultly(argument);
 }
 
+void DtensorFromLocalOp::Build(pir::Builder& builder,
+                               pir::OperationArgument& argument,
+                               pir::Value input,
+                               TensorDistAttribute tensor_dist_attr) {
+  VLOG(4) << "Start build DtensorFromLocalOp";
+
+  paddle::dialect::DenseTensorType local_tensor_type;
+  if (input.type().isa<paddle::dialect::DenseTensorType>()) {
+    local_tensor_type =
+        input.type().dyn_cast<paddle::dialect::DenseTensorType>();
+  } else {
+    PADDLE_THROW(common::errors::Unimplemented(
+        "Only support paddle::dialect::DenseTensorType"));
+  }
+
+  VLOG(4) << "Builder construction inputs";
+  argument.AddInput(input);
+
+  VLOG(4) << "Builder construction attributes";
+
+  VLOG(4) << "Builder construction outputs";
+
+  auto global_ddim =
+      InferGlobalDDim(local_tensor_type.dims(), tensor_dist_attr);
+  auto global_tensor =
+      dialect::DenseTensorType::get(pir::IrContext::Instance(),
+                                    local_tensor_type.dtype(),
+                                    global_ddim,
+                                    local_tensor_type.data_layout(),
+                                    local_tensor_type.lod(),
+                                    local_tensor_type.offset());
+
+  pir::Type out_dist_tensor_type =
+      paddle::dialect::DistDenseTensorType::get(pir::IrContext::Instance(),
+                                                global_tensor,
+                                                tensor_dist_attr,
+                                                local_tensor_type.dims());
+  argument.AddOutput(out_dist_tensor_type);
+  ::pir::PassStopGradientsDefaultly(argument);
+}
+
+OpInfoTuple DtensorFromLocalOp::GetOpInfo() {
+  return OpInfoTuple({OpInputInfo()},
+                     {},
+                     {OpOutputInfo()},
+                     OpRunTimeInfo(),
+                     "dtensor_from_local");
+}
+std::vector<std::vector<pir::Value>> DtensorFromLocalOp::Vjp(
+    pir::Operation* op,
+    const std::vector<std::vector<pir::Value>>& inputs,
+    const std::vector<std::vector<pir::Value>>& outputs,
+    const std::vector<std::vector<pir::Value>>& out_grads,
+    const std::vector<std::vector<bool>>& stop_gradients) {
+  VLOG(6) << "Start call vjp for dtensor_from_local op.";
+  PADDLE_ENFORCE_EQ(inputs.size(),
+                    1,
+                    common::errors::InvalidArgument(
+                        "dtensor_from_local op's inputs' size should be 1"));
+  PADDLE_ENFORCE_EQ(
+      inputs[0].size(),
+      1,
+      common::errors::InvalidArgument(
+          "dtensor_from_local op's inputs[0]'s size should be 1"));
+
+  PADDLE_ENFORCE_EQ(outputs.size(),
+                    1,
+                    common::errors::InvalidArgument(
+                        "dtensor_from_local op's outputs' size should be 1"));
+  PADDLE_ENFORCE_EQ(
+      outputs[0].size(),
+      1,
+      common::errors::InvalidArgument(
+          "dtensor_from_local op's outputs[0]'s size should be 1"));
+  auto dist_type = outputs[0][0].type().dyn_cast<DistTypeInterface>();
+
+  PADDLE_ENFORCE_NOT_NULL(
+      dist_type,
+      common::errors::InvalidArgument("Currently, dtensor_from_local op's "
+                                      "outputs type must be dist type."));
+
+  PADDLE_ENFORCE_EQ(
+      out_grads.size(),
+      1,
+      common::errors::InvalidArgument(
+          "dtensor_from_local op's outputs  grad size should be 1"));
+
+  PADDLE_ENFORCE_EQ(
+      out_grads[0].size(),
+      1,
+      common::errors::InvalidArgument(
+          "dtensor_from_local op's outputs grad[0] size should be 1"));
+
+  auto& builder = *ApiBuilder::Instance().GetBuilder();
+
+  auto out_grad = out_grads[0][0];
+
+  if (out_grad.type() != outputs[0][0].type()) {
+    out_grad = builder.Build<ReshardOp>(out_grad, dist_type.tensor_dist_attr())
+                   ->result(0);
+  }
+
+  auto grad_op = builder.Build<DtensorToLocalOp>(out_grad);
+
+  VLOG(6) << "End call vjp for dtensor_from_local op.";
+
+  return {std::vector<pir::Value>{grad_op->result(0)}};
+}
+
+void DtensorToLocalOp::Build(pir::Builder& builder,
+                             pir::OperationArgument& argument,
+                             pir::Value input) {
+  VLOG(4) << "Start build DtensorToLocalOp";
+
+  VLOG(4) << "Builder construction inputs";
+  argument.AddInput(input);
+
+  VLOG(4) << "Builder construction attributes";
+
+  VLOG(4) << "Builder construction outputs";
+
+  auto dist_type = input.type().dyn_cast<DistTypeInterface>();
+  if (!dist_type) {
+    PADDLE_THROW(common::errors::Unimplemented(
+        "The input of DtensorToLocalOp must be dist type."));
+  }
+
+  argument.AddOutput(dist_type.local_type());
+  ::pir::PassStopGradientsDefaultly(argument);
+}
+
+OpInfoTuple DtensorToLocalOp::GetOpInfo() {
+  return OpInfoTuple({OpInputInfo()},
+                     {},
+                     {OpOutputInfo()},
+                     OpRunTimeInfo(),
+                     "dtensor_to_local");
+}
+
+std::vector<std::vector<pir::Value>> DtensorToLocalOp::Vjp(
+    pir::Operation* op,
+    const std::vector<std::vector<pir::Value>>& inputs,
+    const std::vector<std::vector<pir::Value>>& outputs,
+    const std::vector<std::vector<pir::Value>>& out_grads,
+    const std::vector<std::vector<bool>>& stop_gradients) {
+  VLOG(6) << "Start call vjp for dtensor_to_local op.";
+  PADDLE_ENFORCE_EQ(inputs.size(),
+                    1,
+                    common::errors::InvalidArgument(
+                        "dtensor_to_local op's inputs' size should be 1"));
+  PADDLE_ENFORCE_EQ(inputs[0].size(),
+                    1,
+                    common::errors::InvalidArgument(
+                        "dtensor_to_local op's inputs[0]'s size should be 1"));
+
+  PADDLE_ENFORCE_EQ(outputs.size(),
+                    1,
+                    common::errors::InvalidArgument(
+                        "dtensor_to_local op's outputs' size should be 1"));
+  PADDLE_ENFORCE_EQ(outputs[0].size(),
+                    1,
+                    common::errors::InvalidArgument(
+                        "dtensor_to_local op's outputs[0]'s size should be 1"));
+  auto dist_type = inputs[0][0].type().dyn_cast<DistTypeInterface>();
+
+  PADDLE_ENFORCE_NOT_NULL(
+      dist_type,
+      common::errors::InvalidArgument(
+          "Currently, dtensor_to_local op's inputs type must be dist type."));
+
+  PADDLE_ENFORCE_EQ(
+      out_grads.size(),
+      1,
+      common::errors::InvalidArgument(
+          "dtensor_from_local op's outputs  grad size should be 1"));
+
+  PADDLE_ENFORCE_EQ(
+      out_grads[0].size(),
+      1,
+      common::errors::InvalidArgument(
+          "dtensor_from_local op's outputs grad[0] size should be 1"));
+
+  auto& builder = *ApiBuilder::Instance().GetBuilder();
+
+  auto grad_op = builder.Build<DtensorFromLocalOp>(
+      out_grads[0][0], dist_type.tensor_dist_attr());
+
+  VLOG(6) << "End call vjp for dtensor_from_local op.";
+
+  return {std::vector<pir::Value>{grad_op->result(0)}};
+}
+
 TEST_API void paddle::dialect::MoESubMeshTensorsOp::Build(
     pir::Builder& builder,
     pir::OperationArgument& argument,
@@ -754,6 +946,8 @@ std::vector<std::vector<pir::Value>> DistReshapeOp::Vjp(
 
 IR_DEFINE_EXPLICIT_TYPE_ID(paddle::dialect::ShardTensorOp)
 IR_DEFINE_EXPLICIT_TYPE_ID(paddle::dialect::ReshardOp)
+IR_DEFINE_EXPLICIT_TYPE_ID(paddle::dialect::DtensorFromLocalOp)
+IR_DEFINE_EXPLICIT_TYPE_ID(paddle::dialect::DtensorToLocalOp)
 IR_DEFINE_EXPLICIT_TYPE_ID(paddle::dialect::MoESubMeshTensorsOp)
 IR_DEFINE_EXPLICIT_TYPE_ID(paddle::dialect::MoEGlobalMeshTensorOp)
 IR_DEFINE_EXPLICIT_TYPE_ID(paddle::dialect::DistReshapeOp)
