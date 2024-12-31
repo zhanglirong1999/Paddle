@@ -32,19 +32,6 @@ jobs:
       env:
         AGILE_PULL_ID: ${{ github.event.pull_request.number }}
         GITHUB_API_TOKEN: ${{ secrets.PADDLE_GITHUB_API_TOKEN }}
-        AGILE_COMPILE_BRANCH: develop
-        AGILE_CHECKIN_AUTHOR: ${{ github.event.pull_request.user.login }}
-        AGILE_REVISION: ${{ github.event.pull_request.head.sha }}
-        AGILE_COMMENTS: "[{\"commit\": \"${{ github.event.pull_request.head.sha }}\", \"author\": \"${{ github.event.pull_request.user.login }}\", \"comment\": \"${{ env.commit_message }}\"}]"
-        icafe_url: ${{ secrets.icafe_url }}
-        icafe_user: ${{ secrets.icafe_user }}
-        icafe_pwd: ${{ secrets.icafe_pwd }}
-        db_host: ${{ secrets.db_host }}
-        db_port: ${{ secrets.db_port }}
-        db_user: ${{ secrets.db_user }}
-        db_pd: ${{ secrets.db_pd }}
-        db_name: ${{ secrets.db_name }}
-        method: check_pr
       run: |
         git checkout -b test
         pip install httpx pymysql PyGithub
@@ -60,10 +47,3 @@ jobs:
         echo -e "[ https://github.com/PaddlePaddle/Paddle/wiki/paddle_ci_manual ]"
         echo -e "######################################################"
         fi
-
-        [[ $EXCODE -eq 0 ]] && {
-        set +x
-        wget -q --no-check-certificate  https://paddle-qa.bj.bcebos.com/baidu/cloud/modify_icafe.py
-        set -x
-        python3 modify_icafe.py
-        }
