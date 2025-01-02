@@ -2793,6 +2793,7 @@ All parameter, weight, gradient are variables in Paddle.
 #if defined(PADDLE_WITH_CUDA) || defined(PADDLE_WITH_HIP)
   m.def("get_cuda_device_count", platform::GetGPUDeviceCount);
   m.def("get_cuda_current_device_id", &platform::GetCurrentDeviceId);
+  m.def("set_cuda_current_device_id", &platform::SetDeviceId, py::arg("i"));
   m.def("cuda_empty_cache", [] {
     for (int dev_id : platform::GetSelectedDevices()) {
       auto *dev_ctx =
