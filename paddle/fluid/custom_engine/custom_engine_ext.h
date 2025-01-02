@@ -16,6 +16,7 @@
 #if !defined(_WIN32)
 #include <cstddef>
 #include <cstring>
+#include <unordered_map>
 
 #include "paddle/phi/backends/device_ext.h"
 
@@ -24,12 +25,32 @@ extern "C" {
 #endif
 
 typedef struct C_Operation_st* C_Operation;
+typedef struct C_IrContext_st* C_IrContext;
+typedef struct C_Value_st* C_Value;
+typedef struct C_Place_st* C_Place;
+typedef struct C_KernelKey_st* C_KernelKey;
+typedef struct C_Block_st* C_Block;
+typedef struct std::unordered_map<C_Operation_st, C_Operation_st>*
+    C_Operation_Map;
+typedef struct std::unordered_map<C_Value_st, C_Value_st>* C_Value_Map;
+typedef struct C_CustomEngineInstruction_st* C_CustomEngineInstruction;
+
+struct C_CustomEngineLowerParams {
+  C_IrContext ir_context;
+  C_Operation operation;
+  C_KernelKey kernel_key;
+  C_Place place;
+  C_Operation_Map map_op_pair;
+  C_Value_Map map_value_pair;
+  C_Block block;
+};
 
 struct C_CustomEngineInterface {
   size_t size;
-  C_Status (*graph_engine_build)();
-  C_Status (*graph_engine_execute)();
-  C_Status (*custom_engine_op_lower)();
+  C_Status (*register_custom_engine_op)();
+  C_Status (*graph_engine_build)(C_CustomEngineInstruction);
+  C_Status (*graph_engine_execute)(C_CustomEngineInstruction);
+  C_Status (*custom_engine_op_lower)(C_CustomEngineLowerParams*);
 };
 
 struct CustomEngineParams {

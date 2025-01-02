@@ -40,6 +40,19 @@ void LoadCustomEngineLib(const std::string& dso_lib_path,
     paddle::custom_engine::CustomEngineManager::Instance()
         ->SetCustomEngineInterface(engine_params->interface);
 
+    auto* interface = paddle::custom_engine::CustomEngineManager::Instance()
+                          ->GetCustomEngineInterface();
+
+    // register custom engine op
+    if (interface->register_custom_engine_op) {
+      interface->register_custom_engine_op();
+    } else {
+      LOG(WARNING) << "Skipped lib [" << dso_lib_path
+                   << "]. register_custom_engine_op is not set!!! please check "
+                      "the version "
+                      "compatibility between PaddlePaddle and Custom Engine.";
+    }
+
   } else {
     LOG(WARNING) << "Skipped lib [" << dso_lib_path
                  << "]. Wrong engine parameters!!! please check the version "

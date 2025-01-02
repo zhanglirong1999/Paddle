@@ -1,5 +1,7 @@
 if(WITH_CUSTOM_DEVICE)
-  paddle_test(test_custom_engine_loadlib SRCS test_custom_engine_loadlib.cc)
+  paddle_test(test_custom_engine_loadlib SRCS test_custom_engine_loadlib.cc
+              custom_engine_op.cc)
+
 endif()
 paddle_test(test_custom_engine SRCS test_custom_engine_operation.cc
             custom_engine_op.cc)
