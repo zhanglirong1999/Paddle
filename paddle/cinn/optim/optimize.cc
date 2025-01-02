@@ -77,7 +77,11 @@ ir::LoweredFunc Optimize(ir::LoweredFunc fn,
           RemoveGpuForLoops(copied);
         }
         CudaSyncThreadsDropIfThenElse(copied);
-    // CudaTransBufferWithDynamicShape(&copied);
+        FuncPassManager func_pass_manager;
+        VLOG(10) << "Before Optimize TransBufferWithDynamicShape:" << copied;
+        func_pass_manager.AddPass(CreateTransBufferWithDynamicShapePass());
+        func_pass_manager.Run(copied);
+        VLOG(10) << "After Optimize TransBufferWithDynamicShape:" << copied;
 #endif
       },
       [&](common::HygonDCUArchHIP) {

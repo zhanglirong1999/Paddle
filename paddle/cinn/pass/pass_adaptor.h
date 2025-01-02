@@ -51,11 +51,6 @@ class PassAdaptor {
 
 class FuncPassAdaptor : public PassAdaptor<FuncPass> {
  private:
-  LogicalResult RunPipeline(
-      ir::stmt::BlockRef block,
-      const std::vector<std::unique_ptr<FuncPass>>& passes) {
-    return LogicalResult::failure();
-  }
   LogicalResult Run(
       ir::LoweredFunc func,
       const std::vector<std::unique_ptr<FuncPass>>& passes) override;
