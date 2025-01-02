@@ -183,5 +183,8 @@ void SimplifyForLoops(Expr *expr);
  */
 void SimplifyBlocks(Expr *expr);
 
+void SimplifyLogical(Expr *expr);
+
+Expr ArithSimplify(const Expr &u);
 }  // namespace optim
 }  // namespace cinn
