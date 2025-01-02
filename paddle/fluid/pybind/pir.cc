@@ -1466,6 +1466,19 @@ void BindValue(py::module *m) {
              }
              return op_list;
            })
+      .def("all_used_ops_in_same_block",
+           [](Value &self) -> py::list {
+             py::list op_list;
+             for (auto it = self.use_begin(); it != self.use_end(); ++it) {
+               pir::Operation *used_op = it.owner();
+               while (used_op->GetParent() != self.defining_op()->GetParent() &&
+                      used_op->GetParent()->GetParentOp()) {
+                 used_op = used_op->GetParent()->GetParentOp();
+               }
+               op_list.append(used_op);
+             }
+             return op_list;
+           })
       .def(
           "get_defining_op",
           [](Value self) -> pir::Operation * { return self.defining_op(); },
