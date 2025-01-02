@@ -1578,6 +1578,7 @@ function card_test() {
         fi
     done
     wait; # wait for all subshells to finish
+    trap - CHLD
     ut_endTime_s=`date +%s`
     if (( $2 == -1 )); then
         echo "exclusive TestCases Total Time: $[ $ut_endTime_s - $ut_startTime_s ]s"
@@ -2724,6 +2725,8 @@ set -x
 function hybrid_paddlex() {
     # PaddleX test
     export DEVICE=($(echo $HIP_VISIBLE_DEVICES | tr "," "\n"))
+    export DCU_DEVICES=`echo $HIP_VISIBLE_DEVICES`
+    unset HIP_VISIBLE_DEVICES
     git clone --depth=1000 https://gitee.com/paddlepaddle/PaddleX.git
     cd PaddleX
     pip install -e .
@@ -2740,7 +2743,7 @@ function hybrid_paddlex() {
     -o Global.mode=train \
     -o Global.dataset_dir=./dataset/cls_flowers_examples \
     -o Global.output=resnet50_output \
-    -o Global.device="gpu:${HIP_VISIBLE_DEVICES}" \
+    -o Global.device="gpu:${DCU_DEVICES}" \
     -o Train.epochs_iters=2
 
     # inference Reset50
@@ -2756,7 +2759,7 @@ function hybrid_paddlex() {
     -o Global.mode=train \
     -o Global.dataset_dir=./dataset/seg_optic_examples \
     -o Global.output=deeplabv3p_output \
-    -o Global.device="gpu:${HIP_VISIBLE_DEVICES}" \
+    -o Global.device="gpu:${DCU_DEVICES}" \
     -o Train.epochs_iters=2
 
     # inference DeepLabv3+
@@ -4723,7 +4726,7 @@ function main() {
         ;;
       hyg_dcu_test)
         parallel_test
-	# hybrid_paddlex
+	hybrid_paddlex
         ;;
       nv_cicheck_coverage)
         parallel_test
