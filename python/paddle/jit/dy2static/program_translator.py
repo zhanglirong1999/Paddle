@@ -436,16 +436,6 @@ class StaticFunction(Generic[_InputT, _RetT]):
         self._property = kwargs.get("property", False)
         # Note: Record the patched method name for rollback.
         self._patched_name = None
-        self._get_debug_name()
-
-    def _get_debug_name(self) -> str:
-        try:
-            if self.class_instance:
-                self._debug_name = self.class_instance.__class__.__name__
-            else:
-                self._debug_name = self._dygraph_function.__name__
-        except Exception:
-            self._debug_name = "static_function"
 
     @property
     def is_property(self) -> bool:
@@ -947,7 +937,6 @@ class ASTStaticFunction(StaticFunction[_InputT, _RetT]):
             concrete_program, partial_program_layer = self._program_cache[
                 cache_key
             ]
-        partial_program_layer._debug_name = self._debug_name
         return concrete_program, partial_program_layer
 
     def get_concrete_program_with_cache_key(
