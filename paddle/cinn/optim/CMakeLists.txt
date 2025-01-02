@@ -39,7 +39,8 @@ gather_srcs(
   rearrange_load_instruction.cc
   check_tensor_buffer_map.cc
   longlong2int_pass.cc
-  vectorize_for_trans.cc)
+  vectorize_for_trans.cc
+  if_fold_pass.cc)
 
 if(WITH_CUDA OR WITH_ROCM)
   gather_srcs(cinnapi_src SRCS transform_gpu_forloop.cc)
