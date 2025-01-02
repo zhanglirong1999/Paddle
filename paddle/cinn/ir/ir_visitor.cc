@@ -102,15 +102,16 @@ bool operator==(IndexExpr a, IndexExpr b) {
       auto rhs = b.As<ir::Cast>();
       return lhs->type() == rhs->type() && lhs->v() == rhs->v();
     }
-
     case ir::IrNodeTy::Load: {
       auto lhs = a.As<ir::Load>();
       auto rhs = b.As<ir::Load>();
-      bool equal = lhs->tensor == rhs->tensor;
+      if (lhs->indices.size() != rhs->indices.size()) return false;
+      if (lhs->tensor != rhs->tensor) return false;
+      // compare indices
       for (int32_t i = 0; i < lhs->indices.size(); ++i) {
-        equal &= (lhs->indices[i] == rhs->indices[i]);
+        if (lhs->indices[i] != rhs->indices[i]) return false;
       }
-      return equal;
+      return true;
     }
     case ir::IrNodeTy::Div:
     case ir::IrNodeTy::Mod: {
