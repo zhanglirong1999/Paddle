@@ -22,6 +22,10 @@ namespace xpu {
 XPUOpMap& get_kl3_ops() {
   // KL3支持的op，通过op_name, data_type, place来索引
   static XPUOpMap s_xpu3_kernels{
+      {"acos",
+       XPUKernelSet({phi::DataType::FLOAT32,
+                     phi::DataType::FLOAT16,
+                     phi::DataType::BFLOAT16})},
       {"add_act_xpu",
        XPUKernelSet({phi::DataType::FLOAT32, phi::DataType::FLOAT16})},
       {"add_layernorm_xpu",
@@ -1299,6 +1303,7 @@ XPUOpMap& get_kl3_ops() {
                      phi::DataType::BFLOAT16})},
       {"tanh_grad",
        XPUKernelSet({phi::DataType::FLOAT32, phi::DataType::FLOAT16})},
+      {"tan", XPUKernelSet({phi::DataType::FLOAT32, phi::DataType::FLOAT16})},
       {"tanh", XPUKernelSet({phi::DataType::FLOAT32, phi::DataType::FLOAT16})},
       {"temporal_shift", XPUKernelSet({phi::DataType::FLOAT32})},
       {"temporal_shift_grad", XPUKernelSet({phi::DataType::FLOAT32})},

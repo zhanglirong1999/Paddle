@@ -558,6 +558,32 @@ struct XPURsqrtFunctor : public funcs::BaseActivationFunctor<T> {
   }
 };
 
+template <typename T>
+struct XPUTanFunctor : public funcs::BaseActivationFunctor<T> {
+  using XPUType = typename XPUTypeTrait<T>::Type;
+  template <typename Context>
+  void operator()(const Context& dev_ctx,
+                  const DenseTensor& x,
+                  DenseTensor* out) const {
+    int ret = xpu_activation_func<Context, T, XPUType>(
+        dev_ctx, x, out, xpu::tan<XPUType>);
+    PADDLE_ENFORCE_XDNN_SUCCESS(ret, "tan");
+  }
+};
+
+template <typename T>
+struct XPUAcosFunctor : public funcs::BaseActivationFunctor<T> {
+  using XPUType = typename XPUTypeTrait<T>::Type;
+  template <typename Context>
+  void operator()(const Context& dev_ctx,
+                  const DenseTensor& x,
+                  DenseTensor* out) const {
+    int ret = xpu_activation_func<Context, T, XPUType>(
+        dev_ctx, x, out, xpu::arccos<XPUType>);
+    PADDLE_ENFORCE_XDNN_SUCCESS(ret, "arccos");
+  }
+};
+
 DEFINE_XPU_ACTIVATION_KERNEL(Exp, XPUExpFunctor)
 DEFINE_XPU_ACTIVATION_KERNEL(Floor, XPUFloorFunctor)
 DEFINE_XPU_ACTIVATION_KERNEL(Log, XPULogFunctor)
@@ -571,6 +597,8 @@ DEFINE_XPU_ACTIVATION_KERNEL(Silu, XPUSiluFunctor)
 DEFINE_XPU_ACTIVATION_KERNEL(Sin, XPUSinFunctor)
 DEFINE_XPU_ACTIVATION_KERNEL(Cos, XPUCosFunctor)
 DEFINE_XPU_ACTIVATION_KERNEL(Rsqrt, XPURsqrtFunctor)
+DEFINE_XPU_ACTIVATION_KERNEL(Tan, XPUTanFunctor)
+DEFINE_XPU_ACTIVATION_KERNEL(Acos, XPUAcosFunctor)
 
 DEFINE_XPU_ACTIVATION_KERNEL_WITH_ONE_ATTRS(Mish, XPUMishFunctor, threshold)
 DEFINE_XPU_ACTIVATION_KERNEL_WITH_ONE_ATTRS(LeakyRelu,
@@ -728,6 +756,17 @@ PD_REGISTER_KERNEL(exp,
 
 PD_REGISTER_KERNEL(
     round, XPU, ALL_LAYOUT, phi::RoundKernel, float, phi::dtype::float16) {}
+
+PD_REGISTER_KERNEL(
+    tan, XPU, ALL_LAYOUT, phi::TanKernel, float, phi::dtype::float16) {}
+
+PD_REGISTER_KERNEL(acos,
+                   XPU,
+                   ALL_LAYOUT,
+                   phi::AcosKernel,
+                   float,
+                   phi::dtype::float16,
+                   phi::dtype::bfloat16) {}
 
 #define PD_REGISTER_ACTIVATION_KERNEL(name, func) \
   PD_REGISTER_KERNEL(name, XPU, ALL_LAYOUT, phi::func, float) {}
