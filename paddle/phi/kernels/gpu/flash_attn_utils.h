@@ -100,7 +100,7 @@ static std::vector<int64_t> GetAttnSparseMaskDims(
         rank,
         4,
         common::errors::InvalidArgument(
-            "The number of dimenstions of startend_row_indices is expected to "
+            "The number of dimensions of startend_row_indices is expected to "
             "be greater or equal to 4, but recieved %d. The shape of "
             "startend_row_indices is [%s]",
             rank,
