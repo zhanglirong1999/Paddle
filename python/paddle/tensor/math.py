@@ -4788,7 +4788,16 @@ def prod(
         check_variable_and_dtype(
             x,
             'x/input',
-            ['float32', 'float64', 'int32', 'int64', "float16", "uint16"],
+            [
+                'float32',
+                'float64',
+                'int32',
+                'int64',
+                "float16",
+                "uint16",
+                "complex64",
+                "complex128",
+            ],
             'reduce_prod',
         )
         out = helper.create_variable_for_type_inference(
