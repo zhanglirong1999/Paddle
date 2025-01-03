@@ -25,11 +25,8 @@ jobs:
 
     - name: Merge pr
       run: |
-        git config --global user.name "PaddleCI"
-        git config --global user.email "paddle_ci@example.com"
-        git fetch origin pull/${PR_ID}/head
+        git fetch origin pull/${PR_ID}/merge
         git checkout -b test FETCH_HEAD
-        git merge --no-edit ${BRANCH}
 
     - name: Cache bos client
       id: cache_bos_client

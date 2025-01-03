@@ -21,22 +21,24 @@ jobs:
 
       - name: Merge pr
         run: |
-          git config --global user.name "PaddleCI"
-          git config --global user.email "paddle_ci@example.com"
-          git fetch origin pull/${PR_ID}/head
+          git fetch origin pull/${PR_ID}/merge
           git checkout -b test FETCH_HEAD
-          git merge --no-edit ${BRANCH}
 
-      - name: Setup python3.8
+      - name: Setup python3.12
         uses: actions/setup-python@v5
         with:
-          python-version: '3.8'
+          python-version: '3.12'
           cache: 'pip'
 
-      - name: Check pre-commit
+      - name: Install dependencies
         run: |
-          pip --disable-pip-version-check install --upgrade pip
+          pip install pre-commit==2.17.0 cpplint==1.6.0  clang-format==13.0.0
+
+
+      - name: Check pre-commit
+        env:
+          SKIP_CLANG_TIDY_CHECK: "ON"
+        run: |
           set +e
           bash -x tools/codestyle/pre_commit.sh;EXCODE=$?
-          echo "ipipe_log_param_EXCODE: $EXCODE"
           exit $EXCODE
