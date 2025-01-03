@@ -720,3 +720,18 @@ def unary_op_converter(network, paddle_op, inputs):
         input_tensor = restore_layer.get_output(0)
 
     return input_tensor
+
+
+# get the length of the specified axis for input_tensor
+def get_axis_length(network, input_tensor, axis, is_scalar=False):
+    input_shape = input_tensor.shape
+    if input_shape[axis] >= 0:
+        output_tensor = add_1D_constant_layer(
+            network, input_shape[axis], is_scalar=is_scalar
+        )
+    else:
+        dynamic_shape = trt_shape(network, input_tensor)
+        output_tensor = get_shape_tensor_element(
+            network, dynamic_shape, axis, is_scalar
+        )
+    return output_tensor

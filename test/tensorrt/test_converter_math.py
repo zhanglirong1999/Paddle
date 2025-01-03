@@ -270,6 +270,75 @@ class TestAll1TRTPattern(TensorRTBaseTest):
         self.check_trt_result()
 
 
+class TestCumsumCase1TRTPattern(TensorRTBaseTest):
+    def setUp(self):
+        self.python_api = paddle.cumsum
+        self.api_args = {
+            "x": np.random.randn(2, 2, 3).astype("float32"),
+            "axis": -1,
+        }
+        self.program_config = {"feed_list": ["x"]}
+        self.min_shape = {"x": [1, 2, 3]}
+        self.max_shape = {"x": [5, 2, 3]}
+
+    def test_trt_result_fp16(self):
+        self.check_trt_result(precision_mode="fp16")
+
+    def test_trt_result_fp32(self):
+        self.check_trt_result()
+
+
+class TestCumsumCase2TRTPattern(TensorRTBaseTest):
+    def setUp(self):
+        self.python_api = paddle.cumsum
+        self.api_args = {
+            "x": np.random.randn(2, 2, 3).astype("float32"),
+            "axis": 1,
+        }
+        self.program_config = {"feed_list": ["x"]}
+        self.min_shape = {"x": [1, 2, 3]}
+        self.max_shape = {"x": [5, 2, 3]}
+
+    def test_trt_result_fp16(self):
+        self.check_trt_result(precision_mode="fp16")
+
+    def test_trt_result_fp32(self):
+        self.check_trt_result()
+
+
+class TestCumsumCase3TRTPattern(TensorRTBaseTest):
+    def setUp(self):
+        self.python_api = paddle.cumsum
+        self.api_args = {
+            "x": np.random.randn(2, 2, 3).astype("float32"),
+            "axis": 0,
+        }
+        self.program_config = {"feed_list": ["x"]}
+        self.min_shape = {"x": [1, 2, 3]}
+        self.max_shape = {"x": [5, 2, 3]}
+
+    def test_trt_result_fp16(self):
+        self.check_trt_result(precision_mode="fp16")
+
+    def test_trt_result_fp32(self):
+        self.check_trt_result()
+
+
+class TestCumsumCase4TRTPattern(TensorRTBaseTest):
+    def setUp(self):
+        self.python_api = paddle.cumsum
+        self.api_args = {
+            "x": np.random.randn(2, 2, 3).astype("int64"),
+            "axis": 0,
+        }
+        self.program_config = {"feed_list": ["x"]}
+        self.min_shape = {"x": [1, 2, 3]}
+        self.max_shape = {"x": [5, 2, 3]}
+
+    def test_trt_result(self):
+        self.check_trt_result()
+
+
 class TestFloorDivideFloatTRTPattern(TensorRTBaseTest):
     def setUp(self):
         self.python_api = paddle.floor_divide
