@@ -125,10 +125,6 @@ class IR_API InferSymbolicShapeContext {
   bool IsBroadcastable(const symbol::DimExpr& lhs,
                        const symbol::DimExpr& rhs) const;
 
-  void SubstituteInConstraint(
-      const std::unordered_map<symbol::DimExpr, symbol::DimExpr>&
-          substitution_pattern);
-
   bool HasPredefinedRange(const symbol::DimExpr& dim_expr) const;
 
   void PrintShapeOrDatas() const;
@@ -218,10 +214,6 @@ class IR_API ShapeConstraintIRAnalysis final
 
   bool IsBroadcastable(const symbol::DimExpr& lhs,
                        const symbol::DimExpr& rhs) const;
-
-  void SubstituteInConstraint(
-      const std::unordered_map<symbol::DimExpr, symbol::DimExpr>&
-          substitution_pattern);
 
   // Used to debug
   void PrintShapeOrDatas() const;

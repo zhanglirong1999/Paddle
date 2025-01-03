@@ -1251,15 +1251,6 @@ IR_API PriorityComparisonStatus CompareDimExprPriority(const DimExpr& lhs,
                                        : PriorityComparisonStatus::LOWER;
   }
 
-  const auto& HasSubset = [&](const DimExpr& lhs, const DimExpr& rhs) {
-    std::unordered_map<DimExpr, DimExpr> subsitute_patterns;
-    subsitute_patterns[rhs] = DimExpr{"NS"};
-    if (SubstituteDimExpr(lhs, subsitute_patterns) != lhs) return true;
-    return false;
-  };
-  if (HasSubset(lhs, rhs)) return PriorityComparisonStatus::LOWER;
-  if (HasSubset(rhs, lhs)) return PriorityComparisonStatus::HIGHER;
-
   auto CompareForEqualPriority = common::Overloaded{
       [](const std::string& lhs, const std::string& rhs) {
         if (lhs.size() != rhs.size()) {

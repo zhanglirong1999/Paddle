@@ -235,7 +235,6 @@ CreateGroupShapeOrDataExprs(
 
   local_shape_analysis.RegisterSymbolConstraintFromShapeAnalysis(
       global_shape_analysis);
-  local_shape_analysis.SubstituteInConstraint(dim_expr_map);
   for (const auto& item : dim_expr_map) {
     local_shape_analysis.AddEqualCstr(item.first, item.second);
   }
