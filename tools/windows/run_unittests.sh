@@ -441,7 +441,7 @@ disable_wincpu_test="^jit_kernel_test$|\
 ^test_se_resnet$|\
 ^disable_wincpu_test$"
 
-# these unittest that cost long time, diabled temporarily, Maybe moved to the night
+# these unittest that cost long time, disabled temporarily, Maybe moved to the night
 long_time_test="^test_gru_op$|\
 ^decorator_test$|\
 ^test_dataset_imdb$|\

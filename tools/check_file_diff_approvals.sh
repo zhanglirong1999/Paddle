@@ -64,7 +64,7 @@ fi
 
 changed_deprecated_tests_count=$(expr $(git ls-tree -r --name-only HEAD ${PADDLE_ROOT}/test/deprecated | grep '^test' | wc -l) - $(git ls-tree -r --name-only upstream/$BRANCH ${PADDLE_ROOT}/test/deprecated | grep '^tes' | wc -l))
 if [[ $changed_deprecated_tests_count -gt 0 ]]; then
-    echo_line="You must have one RD (wanghuancoder (Recommend)) approval for add new test in test/deprecated direcotry.\n"
+    echo_line="You must have one RD (wanghuancoder (Recommend)) approval for add new test in test/deprecated directory.\n"
     check_approval 1 wanghuancoder
 fi
 

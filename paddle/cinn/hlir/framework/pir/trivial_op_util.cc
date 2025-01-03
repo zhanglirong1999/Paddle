@@ -398,7 +398,7 @@ ExprSetFinder FindFather(const ir::Expr& root) {
 ExprSetFinder DirectlyFather(const ir::Expr& root) {
   const auto& f = [root](const auto& child) -> ExprSet {
     ExprSet result = FindFather(root)(child);
-    // VLOG(4) << "Direcly Father of \n" << child << "\nIn root: \n" << root <<
+    // VLOG(4) << "Directly Father of \n" << child << "\nIn root: \n" << root <<
     // "\n is : "; for (const auto& r: result){ VLOG(4) << "\n  RESULT: " << r;
     //}
     return {result[result.size() - 1]};

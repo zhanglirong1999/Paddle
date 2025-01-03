@@ -733,7 +733,7 @@ void BuildOpFuncList(const phi::Place& place,
     try {
       if (dynamic_cast<framework::OperatorWithKernel*>(op) == nullptr) {
         VLOG(4) << "HandleOperatorBase";
-        // op is not a operatorwithkernel, so direcly run OperatorBase::Run()
+        // op is not a operatorwithkernel, so directly run OperatorBase::Run()
 
         std::vector<std::shared_ptr<OperatorBase>> following_ops(
             ops.begin() + static_cast<int>(i) + 1, ops.end());
