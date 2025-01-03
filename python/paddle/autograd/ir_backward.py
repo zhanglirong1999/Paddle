@@ -1113,7 +1113,7 @@ def calc_gradient_helper(
     grad_outputs: Value | Sequence[Value | None] | None = None,
     no_grad_set: set[Value] | None = None,
 ) -> ValueDict:
-    block = outputs[0].get_defining_op().get_parent_block()
+    block = paddle.base.libpaddle.pir.get_current_insertion_point().block()
     state = State(block)
     if all_stop_gradient_true(block):
         logging.warning(
