@@ -590,7 +590,7 @@ class _DataLoaderIterMultiProcess(_DataLoaderIterBase):
                 self._clear_and_remove_data_queue()
 
                 # set _workers_done_event should be set before put None
-                # to indices_queue, workers wll exit on reading None from
+                # to indices_queue, workers will exit on reading None from
                 # indices_queue
                 self._workers_done_event.set()
                 for i in range(self._num_workers):
