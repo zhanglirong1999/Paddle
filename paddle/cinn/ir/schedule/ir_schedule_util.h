@@ -205,7 +205,7 @@ Expr MakeCacheBlock(const std::vector<IterRange>& buffer_ranges,
                     DeviceAPI device_api);
 
 /**
- * Fidn cache tensor block's insertion point in the whole AST(root).
+ * Find cache tensor block's insertion point in the whole AST(root).
  * @param root The whole AST.
  * @param info The information of cache block.
  * @param is_write Are we inserting a write cache tensor or a read cache tensor.

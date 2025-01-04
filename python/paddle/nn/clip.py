@@ -743,7 +743,7 @@ class ClipGradByGlobalNorm(ClipGradBase):
             else:
                 sum_square_list.append(sum_square)
 
-        # all parameters have been filterd out
+        # all parameters have been filtered out
         if (
             len(sum_square_list)
             + len(sum_square_list_fp16)
@@ -935,7 +935,7 @@ class ClipGradByGlobalNorm(ClipGradBase):
                 else:
                     sum_square_not_dist.append(sum_square)
 
-        # all parameters have been filterd out
+        # all parameters have been filtered out
         if (
             len(no_fusion_sum_square)
             + len(no_fusion_sum_square_fp16)
@@ -1135,7 +1135,7 @@ class ClipGradByGlobalNorm(ClipGradBase):
                     'FP16 and BF16 are not supported at the same time.'
                 )
 
-            # all parameters have been filterd out
+            # all parameters have been filtered out
             if (
                 len(sum_square_list)
                 + len(sum_square_list_fp16)

@@ -47,7 +47,7 @@ class CollectiveController(Controller):
         else:
             if self.ctx.args.auto_parallel_config is None:
                 skip_run = True
-            # only when skip_run is Flase, should not reset pod
+            # only when skip_run is False, should not reset pod
             return self._build_pod_with_master(skip_run)
 
     def _build_pod_with_tuner(self):
