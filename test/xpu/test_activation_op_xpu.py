@@ -340,10 +340,16 @@ class XPUTestTanhOP(XPUOpTestWrapper):
             self.op_type = "tanh"
             self.dtype = self.in_type
 
-            x = np.random.uniform(-1, 1, [11, 17]).astype(self.dtype)
+            x = np.random.uniform(-1, 1, [11, 17])
+            if self.dtype == np.uint16:
+                # bfloat16 actually
+                new_x = convert_float_to_uint16(x)
+            else:
+                new_x = x.astype(self.dtype)
+
             out = np.tanh(x)
             self.attrs = {'use_xpu': True}
-            self.inputs = {'X': OpTest.np_dtype_to_base_dtype(x)}
+            self.inputs = {'X': new_x}
             self.outputs = {'Out': out}
 
 
