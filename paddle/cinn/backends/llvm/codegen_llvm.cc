@@ -278,11 +278,13 @@ llvm::Value *CodeGenLLVM::Visit(const ir::StringImm *op) {
 }
 
 llvm::Value *CodeGenLLVM::Visit(const ir::Add *op) {
+  ir::TryElevateInt32ToInt64({op->a(), op->b()});
   return EmitBinaryOp(
       Visit(&op->a()), Visit(&op->b()), '+', is_integral_type(op->type()));
 }
 
 llvm::Value *CodeGenLLVM::Visit(const ir::Sub *op) {
+  ir::TryElevateInt32ToInt64({op->a(), op->b()});
   return EmitBinaryOp(
       Visit(&op->a()), Visit(&op->b()), '-', is_integral_type(op->type()));
 }
@@ -295,11 +297,13 @@ llvm::Value *CodeGenLLVM::Visit(const ir::Mul *op) {
 }
 
 llvm::Value *CodeGenLLVM::Visit(const ir::Div *op) {
+  ir::TryElevateInt32ToInt64({op->a(), op->b()});
   return EmitBinaryOp(
       Visit(&op->a()), Visit(&op->b()), '/', is_integral_type(op->type()));
 }
 
 llvm::Value *CodeGenLLVM::Visit(const ir::Mod *op) {
+  ir::TryElevateInt32ToInt64({op->a(), op->b()});
   return EmitBinaryOp(
       Visit(&op->a()), Visit(&op->b()), '%', is_integral_type(op->type()));
 }

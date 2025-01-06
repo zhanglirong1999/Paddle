@@ -83,10 +83,16 @@ Expr Cast::Make(Type t, Expr v) {
   }
 #undef __CAST_TO_TYPE
 
-  if (v.node_type() != ir::IrNodeTy::Load && v.is_index() && t == Int(64)) {
+  // Cast indexExpr without `cast` and `load`
+  if (common::VerifyIndex(v) == common::IndexType::kValid && t == Int(64)) {
     v->convert_int32_to_int64();
     return v;
   }
+  if (common::VerifyIndex(v) == common::IndexType::kValid && t == Int(32)) {
+    v->convert_int64_to_int32();
+    return v;
+  }
+
   auto node = make_shared<Cast>();
   node->v() = v;
   node->set_type(t);
@@ -113,8 +119,6 @@ IndexExpr Add::Make(IndexExpr a, IndexExpr b) {
   node->set_index(true);
   return IndexExpr(node);
 }
-
-Add::Add(Expr a, Expr b) : BinaryOpNode<Add>(a.type(), a, b) {}
 
 void BinaryNodeVerify(const Expr &a, const Expr &b, absl::string_view ir_name) {
   PADDLE_ENFORCE_EQ(
@@ -1382,6 +1386,26 @@ void Reduce::Verify() const {
                         "Received init type: %s, body type: %s",
                         init.type().to_string().c_str(),
                         body.type().to_string().c_str()));
+}
+
+Select::Select(Expr condition, Expr true_value, Expr false_value)
+    : ExprNode<Select>(true_value.type()),
+      condition(condition),
+      true_value(true_value),
+      false_value(false_value) {
+  TryElevateInt32ToInt64({true_value, false_value});
+  PADDLE_ENFORCE_EQ(true_value.type(),
+                    false_value.type(),
+                    ::common::errors::InvalidArgument(
+                        "The type of true_value and false_value should be the "
+                        "same. T: %s, F: %s",
+                        true_value,
+                        false_value));
+  PADDLE_ENFORCE_EQ(condition.type().is_bool(),
+                    true,
+                    ::common::errors::PreconditionNotMet(
+                        "The condition must be of boolean type."));
+  type_ = true_value.type();
 }
 
 Type Select::type() const {
