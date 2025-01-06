@@ -34,7 +34,7 @@ from paddle.distributed.fleet.meta_optimizers.common import OpRole
 from paddle.distributed.passes.pass_base import new_pass
 from paddle.distributed.passes.pass_utils import (
     _split_program_into_forward_backward_optimize,
-    set_pir_skip_gc_vars,
+    set_skip_gc_vars,
 )
 from paddle.framework import (
     IrGraph,
@@ -943,7 +943,7 @@ class Engine:
             opt_job.set_micro_batch_id(0)
             jobs.append(opt_job)
 
-            type_to_program = set_pir_skip_gc_vars(
+            type_to_program = set_skip_gc_vars(
                 self._strategy.gradient_merge.k_steps,
                 job_types,
                 sub_programs,
