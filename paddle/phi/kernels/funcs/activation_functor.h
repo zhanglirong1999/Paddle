@@ -2952,7 +2952,7 @@ struct RoundFunctor : public BaseActivationFunctor<T> {
   int decimals;
 
   std::vector<std::pair<const char*, int*>> GetAttrs() {
-    return {{"deciamls", &decimals}};
+    return {{"decimals", &decimals}};
   }
 
   template <typename Device, typename X, typename Out>
@@ -5178,7 +5178,7 @@ struct CudaRoundFunctor : public BaseActivationFunctor<T> {
   int decimals;
 
   std::vector<std::pair<const char*, int*>> GetAttrs() {
-    return {{"deciamls", &decimals}};
+    return {{"decimals", &decimals}};
   }
   // round(x) = round(x)
   __device__ __forceinline__ T operator()(const T arg_x) const {

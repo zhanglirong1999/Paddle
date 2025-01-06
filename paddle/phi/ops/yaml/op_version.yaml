@@ -566,7 +566,7 @@
 
 - op : round
   version :
-    - checkpoint : Add a new attribute [deciamls] to round
+    - checkpoint : Add a new attribute [decimals] to round
       action :
         - add_attr : decimals
           comment : The number of decimal places rounded
