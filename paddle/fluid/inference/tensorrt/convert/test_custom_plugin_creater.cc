@@ -36,7 +36,7 @@ PD_BUILD_OP(custom_op)
 
 namespace paddle::inference::tensorrt {
 
-TEST(CustomPluginCreator, StaticShapePlugin) {
+TEST(CustomPluginCreater, StaticShapePlugin) {
   framework::ProgramDesc prog;
   auto *block = prog.MutableBlock(0);
   auto *op = block->AppendOp();
@@ -118,14 +118,14 @@ TEST(CustomPluginCreator, StaticShapePlugin) {
           "(*custom_plugin_tell)(custom_op, false, true) is False."));
 
   OpTeller::Global().SetOpConverterType(&custom_op,
-                                        OpConverterType::CustomPluginCreator);
+                                        OpConverterType::CustomPluginCreater);
 
   OpConverter converter;
   converter.ConvertBlock(
       *block->Proto(), {}, scope, engine_.get() /*TensorRTEngine*/);
 }
 
-TEST(CustomPluginCreator, DynamicShapePlugin) {
+TEST(CustomPluginCreater, DynamicShapePlugin) {
   framework::ProgramDesc prog;
   auto *block = prog.MutableBlock(0);
   auto *op = block->AppendOp();
@@ -204,7 +204,7 @@ TEST(CustomPluginCreator, DynamicShapePlugin) {
           "(*custom_plugin_tell)(custom_op, false, true) is False."));
 
   OpTeller::Global().SetOpConverterType(&custom_op,
-                                        OpConverterType::CustomPluginCreator);
+                                        OpConverterType::CustomPluginCreater);
 
   OpConverter converter;
   converter.ConvertBlock(
@@ -212,4 +212,4 @@ TEST(CustomPluginCreator, DynamicShapePlugin) {
 }
 }  // namespace paddle::inference::tensorrt
 
-USE_TRT_CONVERTER(custom_plugin_creator)
+USE_TRT_CONVERTER(custom_plugin_creater)

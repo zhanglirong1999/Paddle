@@ -48,9 +48,9 @@ Tensor CreateRFTensor(const Tensor& original_tensor,
 
 // Base class to create a new reduce block,
 // only used for FactorizeReduction schedule primitive.
-class ReduceBlockCreator {
+class ReduceBlockCreater {
  public:
-  ReduceBlockCreator(const Expr& original_block,
+  ReduceBlockCreater(const Expr& original_block,
                      const std::vector<Expr>& original_loops,
                      const Expr& rf_loop,
                      const Expr& original_update_stmt,
@@ -245,9 +245,9 @@ class LoadReplacer : public ir::IRMutator<> {
 
 // Implement class for building Reduction-Factorized block,
 // only used for FactorizeReduction schedule primitive.
-class RFBlockCreator : public ReduceBlockCreator {
+class RFBlockCreater : public ReduceBlockCreater {
  public:
-  RFBlockCreator(const Expr& original_block,
+  RFBlockCreater(const Expr& original_block,
                  const std::vector<Expr>& original_loops,
                  const Expr& rf_loop,
                  const Expr& original_update_stmt,
@@ -255,7 +255,7 @@ class RFBlockCreator : public ReduceBlockCreator {
                  const std::map<Var, Expr, CompVar>& var2loops,
                  const Expr& bound_check,
                  int rf_axis)
-      : ReduceBlockCreator(original_block,
+      : ReduceBlockCreater(original_block,
                            original_loops,
                            rf_loop,
                            original_update_stmt,
@@ -391,16 +391,16 @@ class RFBlockCreator : public ReduceBlockCreator {
 
 // Implement class for building Writing-Back block,
 // only used for FactorizeReduction schedule primitive.
-class RBBlockCreator : public ReduceBlockCreator {
+class RBBlockCreater : public ReduceBlockCreater {
  public:
-  RBBlockCreator(const Expr& original_block,
+  RBBlockCreater(const Expr& original_block,
                  const std::vector<Expr>& original_loops,
                  const Expr& rf_loop,
                  const Expr& original_update_stmt,
                  const ir::Tensor& rf_tensor,
                  const std::vector<Expr>& rf_tensor_access_indices,
                  const Var& rf_block_rf_iter_var)
-      : ReduceBlockCreator(original_block,
+      : ReduceBlockCreater(original_block,
                            original_loops,
                            rf_loop,
                            original_update_stmt,

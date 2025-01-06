@@ -117,7 +117,7 @@ class ReverseRollPluginDynamic : public DynamicPluginTensorRT {
   bool with_fp16_;
 };
 
-class ReverseRollPluginDynamicCreator : public TensorRTPluginCreator {
+class ReverseRollPluginDynamicCreater : public TensorRTPluginCreator {
  public:
   const char* getPluginName() const TRT_NOEXCEPT override {
     return "reverse_roll_dynamic";
@@ -130,7 +130,7 @@ class ReverseRollPluginDynamicCreator : public TensorRTPluginCreator {
     return new ReverseRollPluginDynamic(serial_data, serial_length);
   }
 };
-REGISTER_TRT_PLUGIN_V2(ReverseRollPluginDynamicCreator);
+REGISTER_TRT_PLUGIN_V2(ReverseRollPluginDynamicCreater);
 
 }  // namespace plugin
 }  // namespace tensorrt

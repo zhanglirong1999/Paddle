@@ -23,7 +23,7 @@ limitations under the License. */
 
 namespace paddle::inference::tensorrt {
 
-class CustomPluginCreator : public OpConverter {
+class CustomPluginCreater : public OpConverter {
  public:
   void operator()(const framework::proto::OpDesc &op,
                   const framework::Scope &scope,
@@ -160,7 +160,7 @@ class CustomPluginCreator : public OpConverter {
   }
 };
 
-class GenericPluginCreator : public OpConverter {
+class GenericPluginCreater : public OpConverter {
  public:
   void operator()(const framework::proto::OpDesc &op,
                   const framework::Scope &scope,
@@ -245,7 +245,7 @@ class GenericPluginCreator : public OpConverter {
   }
 };
 
-class CustomGenericPluginCreator : public OpConverter {
+class CustomGenericPluginCreater : public OpConverter {
  public:
   void operator()(const framework::proto::OpDesc &op,
                   const framework::Scope &scope,
@@ -334,7 +334,7 @@ class CustomGenericPluginCreator : public OpConverter {
 
 }  // namespace paddle::inference::tensorrt
 
-REGISTER_TRT_OP_CONVERTER(custom_plugin_creator, CustomPluginCreator);
-REGISTER_TRT_OP_CONVERTER(generic_plugin_creator, GenericPluginCreator);
-REGISTER_TRT_OP_CONVERTER(custom_generic_plugin_creator,
-                          CustomGenericPluginCreator);
+REGISTER_TRT_OP_CONVERTER(custom_plugin_creater, CustomPluginCreater);
+REGISTER_TRT_OP_CONVERTER(generic_plugin_creater, GenericPluginCreater);
+REGISTER_TRT_OP_CONVERTER(custom_generic_plugin_creater,
+                          CustomGenericPluginCreater);

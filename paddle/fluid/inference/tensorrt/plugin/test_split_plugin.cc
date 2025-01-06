@@ -50,7 +50,7 @@ TEST(split_op_plugin, test_plugin) {
   sp_plugin.terminate();
 }
 
-TEST(split_op_plugin, test_plugin_creator) {
+TEST(split_op_plugin, test_plugin_creater) {
   SplitPluginCreator creator;
   creator.getFieldNames();
   creator.createPlugin("test", nullptr);

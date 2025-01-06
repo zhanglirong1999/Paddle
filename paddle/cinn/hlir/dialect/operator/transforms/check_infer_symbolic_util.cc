@@ -54,7 +54,7 @@ std::ostream& operator<<(std::ostream& stream,
 }
 
 DimExprs4ValueT MakeDimExprs4Value(
-    pir::Program* program, const PassManagerCreator& CreatePassManager) {
+    pir::Program* program, const PassManagerCreater& CreatePassManager) {
   std::shared_ptr<pir::PassManager> pass_manager = CreatePassManager();
   pass_manager->AddPass(pir::CreateShapeOptimizationPass());
   pass_manager->Run(program);
@@ -623,7 +623,7 @@ void CheckProgramDimExprConstraints(
 }  // namespace
 
 void CheckInferSymbolicIfNeed(pir::Program* program,
-                              const PassManagerCreator& CreatePassManager) {
+                              const PassManagerCreater& CreatePassManager) {
   if (!FLAGS_prim_all || !FLAGS_check_infer_symbolic) return;
   const auto& GraphDimExprs4Value =
       MakeDimExprs4Value(program, CreatePassManager);

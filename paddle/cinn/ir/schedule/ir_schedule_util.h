@@ -1313,9 +1313,9 @@ struct FindBlockParent : public ir::IRMutator<> {
 };
 
 // The struct used to create all stmts after rfactor transformation.
-struct RfCreator : public ir::IRMutator<> {
+struct RfCreater : public ir::IRMutator<> {
  public:
-  RfCreator(const Expr& root, const Expr& rf_loop, const int& rf_axis)
+  RfCreater(const Expr& root, const Expr& rf_loop, const int& rf_axis)
       : root_(root), rf_loop_(rf_loop), rf_axis_(rf_axis) {}
   void operator()(Expr* expr) { IRMutator::Visit(expr, expr); }
 
@@ -1360,7 +1360,7 @@ struct RfCreator : public ir::IRMutator<> {
     Expr final_forloop = ir::ir_utils::IRCopy(root_loop);
     FinalMutator final_mutator(rf_loop_, rf_axis_, new_rf_tensor);
     final_mutator(&final_forloop);
-    VLOG(3) << "After FinalMutator, final write-back forloop is\n"
+    VLOG(3) << "After FinalMuator, final write-back forloop is\n"
             << final_forloop;
     // combine the new created rfactor forloops with the final write-back
     // forloops and replace

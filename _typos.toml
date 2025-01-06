@@ -34,6 +34,8 @@ pash = 'pash'
 unpacket = "unpacket"
 
 # These words need to be fixed
+Creater = 'Creater'
+creater = 'creater'
 dateset = 'dateset'
 delt = 'delt'
 dealed = 'dealed'
