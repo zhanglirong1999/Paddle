@@ -739,7 +739,7 @@ class _DataLoaderIterMultiProcess(_DataLoaderIterBase):
                 if self._dataset_kind == _DatasetKind.ITER and isinstance(
                     data, _IterableDatasetStopIteration
                 ):
-                    # if a worker get StopIteraion, we shutdown this worker,
+                    # if a worker get StopIteration, we shutdown this worker,
                     # note that this batch indices to trigger StopIteration
                     # is discard, outstanding batch number should be decrease
                     # and another indices should be put for other workers

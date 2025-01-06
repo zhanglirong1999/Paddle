@@ -2576,8 +2576,8 @@ class DygraphNodeGenerator(DygraphFunctionGeneratorBase):
                         optional_inplace_var_name.append(
                             transformed_tensor_name
                         )
-                tensor_wrapper_intermidiate_tensor_str = (
-                    f"(&this->{tensor_wrapper_name})->get_intermidiate_tensor()"
+                tensor_wrapper_intermediate_tensor_str = (
+                    f"(&this->{tensor_wrapper_name})->get_intermediate_tensor()"
                 )
                 inplace_check_str += CHECK_BACKWARD_INPLACE_TEMPLATE.format(
                     transformed_tensor_name,
@@ -2587,7 +2587,7 @@ class DygraphNodeGenerator(DygraphFunctionGeneratorBase):
                     transformed_tensor_name,
                     transformed_tensor_name,
                     transformed_tensor_name,
-                    tensor_wrapper_intermidiate_tensor_str,
+                    tensor_wrapper_intermediate_tensor_str,
                     transformed_tensor_name,
                     transformed_tensor_name,
                     transformed_tensor_name,

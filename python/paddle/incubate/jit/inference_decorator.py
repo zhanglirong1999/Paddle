@@ -640,7 +640,7 @@ def inference(
         )
 
         # This is the innermost_decorator, ie. when user invoke the function decorated by @paddle.incubate.jit.inference()
-        # he is actually invoke this internel function.
+        # he is actually invoke this internal function.
         def innermost_decorator(*args, **kwargs):
             input_tensor_lists = infer_engine.get_input_tensor_lists(
                 *args, **kwargs

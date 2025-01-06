@@ -249,7 +249,7 @@ std::vector<ir::Expr> FusionInterpreter::Run() {
         break;
       default:
         PADDLE_THROW(
-            ::common::errors::Unavailable("Unsupported Fusion Instrution"));
+            ::common::errors::Unavailable("Unsupported Fusion Instruction"));
     }
   }
 

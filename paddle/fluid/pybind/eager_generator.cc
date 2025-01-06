@@ -2234,8 +2234,8 @@ static std::string GenerateSingleOpBase(
                                     bwd_inplace_input_name,
                                     struct_fwd_input_name);
         const char* GRAD_INS_FWD_TENSOR_TEMPLATE =
-            "(&this->%s)->get_intermidiate_tensor()";
-        std::string tensor_wrapper_intermidiate_tensor_str =
+            "(&this->%s)->get_intermediate_tensor()";
+        std::string tensor_wrapper_intermediate_tensor_str =
             paddle::string::Sprintf(GRAD_INS_FWD_TENSOR_TEMPLATE,
                                     struct_fwd_input_name);
         generated_grad_function_body +=
@@ -2249,7 +2249,7 @@ static std::string GenerateSingleOpBase(
                                     bwd_inplace_input_name,
                                     bwd_inplace_input_name,
                                     bwd_inplace_input_name,
-                                    tensor_wrapper_intermidiate_tensor_str,
+                                    tensor_wrapper_intermediate_tensor_str,
                                     can_be_inplaced_name);
       }
     } else if (grad_ins_grad_slotname_map.count(grad_input_name)) {

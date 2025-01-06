@@ -4,6 +4,9 @@ extend-exclude = [
     "third_party",
     "patches",
     "build",
+    # Skip `intermidiate` check in these files
+    "test/cpp/eager/task_tests/CMakeLists.txt",
+    "test/cpp/eager/task_tests/hook_test_intermidiate.cc",
 ]
 
 [default]
@@ -111,23 +114,6 @@ insid = 'insid'
 insepection = 'insepection'
 intall = 'intall'
 instanciate = 'instanciate'
-Instrution = 'Instrution'
-INSTUCTION = 'INSTUCTION'
-instuction = 'instuction'
-interger = 'interger'
-intermidiate = 'intermidiate'
-itermediate = 'itermediate'
-interal = 'interal'
-internel = 'internel'
-instrinsics = 'instrinsics'
-intristic = 'intristic'
-invalied = 'invalied'
-Invaid = 'Invaid'
-invaild = 'invaild'
-invalide = 'invalide'
-iteratable = 'iteratable'
-interated = 'interated'
-Iteraion = 'Iteraion'
 occured = 'occured'
 Ocurred = 'Ocurred'
 occures = 'occures'

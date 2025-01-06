@@ -1352,7 +1352,7 @@ class OpcodeExecutorBase:
         next_instr = self._instructions[self._lasti]
         assert (
             next_instr.opname in NEED_TO_BOOL
-        ), f"The bytecode is illegal! The opcode following TO_BOOL must be in ['POP_JUMP_IF_TRUE', 'POP_JUMP_IF_FALSE', 'UNARY_NOT'], the next instuction now is {next_instr.opname}"
+        ), f"The bytecode is illegal! The opcode following TO_BOOL must be in ['POP_JUMP_IF_TRUE', 'POP_JUMP_IF_FALSE', 'UNARY_NOT'], the next instruction now is {next_instr.opname}"
 
     @call_break_graph_decorator(push_n=1)
     def IS_OP(self, instr: Instruction):

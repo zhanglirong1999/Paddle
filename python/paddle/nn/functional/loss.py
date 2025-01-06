@@ -1917,7 +1917,7 @@ def ctc_loss(
     An operator integrating the open source Warp-CTC library (https://github.com/baidu-research/warp-ctc)
     to compute Connectionist Temporal Classification (CTC) loss.
     It can be aliased as softmax with CTC, since a native softmax activation
-    is interated to the Warp-CTC library to normalize values for each row of the input tensor.
+    is integrated to the Warp-CTC library to normalize values for each row of the input tensor.
 
     Parameters:
         log_probs (Tensor): The unscaled probability sequence with padding, which is a 3-D Tensor. The tensor shape is [max_logit_length, batch_size, num_classes + 1], where max_logit_length is the longest length of input logit sequence. The data type should be float32 or float64.
