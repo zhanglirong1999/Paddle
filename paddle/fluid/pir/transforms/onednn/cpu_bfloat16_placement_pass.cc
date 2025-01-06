@@ -280,9 +280,28 @@ class RemoveOrphanedPattern : public pir::RewritePattern {
                                              "pd_op.fetch",
                                              "pd_op.assign"});
 
+    const std::vector<std::string> permitted_input_names = {
+        "x", "y", "input", "residual_param", "residual_data"};
+    auto op_name = op->name();
+    auto op_info = pir::IrContext::Instance()->GetRegisteredOpInfo(op_name);
+    if (!op_info) return false;
+    paddle::dialect::OpYamlInfoParser yaml_parser(
+        op_info.GetInterfaceImpl<paddle::dialect::OpYamlInfoInterface>()
+            ->get_op_info_(op_name),
+        paddle::dialect::IsLegacyOp(op_name));
+    auto input_names = yaml_parser.InputNames();
+
     if (op->num_operands()) {
       for (uint32_t i = 0; i < op->num_operands(); i++) {
         if (!op->operand_source(i) || !op->operand_source(i).type()) {
+          continue;
+        }
+        std::string input_name = input_names[i];
+        auto iter = std::find(permitted_input_names.begin(),
+                              permitted_input_names.end(),
+                              input_name);
+        if (iter == permitted_input_names.end()) {
+          // The input in permitted_input, it must be bf16, others can be fp32
           continue;
         }
         auto* prev_op = pir::GetDefiningOpForInput(op, i);
