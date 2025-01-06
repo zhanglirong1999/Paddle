@@ -28,7 +28,7 @@ class TestQuantileAndNanquantile(unittest.TestCase):
     """
     This class is used for numerical precision testing. If there is
     a corresponding numpy API, the precision comparison can be performed directly.
-    Otherwise, it needs to be verified by numpy implementated function.
+    Otherwise, it needs to be verified by numpy implemented function.
     """
 
     def setUp(self):

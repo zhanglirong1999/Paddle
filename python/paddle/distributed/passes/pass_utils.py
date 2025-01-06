@@ -1119,7 +1119,7 @@ def _split_program_for_vpp(
                     f"Cannot infer chunk_id for op {op.name()} at index {idx}"
                 )
 
-        # Step2.2: indentify the job_type of the op
+        # Step2.2: identify the job_type of the op
         if op_role == int(OpRole.Optimize):
             job_type = "optimizer"
         elif op_role == int(OpRole.Backward) and split_bw:
