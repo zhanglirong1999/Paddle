@@ -305,7 +305,6 @@ class RemoveOrphanedPattern : public pir::RewritePattern {
           continue;
         }
         auto* prev_op = pir::GetDefiningOpForInput(op, i);
-        // if (!prev_op) continue;
         // Some ops do not need to be processed
         std::string prev_name = prev_op->name();
         if (constant_op.count(prev_name)) {
