@@ -43,8 +43,6 @@ const std::unordered_set<std::string> LegacyOpList = {
     CAllreduceSum_Op::name(),
     CSplitOp::name(),
     PushDenseOp::name(),
-    SoftReluOp::name(),
-    SoftReluGradOp::name(),
     CScatterOp::name(),
     PullBoxSparseOp::name(),
     PushBoxSparseOp::name(),
