@@ -678,7 +678,9 @@ def auto_recompute(
     )
     DebugPrint("program after recompute:", program_after_recompute)
     end_time = time.time()
-    logging.info(
+    logger = logging.getLogger("auto-recompute")
+    logger.setLevel(logging.INFO)
+    logger.info(
         f"Time of auto recompute program: ***** [ {end_time - start_time} ] ***** seconds."
     )
     return program_after_recompute, fwd_op_end_idx_after_recompute
