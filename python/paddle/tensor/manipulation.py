@@ -2106,6 +2106,7 @@ def roll(
             x,
             'dtype',
             [
+                'bool',
                 'float16',
                 'float32',
                 'uint16',
