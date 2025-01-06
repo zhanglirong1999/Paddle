@@ -538,6 +538,7 @@ void EmbeddingGradInferMeta(const MetaTensor& x,
   (void)x;
   if (weight) {
     out->share_dims(weight);
+    out->set_dtype(weight.dtype());
   }
 }
 
