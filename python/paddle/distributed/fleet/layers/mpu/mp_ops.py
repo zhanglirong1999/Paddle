@@ -266,15 +266,7 @@ class mp_allreduce_eager(PyLayer):
         if ctx.skip_c_identity_dynamic:
             return dy
         else:
-            return _legacy_C_ops.c_identity(
-                dy,
-                'use_calc_stream',
-                True,
-                'ring_id',
-                ctx.ring_id,
-                'use_model_parallel',
-                True,
-            )
+            return _C_ops.c_identity(dy, ctx.ring_id, True, True)
 
 
 def _mp_allreduce(
