@@ -265,6 +265,7 @@ class ActOpPattern : public pir::OpRewritePattern<OpType> {
 };
 using TanhOpPattern = ActOpPattern<paddle::dialect::TanhOp>;
 using CeluOpPattern = ActOpPattern<paddle::dialect::CeluOp>;
+using TanhShrinkOpPattern = ActOpPattern<paddle::dialect::TanhShrinkOp>;
 using LogicalNotOpPattern = ActOpPattern<paddle::dialect::LogicalNotOp>;
 using LogicalNot_OpPattern = ActOpPattern<paddle::dialect::LogicalNot_Op>;
 
@@ -2302,6 +2303,7 @@ class TrtOpMarkerPass : public pir::PatternRewritePass {
     ps.Add(std::make_unique<ClipPattern>(context));
     ps.Add(std::make_unique<GridSampleOpPattern>(context));
     ps.Add(std::make_unique<StackOpPattern>(context));
+    ps.Add(std::make_unique<TanhShrinkOpPattern>(context));
     ps.Add(std::make_unique<WherePattern>(context));
     ps.Add(std::make_unique<FullLikeOpPattern>(context));
     ps.Add(std::make_unique<FullWithTensorPattern>(context));
