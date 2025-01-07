@@ -1054,18 +1054,17 @@ void AnalysisPredictor::OptimizeInferencePirProgram() {
   if (config_.enable_gpu_mixed_) {
     if (!config_.cinn_enabled()) {
       AddAutoMixedPrecisionPass(basic_pass_pm);
-
-      if (FLAGS_enable_auto_layout_pass) {
-        AddAutoLayoutPasses(basic_pass_pm);
-      } else {
-        auto transfer_layout_pass = ::pir::CreateTransferLayoutPass();
-        if (std::find(config_.deleted_passes_.begin(),
-                      config_.deleted_passes_.end(),
-                      transfer_layout_pass->name()) ==
-            config_.deleted_passes_.end()) {
-          basic_pass_pm.AddPass(std::move(transfer_layout_pass));
-        }
-      }
+    }
+  }
+  if (FLAGS_enable_auto_layout_pass) {
+    AddAutoLayoutPasses(basic_pass_pm);
+  } else {
+    auto transfer_layout_pass = ::pir::CreateTransferLayoutPass();
+    if (std::find(config_.deleted_passes_.begin(),
+                  config_.deleted_passes_.end(),
+                  transfer_layout_pass->name()) ==
+        config_.deleted_passes_.end()) {
+      basic_pass_pm.AddPass(std::move(transfer_layout_pass));
     }
   }
   auto common_subexpression_elimination_pass =
