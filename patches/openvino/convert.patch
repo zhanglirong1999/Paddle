@@ -1,7 +1,7 @@
 From 4b94f82777261f8abe23cd8c53d23da0742f6232 Mon Sep 17 00:00:00 2001
 From: bukejiyu <395822456@qq.com>
 Date: Thu, 5 Dec 2024 20:29:04 +0800
-Subject: [PATCH 1/4] paddle_support
+Subject: [PATCH 1/6] paddle_support
 
 ---
  src/frontends/paddle/src/default_opset.hpp    |  4 +-
@@ -38,17 +38,17 @@ index c3eed5b565..a5dc374964 100644
 @@ -2,13 +2,13 @@
  // SPDX-License-Identifier: Apache-2.0
  //
-
+ 
 -#include "openvino/opsets/opset9.hpp"
 +#include "openvino/opsets/opset14.hpp"
-
+ 
  namespace ov {
  namespace frontend {
  namespace paddle {
  namespace op {
 -namespace default_opset = ov::opset9;
 +namespace default_opset = ov::opset14;
-
+ 
  }  // namespace op
  }  // namespace paddle
 diff --git a/src/frontends/paddle/src/op/abs.cpp b/src/frontends/paddle/src/op/abs.cpp
@@ -271,7 +271,7 @@ index b066fdfbe7..4a674b61d1 100644
 @@ -29,6 +29,10 @@ NamedOutputs fill_constant(const NodeContext& node) {
          PADDLE_OP_CHECK(node, false, "fill_constant only supports i32, f32, i64");
      }
-
+ 
 +    if (shape.empty()) {
 +        shape.emplace_back(1);
 +    }
@@ -284,24 +284,24 @@ index e7b317f288..5ab551dc3b 100644
 --- a/src/frontends/paddle/src/op/interp.cpp
 +++ b/src/frontends/paddle/src/op/interp.cpp
 @@ -4,6 +4,7 @@
-
+ 
  #include "default_opset.hpp"
  #include "openvino/frontend/paddle/node_context.hpp"
 +#include "openvino/opsets/opset4.hpp"
-
+ 
  namespace ov {
  namespace frontend {
 @@ -147,8 +148,9 @@ static NamedOutputs interpolate(const NodeContext& node,
      attrs.pads_begin = {0, 0, 0, 0};
      attrs.pads_end = {0, 0, 0, 0};
-
+ 
 -    return node.default_single_output_mapping({std::make_shared<Interpolate>(x, target_spatial_shape, scales, attrs)},
 -                                              {"Out"});
 +    return node.default_single_output_mapping(
 +        {std::make_shared<ov::opset4::Interpolate>(x, target_spatial_shape, scales, attrs)},
 +        {"Out"});
  }
-
+ 
  NamedOutputs linear_interp_v2(const NodeContext& node) {
 diff --git a/src/frontends/paddle/src/op/reduce_ops.hpp b/src/frontends/paddle/src/op/reduce_ops.hpp
 index 2b59516042..954d1de425 100644
@@ -310,14 +310,14 @@ index 2b59516042..954d1de425 100644
 @@ -31,6 +31,10 @@ NamedOutputs reduce_ops(const NodeContext& node) {
          dims = node.get_attribute<std::vector<int64_t>>("dim");
      }
-
+ 
 +    std::transform(dims.begin(), dims.end(), dims.begin(), [&input_rank](int64_t value) {
 +        return value >= 0 ? value : value + input_rank;
 +    });
 +
      int64_t axis_size = static_cast<int64_t>(dims.size());
      reduce_all = reduce_all || (axis_size == input_rank || axis_size == 0);
-
+ 
 diff --git a/src/frontends/paddle/src/op/scatter.cpp b/src/frontends/paddle/src/op/scatter.cpp
 new file mode 100644
 index 0000000000..b689623c9e
@@ -488,7 +488,7 @@ index 769492eb13..3a6b5dda9f 100644
 +            {"scatter_nd_add", op::scatter_nd_add},
 +            {"take_along_axis", op::take_along_axis}};
  };
-
+ 
  }  // namespace paddle
 diff --git a/src/frontends/paddle/tests/op_fuzzy.cpp b/src/frontends/paddle/tests/op_fuzzy.cpp
 index 99357a3a33..53ea785260 100644
@@ -535,7 +535,7 @@ index 0000000000..4dc67b2051
 +
 +    with paddle.static.program_guard(paddle.static.Program(), paddle.static.Program()):
 +        node_x = paddle.static.data(name='x', shape=x.shape, dtype=data_type)
-+
++        
 +        if paddle.__version__ >= '2.0.0':
 +            out = paddle.nn.functional.elu(node_x, alpha, name='elu')
 +        else:
@@ -547,7 +547,7 @@ index 0000000000..4dc67b2051
 +
 +        outs = exe.run(
 +            feed={'x': x},
-+            fetch_list=[out])
++            fetch_list=[out])             
 +
 +        saveModel(name, exe, feed_vars=[node_x], fetchlist=[out],
 +                  inputs=[x], outputs=[outs[0]], target_dir=sys.argv[1])
@@ -596,7 +596,7 @@ index 0000000000..9b1a4f668c
 +        exe.run(paddle.static.default_startup_program())
 +
 +        outs = exe.run(
-+            fetch_list=[out])
++            fetch_list=[out])             
 +
 +        saveModel(name, exe, feed_vars=[], fetchlist=[out], inputs=[], outputs=[outs[0]], target_dir=sys.argv[1])
 +
@@ -609,14 +609,14 @@ index 0000000000..9b1a4f668c
 +
 +if __name__ == "__main__":
 +    main()
---
+-- 
 2.25.1
 
 
 From d3c1126fe82aae72794c7e017a990d7e34310a69 Mon Sep 17 00:00:00 2001
 From: bukejiyu <395822456@qq.com>
 Date: Mon, 23 Dec 2024 22:45:48 +0800
-Subject: [PATCH 2/4] ckl convert
+Subject: [PATCH 2/6] ckl convert
 
 ---
  src/frontends/paddle/src/op/expand_as_v2.cpp  | 49 +++++++++++++++++++
@@ -716,7 +716,7 @@ index 64bc75c66a..81ca472dfa 100644
 -                                              {"Out"});
 +                                              {"Result"});
  }
-
+ 
  }  // namespace op
 diff --git a/src/frontends/paddle/src/op_table.cpp b/src/frontends/paddle/src/op_table.cpp
 index 3a6b5dda9f..d7de21a481 100644
@@ -754,14 +754,14 @@ index 3a6b5dda9f..d7de21a481 100644
              {"linear_interp_v2", op::linear_interp_v2},
              {"linspace", op::linspace},
              {"lod_array_length", op::lod_array_length},
---
+-- 
 2.25.1
 
 
 From 80a8faa0c9596e96839de7b08538e650d00402b4 Mon Sep 17 00:00:00 2001
 From: bukejiyu <395822456@qq.com>
 Date: Mon, 23 Dec 2024 22:50:28 +0800
-Subject: [PATCH 3/4] update set_value
+Subject: [PATCH 3/6] update set_value
 
 ---
  src/frontends/paddle/src/op/set_value.cpp | 15 ++++++++++++---
@@ -774,16 +774,16 @@ index cd65591145..df7471fd96 100644
 @@ -56,7 +56,7 @@ NamedOutputs set_value(const NodeContext& node) {
      // auto input_shape = default_opset::Constant::create(element::i64, {input_shape_.size()}, input_shape_);
      auto input_shape = std::make_shared<default_opset::ShapeOf>(input_node);
-
+ 
 -    Output<Node> starts_node, ends_node, steps_node, starts, ends, steps;
 +    Output<Node> axes_node, spec_dim_node, starts_node, ends_node, steps_node, starts, ends, steps;
-
+ 
      // The following process is:
      // Given:
 @@ -93,13 +93,22 @@ NamedOutputs set_value(const NodeContext& node) {
      // 7. Use `ScatterUpdate` update update_value into input_data.
      // 8. Reshape input to original input_shape.
-
+ 
 -    const auto axes_node = default_opset::Constant::create(element::i64, {axes.size(), 1}, axes);
 -    const auto spec_dim_node = std::make_shared<default_opset::GatherND>(input_shape, axes_node);
      const auto zero_node = default_opset::Constant::create(element::i64, Shape{}, {0});
@@ -802,17 +802,17 @@ index cd65591145..df7471fd96 100644
 +                                                    ov::op::v0::Constant::create(ov::element::i64, ov::Shape{}, {0}));
 +        axes_node = std::make_shared<default_opset::Unsqueeze>(axes_node, one_node);
 +    }
-
+ 
      // get positive starts ends and steps
      if (node.has_input("StartsTensorList")) {
---
+-- 
 2.25.1
 
 
 From 3b075c8d66257e5262c4947c8de50ab0698d4853 Mon Sep 17 00:00:00 2001
 From: bukejiyu <395822456@qq.com>
 Date: Mon, 30 Dec 2024 03:55:16 +0000
-Subject: [PATCH 4/4] update openvino for paddle
+Subject: [PATCH 4/6] update openvino for paddle
 
 ---
  src/frontends/paddle/src/decoder_proto.cpp    |  31 +++++
@@ -879,7 +879,7 @@ index 7ca9a1a6fc..eab619bae5 100644
 --- a/src/frontends/paddle/src/op/assign_value.cpp
 +++ b/src/frontends/paddle/src/op/assign_value.cpp
 @@ -15,12 +15,29 @@ NamedOutputs assign_value(const NodeContext& node) {
-
+ 
      switch (dtype) {
      case element::i32: {
 -        auto values = node.get_attribute<std::vector<int32_t>>("int32_values");
@@ -935,9 +935,9 @@ index fe13fa6425..04fcefe992 100644
 --- a/src/frontends/paddle/src/op/elementwise_ops.cpp
 +++ b/src/frontends/paddle/src/op/elementwise_ops.cpp
 @@ -4,6 +4,8 @@
-
+ 
  #include "elementwise_ops.hpp"
-
+ 
 +#include "op_utils.hpp"
 +
  namespace ov {
@@ -958,11 +958,11 @@ index bcd320e2f2..a243be37de 100644
 +++ b/src/frontends/paddle/src/op/fill_any_like.cpp
 @@ -3,6 +3,7 @@
  //
-
+ 
  #include "default_opset.hpp"
 +#include "op_utils.hpp"
  #include "openvino/frontend/paddle/node_context.hpp"
-
+ 
  namespace ov {
 @@ -10,7 +11,7 @@ namespace frontend {
  namespace paddle {
@@ -1015,7 +1015,7 @@ index 4a674b61d1..5df8947d24 100644
      } else {
          PADDLE_OP_CHECK(node, false, "fill_constant only supports i32, f32, i64");
      }
-
+ 
 -    if (shape.empty()) {
 -        shape.emplace_back(1);
 -    }
@@ -1024,7 +1024,7 @@ index 4a674b61d1..5df8947d24 100644
 -                    shape.size() > 0 || node.has_input("ShapeTensor") || node.has_input("ShapeTensorList"),
 +                    node.has_attribute("shape") || node.has_input("ShapeTensor") || node.has_input("ShapeTensorList"),
                      "fill_constant shape not set");
-
+ 
      if (node.has_input("ShapeTensor")) {
 @@ -50,7 +55,13 @@ NamedOutputs fill_constant(const NodeContext& node) {
          }
@@ -1039,7 +1039,7 @@ index 4a674b61d1..5df8947d24 100644
 +            shape_node = opset6::Constant::create(element::i64, {shape.size()}, shape);
 +        }
      }
-
+ 
      return node.default_single_output_mapping({std::make_shared<ov::opset6::Broadcast>(value_node, shape_node)},
 diff --git a/src/frontends/paddle/src/op/reduce_any.cpp b/src/frontends/paddle/src/op/reduce_any.cpp
 new file mode 100644
@@ -1071,16 +1071,16 @@ index df7471fd96..442c3db82b 100644
 +++ b/src/frontends/paddle/src/op/set_value.cpp
 @@ -5,6 +5,7 @@
  #include <limits>
-
+ 
  #include "default_opset.hpp"
 +#include "op_utils.hpp"
  #include "openvino/frontend/paddle/node_context.hpp"
-
+ 
  namespace ov {
 @@ -12,19 +13,6 @@ namespace frontend {
  namespace paddle {
  namespace op {
-
+ 
 -std::shared_ptr<Node> get_tensor_list(const OutputVector& node) {
 -    auto tensor_list = node;
 -    for (size_t i = 0; i < node.size(); i++) {
@@ -1100,7 +1100,7 @@ index df7471fd96..442c3db82b 100644
 @@ -36,28 +24,75 @@ std::shared_ptr<Node> handle_maximum_index(Output<Node>& node, const Output<Node
      return std::make_shared<default_opset::Select>(mask, update_node, node);
  }
-
+ 
 -bool is_contain_minus(const std::vector<int64_t> vec) {
 -    for (int64_t i : vec) {
 -        if (i < 0)
@@ -1114,11 +1114,11 @@ index df7471fd96..442c3db82b 100644
      }
 -    return false;
  }
-
+ 
  NamedOutputs set_value(const NodeContext& node) {
      auto input_node = node.get_input("Input");
 -    auto value_node = node.get_input("ValueTensor");
-
+ 
      PADDLE_OP_CHECK(node, (input_node.get_partial_shape().rank().is_static()), "rank must be static");
      const auto dims = static_cast<int64_t>(input_node.get_partial_shape().rank().get_length());
 -    const auto axes = node.get_attribute<std::vector<int64_t>>("axes");
@@ -1127,7 +1127,7 @@ index df7471fd96..442c3db82b 100644
      // const auto input_shape_ = input_node.get_partial_shape().get_shape();
      // auto input_shape = default_opset::Constant::create(element::i64, {input_shape_.size()}, input_shape_);
 -    auto input_shape = std::make_shared<default_opset::ShapeOf>(input_node);
-
+ 
 -    Output<Node> axes_node, spec_dim_node, starts_node, ends_node, steps_node, starts, ends, steps;
 +    Output<Node> input_shape = std::make_shared<default_opset::ShapeOf>(input_node);
 +
@@ -1137,7 +1137,7 @@ index df7471fd96..442c3db82b 100644
 +    } else {
 +        auto value_shape = node.get_attribute<std::vector<int64_t>>("shape");
 +        auto intput_type = node.get_attribute<ov::element::Type>("dtype");
-
+ 
 +        if (intput_type == ov::element::i32) {
 +            if (node.has_attribute("int32_values")) {
 +                auto value_arrt = node.get_attribute<std::vector<int32_t>>("int32_values");
@@ -1204,7 +1204,7 @@ index df7471fd96..442c3db82b 100644
          axes_node = default_opset::Constant::create(element::i64, {1}, axes);
          spec_dim_node =
 @@ -112,34 +156,31 @@ NamedOutputs set_value(const NodeContext& node) {
-
+ 
      // get positive starts ends and steps
      if (node.has_input("StartsTensorList")) {
 -        starts = get_tensor_list(node.get_ng_inputs("StartsTensorList"));
@@ -1219,7 +1219,7 @@ index df7471fd96..442c3db82b 100644
          starts = handle_minus_index(start_vec, spec_dim_node);
      } else
          PADDLE_OP_CHECK(node, (false), "Invalid arguments!");
-
+ 
      if (node.has_input("EndsTensorList")) {
 -        ends = get_tensor_list(node.get_ng_inputs("EndsTensorList"));
 +        auto ends_list = node.get_ng_inputs("EndsTensorList");
@@ -1233,7 +1233,7 @@ index df7471fd96..442c3db82b 100644
          ends = handle_minus_index(ends_vec, spec_dim_node);
      } else
          PADDLE_OP_CHECK(node, (false), "Invalid arguments!");
-
+ 
      if (node.has_input("StepsTensorList")) {
 -        steps = get_tensor_list(node.get_ng_inputs("StepsTensorList"));
 +        auto steps_list = node.get_ng_inputs("StepsTensorList");
@@ -1254,7 +1254,7 @@ index df7471fd96..442c3db82b 100644
 -    const auto value_target_shape =
 +    Output<Node> value_target_shape =
          std::make_shared<default_opset::ScatterNDUpdate>(input_shape, axes_node, value_shape_update_node);
-
+ 
      // 4.5 broadcast
      auto value_shape = std::make_shared<default_opset::ShapeOf>(value_node);
      auto value_rank = std::make_shared<default_opset::ShapeOf>(value_shape);
@@ -1265,7 +1265,7 @@ index df7471fd96..442c3db82b 100644
 +    // Output<Node> broadcast_axes =
 +    //     std::make_shared<default_opset::Range>(zero_node, value_rank_scalar, one_node, element::i64);
 +    value_node = std::make_shared<default_opset::Broadcast>(value_node, value_target_shape);
-
+ 
      // get total number of elements
      const auto numel_node = std::make_shared<default_opset::ReduceProd>(input_shape, zero_node);
 diff --git a/src/frontends/paddle/src/op/slice_ops.hpp b/src/frontends/paddle/src/op/slice_ops.hpp
@@ -1274,11 +1274,11 @@ index 7035d11d77..bb0351ed81 100644
 +++ b/src/frontends/paddle/src/op/slice_ops.hpp
 @@ -4,6 +4,7 @@
  #include <limits.h>
-
+ 
  #include "default_opset.hpp"
 +#include "op_utils.hpp"
  #include "openvino/frontend/paddle/node_context.hpp"
-
+ 
  namespace ov {
 @@ -19,8 +20,7 @@ Output<Node> idx_node(const std::string& tensor_alias,
          return std::make_shared<default_opset::Convert>(node.get_input(tensor_alias), element::i32);
@@ -1296,11 +1296,11 @@ index 7e8938414a..91a2c0d49d 100644
 +++ b/src/frontends/paddle/src/op/tile.cpp
 @@ -3,6 +3,7 @@
  //
-
+ 
  #include "default_opset.hpp"
 +#include "op_utils.hpp"
  #include "openvino/frontend/paddle/node_context.hpp"
-
+ 
  namespace ov {
 @@ -11,12 +12,14 @@ namespace paddle {
  namespace op {
@@ -1338,7 +1338,7 @@ index d7de21a481..754e0cc5c1 100644
 +            {"take_along_axis", op::take_along_axis},
 +            {"reduce_any", op::reduce_any}};
  };
-
+ 
  }  // namespace paddle
 diff --git a/src/frontends/paddle/src/op_utils.cpp b/src/frontends/paddle/src/op_utils.cpp
 new file mode 100644
@@ -1415,6 +1415,239 @@ index 0000000000..6df839b1da
 +}  // namespace paddle
 +}  // namespace frontend
 +}  // namespace ov
---
+-- 
+2.25.1
+
+
+From 5060e26ef78f8e761f85fcd97dcee6917d7b778d Mon Sep 17 00:00:00 2001
+From: bukejiyu <395822456@qq.com>
+Date: Tue, 31 Dec 2024 08:05:47 +0000
+Subject: [PATCH 5/6] update
+
+---
+ src/frontends/paddle/src/op/argmin.cpp    | 48 +++++++++++++++++++++++
+ src/frontends/paddle/src/op/set_value.cpp | 14 ++++++-
+ src/frontends/paddle/src/op_table.cpp     |  2 +
+ 3 files changed, 62 insertions(+), 2 deletions(-)
+ create mode 100644 src/frontends/paddle/src/op/argmin.cpp
+
+diff --git a/src/frontends/paddle/src/op/argmin.cpp b/src/frontends/paddle/src/op/argmin.cpp
+new file mode 100644
+index 0000000000..14bb5e3a6b
+--- /dev/null
++++ b/src/frontends/paddle/src/op/argmin.cpp
+@@ -0,0 +1,48 @@
++// Copyright (C) 2018-2024 Intel Corporation
++// SPDX-License-Identifier: Apache-2.0
++//
++
++#include "openvino/frontend/paddle/node_context.hpp"
++#include "openvino/opsets/opset6.hpp"
++
++namespace ov {
++namespace frontend {
++namespace paddle {
++namespace op {
++NamedOutputs argmin(const NodeContext& node) {
++    auto data = node.get_input("X");
++    bool flatten = node.get_attribute<bool>("flatten");
++    const element::Type& index_element_type = element::i64;
++    const Output<ov::Node> k = ov::opset6::Constant::create(ov::element::i64, {}, {1});
++
++    if (!flatten) {
++        auto axis = node.get_attribute<int64_t>("axis");
++        const auto axis_to_remove = ov::opset6::Constant::create(element::u64, Shape{}, {axis});
++        auto node_topk = std::make_shared<ov::opset6::TopK>(data, k, axis, "min", "index", index_element_type);
++        const auto reshaped_indices = std::make_shared<ov::opset6::Squeeze>(node_topk->output(1), axis_to_remove);
++        return node.default_single_output_mapping(
++            {std::make_shared<ov::opset6::Convert>(reshaped_indices, element::i64)},
++            {"Out"});
++    } else {
++        int64_t axis = 0;
++        const Output<ov::Node> reshape_flatten = ov::opset6::Constant::create(ov::element::i64, {1}, {-1});
++        auto node_reshape = std::make_shared<ov::opset6::Reshape>(data, reshape_flatten, true);
++        auto node_topk = std::make_shared<ov::opset6::TopK>(node_reshape, k, axis, "min", "index", index_element_type);
++        const auto output_info = node.get_output_port_infos("Out");
++        size_t output_size = output_info[0].second.size();
++        if (output_size == 0) {
++            auto out = std::make_shared<ov::opset6::Squeeze>(node_topk->output(1));
++            return node.default_single_output_mapping({std::make_shared<ov::opset6::Convert>(out, element::i64)},
++                                                      {"Out"});
++        } else {
++            return node.default_single_output_mapping(
++                {std::make_shared<ov::opset6::Convert>(node_topk->output(1), element::i64)},
++                {"Out"});
++        }
++    }
++}
++
++}  // namespace op
++}  // namespace paddle
++}  // namespace frontend
++}  // namespace ov
+diff --git a/src/frontends/paddle/src/op/set_value.cpp b/src/frontends/paddle/src/op/set_value.cpp
+index 442c3db82b..1a30c78f52 100644
+--- a/src/frontends/paddle/src/op/set_value.cpp
++++ b/src/frontends/paddle/src/op/set_value.cpp
+@@ -7,6 +7,8 @@
+ #include "default_opset.hpp"
+ #include "op_utils.hpp"
+ #include "openvino/frontend/paddle/node_context.hpp"
++#include "openvino/op/util/attr_types.hpp"
++#include "openvino/opsets/opset1.hpp"
+ 
+ namespace ov {
+ namespace frontend {
+@@ -39,6 +41,8 @@ NamedOutputs set_value(const NodeContext& node) {
+     PADDLE_OP_CHECK(node, (input_node.get_partial_shape().rank().is_static()), "rank must be static");
+     const auto dims = static_cast<int64_t>(input_node.get_partial_shape().rank().get_length());
+     auto axes = node.get_attribute<std::vector<int64_t>>("axes");
++    auto decrease_axes = node.get_attribute<std::vector<int64_t>>("decrease_axes");
++
+     // const auto input_shape_ = input_node.get_partial_shape().get_shape();
+     // auto input_shape = default_opset::Constant::create(element::i64, {input_shape_.size()}, input_shape_);
+ 
+@@ -218,11 +222,17 @@ NamedOutputs set_value(const NodeContext& node) {
+         std::make_shared<default_opset::ScatterNDUpdate>(input_shape, axes_node, value_shape_update_node);
+ 
+     // 4.5 broadcast
++    const auto value_dims = static_cast<int64_t>(value_node.get_partial_shape().rank().get_length());
++    if (value_dims != dims && decrease_axes.size() > 0) {
++        value_node = std::make_shared<default_opset::Unsqueeze>(
++            value_node,
++            default_opset::Constant::create(element::i64, {decrease_axes.size()}, decrease_axes));
++    }
+     auto value_shape = std::make_shared<default_opset::ShapeOf>(value_node);
+     auto value_rank = std::make_shared<default_opset::ShapeOf>(value_shape);
+     auto value_rank_scalar = std::make_shared<default_opset::Squeeze>(value_rank);
+-    // Output<Node> broadcast_axes =
+-    //     std::make_shared<default_opset::Range>(zero_node, value_rank_scalar, one_node, element::i64);
++    Output<Node> broadcast_axes =
++        std::make_shared<default_opset::Range>(zero_node, value_rank_scalar, one_node, element::i64);
+     value_node = std::make_shared<default_opset::Broadcast>(value_node, value_target_shape);
+ 
+     // get total number of elements
+diff --git a/src/frontends/paddle/src/op_table.cpp b/src/frontends/paddle/src/op_table.cpp
+index 754e0cc5c1..deccc55fb9 100644
+--- a/src/frontends/paddle/src/op_table.cpp
++++ b/src/frontends/paddle/src/op_table.cpp
+@@ -9,6 +9,7 @@ namespace paddle {
+ namespace op {
+ #define OP_CONVERTER(op) NamedOutputs op(const NodeContext& node)
+ OP_CONVERTER(argmax);
++OP_CONVERTER(argmin);
+ OP_CONVERTER(assign);
+ OP_CONVERTER(assign_value);
+ OP_CONVERTER(batch_norm);
+@@ -152,6 +153,7 @@ OP_CONVERTER(reduce_any);
+ }  // namespace op
+ std::map<std::string, CreatorFunction> get_supported_ops() {
+     return {{"arg_max", op::argmax},
++            {"arg_min", op::argmin},
+             {"assign", op::assign},
+             {"assign_value", op::assign_value},
+             {"batch_norm", op::batch_norm},
+-- 
+2.25.1
+
+
+From a918894489de5a13c2467a17bb31580ba5a618f0 Mon Sep 17 00:00:00 2001
+From: bukejiyu <395822456@qq.com>
+Date: Wed, 1 Jan 2025 15:28:22 +0000
+Subject: [PATCH 6/6] fix
+
+---
+ src/frontends/paddle/src/op/argmax.cpp | 18 ++++++++----------
+ src/frontends/paddle/src/op/argmin.cpp | 16 +++++++---------
+ 2 files changed, 15 insertions(+), 19 deletions(-)
+
+diff --git a/src/frontends/paddle/src/op/argmax.cpp b/src/frontends/paddle/src/op/argmax.cpp
+index d04424dd1e..6cc856d1b3 100644
+--- a/src/frontends/paddle/src/op/argmax.cpp
++++ b/src/frontends/paddle/src/op/argmax.cpp
+@@ -12,31 +12,29 @@ namespace op {
+ NamedOutputs argmax(const NodeContext& node) {
+     auto data = node.get_input("X");
+     bool flatten = node.get_attribute<bool>("flatten");
+-    const element::Type& index_element_type = element::i64;
+-    const Output<ov::Node> k = ov::opset6::Constant::create(ov::element::i64, {}, {1});
++    auto dtype = node.get_attribute<ov::element::Type>("dtype");
++    const Output<ov::Node> k = ov::opset6::Constant::create(dtype, {}, {1});
+ 
+     if (!flatten) {
+         auto axis = node.get_attribute<int64_t>("axis");
+         const auto axis_to_remove = ov::opset6::Constant::create(element::u64, Shape{}, {axis});
+-        auto node_topk = std::make_shared<ov::opset6::TopK>(data, k, axis, "max", "index", index_element_type);
++        auto node_topk = std::make_shared<ov::opset6::TopK>(data, k, axis, "max", "index", dtype);
+         const auto reshaped_indices = std::make_shared<ov::opset6::Squeeze>(node_topk->output(1), axis_to_remove);
+-        return node.default_single_output_mapping(
+-            {std::make_shared<ov::opset6::Convert>(reshaped_indices, element::i64)},
+-            {"Out"});
++        return node.default_single_output_mapping({std::make_shared<ov::opset6::Convert>(reshaped_indices, dtype)},
++                                                  {"Out"});
+     } else {
+         int64_t axis = 0;
+         const Output<ov::Node> reshape_flatten = ov::opset6::Constant::create(ov::element::i64, {1}, {-1});
+         auto node_reshape = std::make_shared<ov::opset6::Reshape>(data, reshape_flatten, true);
+-        auto node_topk = std::make_shared<ov::opset6::TopK>(node_reshape, k, axis, "max", "index", index_element_type);
++        auto node_topk = std::make_shared<ov::opset6::TopK>(node_reshape, k, axis, "max", "index", dtype);
+         const auto output_info = node.get_output_port_infos("Out");
+         size_t output_size = output_info[0].second.size();
+         if (output_size == 0) {
+             auto out = std::make_shared<ov::opset6::Squeeze>(node_topk->output(1));
+-            return node.default_single_output_mapping({std::make_shared<ov::opset6::Convert>(out, element::i64)},
+-                                                      {"Out"});
++            return node.default_single_output_mapping({std::make_shared<ov::opset6::Convert>(out, dtype)}, {"Out"});
+         } else {
+             return node.default_single_output_mapping(
+-                {std::make_shared<ov::opset6::Convert>(node_topk->output(1), element::i64)},
++                {std::make_shared<ov::opset6::Convert>(node_topk->output(1), dtype)},
+                 {"Out"});
+         }
+     }
+diff --git a/src/frontends/paddle/src/op/argmin.cpp b/src/frontends/paddle/src/op/argmin.cpp
+index 14bb5e3a6b..f454e476cb 100644
+--- a/src/frontends/paddle/src/op/argmin.cpp
++++ b/src/frontends/paddle/src/op/argmin.cpp
+@@ -12,31 +12,29 @@ namespace op {
+ NamedOutputs argmin(const NodeContext& node) {
+     auto data = node.get_input("X");
+     bool flatten = node.get_attribute<bool>("flatten");
+-    const element::Type& index_element_type = element::i64;
++    auto dtype = node.get_attribute<ov::element::Type>("dtype");
+     const Output<ov::Node> k = ov::opset6::Constant::create(ov::element::i64, {}, {1});
+ 
+     if (!flatten) {
+         auto axis = node.get_attribute<int64_t>("axis");
+         const auto axis_to_remove = ov::opset6::Constant::create(element::u64, Shape{}, {axis});
+-        auto node_topk = std::make_shared<ov::opset6::TopK>(data, k, axis, "min", "index", index_element_type);
++        auto node_topk = std::make_shared<ov::opset6::TopK>(data, k, axis, "min", "index", dtype);
+         const auto reshaped_indices = std::make_shared<ov::opset6::Squeeze>(node_topk->output(1), axis_to_remove);
+-        return node.default_single_output_mapping(
+-            {std::make_shared<ov::opset6::Convert>(reshaped_indices, element::i64)},
+-            {"Out"});
++        return node.default_single_output_mapping({std::make_shared<ov::opset6::Convert>(reshaped_indices, dtype)},
++                                                  {"Out"});
+     } else {
+         int64_t axis = 0;
+         const Output<ov::Node> reshape_flatten = ov::opset6::Constant::create(ov::element::i64, {1}, {-1});
+         auto node_reshape = std::make_shared<ov::opset6::Reshape>(data, reshape_flatten, true);
+-        auto node_topk = std::make_shared<ov::opset6::TopK>(node_reshape, k, axis, "min", "index", index_element_type);
++        auto node_topk = std::make_shared<ov::opset6::TopK>(node_reshape, k, axis, "min", "index", dtype);
+         const auto output_info = node.get_output_port_infos("Out");
+         size_t output_size = output_info[0].second.size();
+         if (output_size == 0) {
+             auto out = std::make_shared<ov::opset6::Squeeze>(node_topk->output(1));
+-            return node.default_single_output_mapping({std::make_shared<ov::opset6::Convert>(out, element::i64)},
+-                                                      {"Out"});
++            return node.default_single_output_mapping({std::make_shared<ov::opset6::Convert>(out, dtype)}, {"Out"});
+         } else {
+             return node.default_single_output_mapping(
+-                {std::make_shared<ov::opset6::Convert>(node_topk->output(1), element::i64)},
++                {std::make_shared<ov::opset6::Convert>(node_topk->output(1), dtype)},
+                 {"Out"});
+         }
+     }
+-- 
 2.25.1
 

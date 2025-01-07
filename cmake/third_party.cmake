@@ -52,7 +52,7 @@ if(NOT WITH_SETUP_INSTALL)
 
   if(WITH_OPENVINO)
     execute_process(
-      COMMAND git submodule update --init third_party/openvino
+      COMMAND git submodule update --init --depth=1 third_party/openvino
       WORKING_DIRECTORY ${PADDLE_SOURCE_DIR}
       RESULT_VARIABLE result_var)
     # List of modules to be deleted
