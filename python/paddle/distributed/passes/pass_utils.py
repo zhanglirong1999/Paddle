@@ -356,7 +356,7 @@ def _set_skip_gc_vars_in_pir(num_micro_batches, job_types, sub_programs, jobs):
             f"Skip gc vars for {job_type}-({micro_batch_id}): {skip_gc_vars}"
         )
 
-        if job_type in ["backward", "backward_w"]:
+        if job_type in ["send_backward", "backward_w"]:
             assert (
                 len(skip_gc_vars) == 0
             ), f"When enabling pipeline parallelism strategy, the skip_gc_vars for {job_type} subprogram must be empty, but it is {skip_gc_vars}."
