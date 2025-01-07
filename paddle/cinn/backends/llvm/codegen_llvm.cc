@@ -757,7 +757,7 @@ llvm::Value *CodeGenLLVM::Visit(const ir::_Module_ *op) {
   { ir::ir_utils::IrVerify(op); }
 
   for (auto &fn : op->functions) {
-    VLOG(1) << "JIT Linking function [" << fn.As<ir::_LoweredFunc_>()->name
+    VLOG(3) << "JIT Linking function [" << fn.As<ir::_LoweredFunc_>()->name
             << "]";
     auto fnll = Visit(fn.As<ir::_LoweredFunc_>());
 
