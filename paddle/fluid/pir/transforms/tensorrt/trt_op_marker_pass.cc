@@ -94,6 +94,7 @@ DEFINE_GENERAL_PATTERN(Flip, paddle::dialect::FlipOp)
 DEFINE_GENERAL_PATTERN(Mish, paddle::dialect::MishOp)
 DEFINE_GENERAL_PATTERN(AssignValue, paddle::dialect::AssignValueOp)
 DEFINE_GENERAL_PATTERN(AssignValue_, paddle::dialect::AssignValue_Op)
+DEFINE_GENERAL_PATTERN(Numel, paddle::dialect::NumelOp)
 #undef DEFINE_GENERAL_PATTERN
 
 // Add ReduceCommonOpPattern base class to simplify code
@@ -2191,6 +2192,33 @@ class InstanceNormOpPattern
   }
 };
 
+class AffineChannelOpPattern
+    : public pir::OpRewritePattern<paddle::dialect::AffineChannelOp> {
+ public:
+  using pir::OpRewritePattern<
+      paddle::dialect::AffineChannelOp>::OpRewritePattern;
+  bool MatchAndRewrite(paddle::dialect::AffineChannelOp op,
+                       pir::PatternRewriter &rewriter) const override {
+    if (op->HasAttribute(kCanRunTrtAttr) &&
+        op->attribute<pir::BoolAttribute>(kCanRunTrtAttr).data()) {
+      return false;
+    }
+    if (!op->HasAttribute("data_layout")) {
+      VLOG(3) << "pd_op.affine_channel must has data_layout";
+      return false;
+    }
+    pir::Value x = op.operand_source(0);
+    auto x_shape = pir::GetShapeFromValue(x);
+    if (x_shape.size() == 2) {
+      VLOG(3) << "pd_op.affine_channel x.shape can not be 2";
+      return false;
+    }
+
+    op->set_attribute(kCanRunTrtAttr, rewriter.bool_attr(true));
+    return true;
+  }
+};
+
 class TrtOpMarkerPass : public pir::PatternRewritePass {
  public:
   TrtOpMarkerPass() : pir::PatternRewritePass("trt_op_marker_pass", 2) {}
@@ -2245,6 +2273,7 @@ class TrtOpMarkerPass : public pir::PatternRewritePass {
     ADD_PATTERN(Mish)
     ADD_PATTERN(AssignValue)
     ADD_PATTERN(AssignValue_)
+    ADD_PATTERN(Numel)
 #if IS_TRT_VERSION_GE(8600)
     ADD_PATTERN(Layer_norm)
 #endif
@@ -2321,6 +2350,7 @@ class TrtOpMarkerPass : public pir::PatternRewritePass {
     ps.Add(std::make_unique<CeluOpPattern>(context));
     ps.Add(std::make_unique<OneHotOpPattern>(context));
     ps.Add(std::make_unique<InstanceNormOpPattern>(context));
+    ps.Add(std::make_unique<AffineChannelOpPattern>(context));
     return ps;
   }
 };

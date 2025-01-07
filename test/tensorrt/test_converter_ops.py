@@ -28,6 +28,7 @@ class TestSqrtTRTPattern(TensorRTBaseTest):
         }
         self.program_config = {"feed_list": ["x"]}
         self.min_shape = {"x": [3, 3]}
+        self.opt_shape = {"x": [7, 3]}
         self.max_shape = {"x": [10, 3]}
 
     def test_trt_result(self):
@@ -42,6 +43,7 @@ class TestFloorFloatTRTPattern(TensorRTBaseTest):
         }
         self.program_config = {"feed_list": ["x"]}
         self.min_shape = {"x": [3, 3]}
+        self.opt_shape = {"x": [7, 3]}
         self.max_shape = {"x": [10, 3]}
 
     def test_trt_result(self):

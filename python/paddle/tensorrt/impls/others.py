@@ -301,3 +301,54 @@ def share_data_converter(network, paddle_op, inputs):
     identity_layer = network.add_identity(x)
 
     return identity_layer.get_output(0)
+
+
+@converter_registry.register("pd_op.affine_channel", trt_version="8.x")
+def affine_channel_converter(network, paddle_op, inputs):
+    x, scale_weights, bias_weights = inputs
+    data_layout = paddle_op.attrs().get("data_layout")
+
+    if data_layout == "NCHW":
+        channel_axis = 1
+        x_input = x
+    elif data_layout == "NHWC":
+        # Permute NHWC to NCHW
+        shuffle_layer1 = network.add_shuffle(x)
+        shuffle_layer1.first_transpose = (0, 3, 1, 2)
+        x_input = shuffle_layer1.get_output(0)
+        channel_axis = 1
+    else:
+        raise ValueError(f"affine_channel: Unsupported layout: {data_layout}")
+
+    if not isinstance(scale_weights, trt.Weights):
+        raise TypeError("affine_channel requires scale as trt.Weights")
+    if not isinstance(bias_weights, trt.Weights):
+        raise TypeError("affine_channel requires bias as trt.Weights")
+
+    if scale_weights.size != bias_weights.size:
+        raise ValueError(
+            f"affine_channel: scale.size({scale_weights.size}) != bias.size({bias_weights.size})"
+        )
+
+    power_array = np.ones((scale_weights.size,), dtype=np.float32)
+    power_weights = trt.Weights(power_array)
+
+    layer = network.add_scale_nd(
+        input=x_input,
+        mode=trt.ScaleMode.CHANNEL,
+        shift=bias_weights,
+        scale=scale_weights,
+        power=power_weights,
+        channel_axis=channel_axis,
+    )
+    if not layer:
+        raise RuntimeError("affine_channel: add_scale_nd failed.")
+
+    out_tensor = layer.get_output(0)
+
+    if data_layout == "NHWC":
+        shuffle_layer2 = network.add_shuffle(out_tensor)
+        shuffle_layer2.first_transpose = (0, 2, 3, 1)
+        out_tensor = shuffle_layer2.get_output(0)
+
+    return out_tensor
