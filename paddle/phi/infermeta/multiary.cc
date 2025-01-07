@@ -393,11 +393,11 @@ void AddNInferMeta(const std::vector<const MetaTensor*>& x,
       N,
       0,
       common::errors::InvalidArgument(
-          "The input tensor X's dimensions of SumOp "
+          "The input tensor X's dimensions of AddNOp "
           "should be larger than 0. But received X's dimensions %d.",
           N));
   if (N == 1) {
-    VLOG(3) << "Warning: SumOp have only one input, may waste memory";
+    VLOG(3) << "Warning: AddNOp have only one input, may waste memory";
   }
   bool is_all_0d_tensor = true;
   phi::DDim in_dim({0});
@@ -405,10 +405,6 @@ void AddNInferMeta(const std::vector<const MetaTensor*>& x,
     auto x_dim = x[i]->dims();
     // x_dim.size() == 1 means the real dim of selected rows is [0]
     if (x[i]->is_selected_rows() && x_dim.size() == 1) {
-      continue;
-    }
-    // for zero-sized tensor
-    if (common::product(x_dim) == 0) {
       continue;
     }
     // for 0D tensor
@@ -423,7 +419,7 @@ void AddNInferMeta(const std::vector<const MetaTensor*>& x,
         PADDLE_ENFORCE_EQ(in_dim,
                           x_dim,
                           common::errors::InvalidArgument(
-                              "The input tensor X of SumOp must"
+                              "The input tensor X of AddNOp must"
                               " have same shape. But received X[0]'s shape = "
                               "[%s], X[%d]'s shape = [%s].",
                               in_dim,
@@ -434,7 +430,7 @@ void AddNInferMeta(const std::vector<const MetaTensor*>& x,
             in_dim.size(),
             x_dim.size(),
             common::errors::InvalidArgument(
-                "The input tensor X of SumOp must have same "
+                "The input tensor X of AddNOp must have same "
                 "dimensions. But received X[0]'s dimensions = %d, X[0]'s "
                 "shape = "
                 "[%s], X[%d]'s dimensions = %d, X[%d]'s shape = [%s].",
@@ -453,7 +449,7 @@ void AddNInferMeta(const std::vector<const MetaTensor*>& x,
               in_dim[j],
               x_dim[j],
               common::errors::InvalidArgument(
-                  "The input tensor X of SumOp must have same shape "
+                  "The input tensor X of AddNOp must have same shape "
                   "if not -1."
                   "But received X[0]'s shape = [%s], X[%d]'s shape = [%s].",
                   in_dim,

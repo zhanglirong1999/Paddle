@@ -30,7 +30,7 @@ void ReshapeKernel(const Context& dev_ctx,
   MetaTensor meta_out(out);
   InferMetaFromVecValue(x, shape.GetData(), &meta_out);
 
-  if (x.initialized() && x.Holder() == out->Holder()) {
+  if (x.has_allocation() && x.Holder() == out->Holder()) {
     dev_ctx.Alloc(out, x.dtype());
     return;
   }

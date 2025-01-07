@@ -694,7 +694,7 @@ LAYOUT_LOGIC_TEMPLATE = """
 """
 CREATE_PLAIN_OPTIONAL_TENSOR_TEMPLATE = """
   paddle::optional<paddle::Tensor> {name}_optional;
-  if({name}.initialized() ||
+  if(({name}.has_allocation()) ||
      ({name}.defined() && {name}.is_dist_tensor() &&
       phi::distributed::NeedComputationClipForPP({name}.impl()))) {name}_optional = paddle::make_optional<paddle::Tensor>({name});
 """
@@ -731,7 +731,7 @@ INPUT_CONTAIN_DIST_TENSOR_TEMPLATE = """
 
 CHECK_BACKWARD_INPLACE_TEMPLATE = """
   bool can_be_inplaced = false;
-  if ({}.initialized()) {{
+  if ({}.has_allocation()) {{
     VLOG(10) << {}.name() << "({}) use_count: " << {}.impl().use_count();
     if ({}.impl().use_count() == 1 || ({}.impl().use_count() == 2 && {}.impl().get() == {}.impl().get())) {{
       if ({}.is_dense_tensor() && !std::dynamic_pointer_cast<phi::DenseTensor>({}.impl())->meta().is_contiguous()) {{
@@ -2949,7 +2949,7 @@ if (paddle::prim::PrimCommonUtils::IsEagerPrimEnabled() && !need_skip) {{
             if IsPlainTensorType(rtype):
                 output_autograd_meta = f"""
   auto& {transformed_tensor_name} = returns[{pos}][0];
-  egr::AutogradMeta* {output_autograd_meta_name} = returns[{pos}][0].initialized() ? egr::EagerUtils::autograd_meta(&{transformed_tensor_name}) : nullptr;
+  egr::AutogradMeta* {output_autograd_meta_name} = returns[{pos}][0].has_allocation() ? egr::EagerUtils::autograd_meta(&{transformed_tensor_name}) : nullptr;
   if ({output_autograd_meta_name}) {output_autograd_meta_name}->SetStopGradient(false);
 """
 
