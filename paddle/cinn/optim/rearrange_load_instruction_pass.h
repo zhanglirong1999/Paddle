@@ -13,10 +13,17 @@
 // limitations under the License.
 
 #pragma once
-#include "paddle/cinn/ir/ir.h"
+#include "paddle/cinn/pass/pass.h"
+
+PD_DECLARE_bool(cinn_enable_rearrange_load);
 
 namespace cinn {
 namespace optim {
+class RearrangeLoadInstructionPass : public FuncPass {
+ public:
+  RearrangeLoadInstructionPass() : FuncPass("rearrange_load_instruction") {}
+  LogicalResult Run(ir::LoweredFunc func) override;
+};
 
 /*
  * Rearrange global memory loads in front of expressions to optimize the
@@ -149,7 +156,7 @@ namespace optim {
  *   branch of Select, `var_3[k]` in ScheduleBlock(var_4) has data dependency
  *   with ScheduleBlock(var_3); none of them can be rearranged.
  */
-void RearrangeLoadInstruction(Expr *expr);
+std::unique_ptr<FuncPass> CreateRearrangeLoadInstructionPass();
 
 }  // namespace optim
 }  // namespace cinn
