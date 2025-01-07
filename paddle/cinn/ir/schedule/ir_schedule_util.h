@@ -66,6 +66,13 @@ Tensor GetReadTensor(const Expr& block, int index);
 int GetLoopExtent(const Expr& loop);
 
 /**
+ * \brief Given a For node, return its extent as int.
+ * @param loop The given For node
+ * @return The extent of For node
+ */
+int GetLoopExtent(const ir::stmt::For loop);
+
+/**
  * \brief Given a vector of Exprs, return whether they contain a var with
  * specific name.
  * @param exprs The given vector of Exprs

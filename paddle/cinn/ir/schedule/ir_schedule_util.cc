@@ -110,6 +110,18 @@ int GetLoopExtent(const Expr& loop) {
   return static_cast<int>(loop.As<ir::For>()->extent.get_constant());
 }
 
+int GetLoopExtent(const ir::stmt::For loop) {
+  PADDLE_ENFORCE_EQ(
+      cinn::common::is_zero(loop->min()),
+      true,
+      ::common::errors::InvalidArgument("For node's min should be zero."));
+  PADDLE_ENFORCE_EQ(loop->extent().is_constant(),
+                    true,
+                    ::common::errors::InvalidArgument(
+                        "For node's extent should be constant."));
+  return static_cast<int>(loop->extent().get_constant());
+}
+
 void SetCudaAxisInfo(ir::LoweredFunc lowered_func) {
   auto CannotProveLT = [](const ir::Expr& lhs, const ir::Expr& rhs) -> bool {
     std::vector<ir::Expr> exprs{rhs, lhs};
