@@ -218,33 +218,16 @@ void PowKernel(const Context& dev_ctx,
                DenseTensor* out) {
   using XPUType = typename XPUTypeTrait<T>::Type;
   dev_ctx.template Alloc<T>(out);
-  T pow_factor = factor.to<T>();
+
   const XPUType* x_data = reinterpret_cast<const XPUType*>(x.data<T>());
   XPUType* y_data = reinterpret_cast<XPUType*>(out->data<T>());
+  XPUType pow_factor = static_cast<XPUType>(factor.to<T>());
 
   auto xpu_context = dev_ctx.x_context();
-  // allocate temp memory for factor on xpu
-  xpu::ctx_guard RAII_GUARD(xpu_context);
-  XPUType* factor_data = RAII_GUARD.alloc_l3_or_gm<XPUType>(1);
-  PADDLE_ENFORCE_NOT_NULL(
-      factor_data, errors::External("XPU alloc_l3_or_gm returns nullptr"));
-  memory_utils::Copy(dev_ctx.GetPlace(),
-                     static_cast<void*>(factor_data),
-                     phi::CPUPlace(),
-                     static_cast<void*>(&pow_factor),
-                     sizeof(T));
 
-  auto x_dims = common::vectorize<int>(x.dims());
-  // use [1] to replace [], because xpu not support []
-  if (x_dims.size() == 0) {
-    x_dims = std::vector<int>({1});
-  }
-
-  // broadcast_pow(Context* ctx, const T* x, const T* y, T* z, const
-  //    std::vector<int>& xshape, const std::vector<int>& yshape);
-  int r =
-      xpu::broadcast_pow(xpu_context, x_data, factor_data, y_data, x_dims, {1});
-  PADDLE_ENFORCE_XDNN_SUCCESS(r, "broadcast_pow");
+  int r = xpu::pow_tensor_scalar(
+      xpu_context, x_data, pow_factor, y_data, x.numel());
+  PADDLE_ENFORCE_XDNN_SUCCESS(r, "pow_tensor_scalar");
 }
 
 template <typename T>
