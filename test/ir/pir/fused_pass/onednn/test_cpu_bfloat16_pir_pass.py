@@ -1168,6 +1168,7 @@ class TestConcatBfloatQuantizePass(PassTest):
     def test_check_output(self):
         self.check_pass_correct(rtol=1e-02, atol=1e-02)
 
+
 class TestConv2dBf16PlacementPass(PassTest):
     def is_program_valid(self, program=None):
         return True
@@ -1225,6 +1226,7 @@ class TestConv2dBf16PlacementPass(PassTest):
 
     def test_check_output(self):
         self.check_pass_correct()
+
 
 if __name__ == "__main__":
     unittest.main()
