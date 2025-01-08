@@ -489,8 +489,11 @@ void OptimizeExprGPU(Expr *expr) {
   // Replace variables that are in range [0, 1) to zero.
   ReplaceUnitVarToZero replace_unit_var_to_zero;
   replace_unit_var_to_zero(expr);
-
-  EliminateCommonFactorOfLocalIndex(expr);
+  VLOG(10) << "After ReplaceUnitVarToZero: \n" << *expr;
+  ir::stmt::BlockRef func_body = ir::ConvertExprBlockToStmtBlock(*expr);
+  EliminateCommonFactorOfLocalIndex(func_body);
+  *expr = ir::ConvertStmtBlockToExprBlock(func_body);
+  VLOG(10) << "After EliminateCommonFactorOfLocalIndex: \n" << *expr;
 
   ResizeBufferToMaxVarRange(expr);
 

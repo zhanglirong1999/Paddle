@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "paddle/cinn/ir/ir.h"
+#include "paddle/cinn/ir/stmt.h"
 
 namespace cinn {
 namespace optim {
@@ -40,9 +40,9 @@ namespace optim {
  *       e.g., ([i+2, i+3], [i+4, i+6]) -> ([i, i], [i+2, i+3])
  *    c) Symbolic common factor elimination.
  *       e.g., ([C, 2], [3C, 4]) -> ([1, 2], [3, 4])
- * 3. Transform simplified indices into iterator-based forms.
+ * 3. Update the IR, replacing original indices with simplified versions.
+ * 4. Transform local buffer indices into iterator-based forms.
  *       e.g., [i, 0, 0] -> [0, 0, i]
- * 4. Update the IR, replacing original indices with simplified versions.
  *
  * Key benefits:
  * 1. Reduces computational overhead in index calculations.
@@ -93,7 +93,7 @@ namespace optim {
  * Output:
  *     local_tensor[0, 0, 0] = global_tensor[i, 0, 0];
  */
-void EliminateCommonFactorOfLocalIndex(ir::Expr* expr);
+void EliminateCommonFactorOfLocalIndex(ir::stmt::BlockRef func_body);
 
 }  // namespace optim
 }  // namespace cinn
