@@ -1320,9 +1320,9 @@ struct FindBlockParent : public ir::IRMutator<> {
 };
 
 // The struct used to create all stmts after rfactor transformation.
-struct RfCreater : public ir::IRMutator<> {
+struct RfCreator : public ir::IRMutator<> {
  public:
-  RfCreater(const Expr& root, const Expr& rf_loop, const int& rf_axis)
+  RfCreator(const Expr& root, const Expr& rf_loop, const int& rf_axis)
       : root_(root), rf_loop_(rf_loop), rf_axis_(rf_axis) {}
   void operator()(Expr* expr) { IRMutator::Visit(expr, expr); }
 

@@ -3515,7 +3515,7 @@ bool OpTeller::Tell(const framework::ir::Node* node,
                                with_dynamic_shape,
                                forbid_dynamic_op_enter_into_trt,
                                use_explicit_quantization)) {
-    SetOpConverterType(node->Op(), OpConverterType::GenericPluginCreater);
+    SetOpConverterType(node->Op(), OpConverterType::GenericPluginCreator);
     return true;
   }
   auto& custom_plugin_teller = GetCustomPluginTeller();
@@ -3524,7 +3524,9 @@ bool OpTeller::Tell(const framework::ir::Node* node,
                               with_dynamic_shape,
                               forbid_dynamic_op_enter_into_trt,
                               use_explicit_quantization)) {
-    SetOpConverterType(node->Op(), OpConverterType::CustomPluginCreater);
+    SetOpConverterType(
+        node->Op(),
+        OpConverterType::CustomPluginCreater);  // typos: disable-line
     return true;
   }
   auto& custom_generic_plugin_teller = GetCustomGenericPluginTeller();
@@ -3533,7 +3535,7 @@ bool OpTeller::Tell(const framework::ir::Node* node,
                                       with_dynamic_shape,
                                       forbid_dynamic_op_enter_into_trt,
                                       use_explicit_quantization)) {
-    SetOpConverterType(node->Op(), OpConverterType::CustomGenericPluginCreater);
+    SetOpConverterType(node->Op(), OpConverterType::CustomGenericPluginCreator);
     return true;
   }
   return false;

@@ -7,6 +7,10 @@ extend-exclude = [
     # Skip `intermidiate` check in these files
     "test/cpp/eager/task_tests/CMakeLists.txt",
     "test/cpp/eager/task_tests/hook_test_intermidiate.cc",
+    # Skip `creater` check in these files
+    "paddle/fluid/inference/tensorrt/convert/CMakeLists.txt",
+    "paddle/fluid/inference/tensorrt/convert/generic_and_custom_plugin_creater.cc",
+    "paddle/fluid/inference/tensorrt/convert/test_custom_plugin_creater.cc",
 ]
 
 [default]
@@ -41,8 +45,6 @@ pash = 'pash'
 unpacket = "unpacket"
 
 # These words need to be fixed
-Creater = 'Creater'
-creater = 'creater'
 fetchs = 'fetchs'
 Indexs = 'Indexs'
 indexs = 'indexs'
