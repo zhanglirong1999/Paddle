@@ -1156,6 +1156,10 @@ class _ShardOptimizer(Optimizer):
             accumulator = self._inner_opt._accumulators[key][target_name]
             if accumulator.is_dist() and not isinstance(accumulator, pir.Value):
                 continue
+
+            if paddle.in_dynamic_mode():
+                origin_accumulator_name = accumulator.name
+
             if self._shard_fn is not None:
                 self._inner_opt._accumulators[key][target_name] = (
                     self._shard_fn(key, param, accumulator)
@@ -1179,12 +1183,10 @@ class _ShardOptimizer(Optimizer):
                             placements=placements,
                         )
                     )
-            if not isinstance(
-                self._inner_opt._accumulators[key][target_name], pir.Value
-            ):
-                self._inner_opt._accumulators[key][target_name].name = (
-                    target_name + "_" + key
-                )
+            if paddle.in_dynamic_mode():
+                self._inner_opt._accumulators[key][
+                    target_name
+                ].name = origin_accumulator_name
 
     def _reset_placements(self, param):
         if param.is_dist() and isinstance(
