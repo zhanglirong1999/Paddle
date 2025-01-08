@@ -537,7 +537,7 @@ int PrelnResidualBiasPluginDynamic::enqueue(
     PADDLE_THROW(common::errors::Fatal(
         "The Ernie(Bert) tensorRT plugin should be "
         "complied with CUDA version >= 10.0 when running with fp16. "
-        "Please recomplie it or try to use fp32 by set "
+        "Please recompile it or try to use fp32 by set "
         "config.SetTRTDynamicShapeInfo(min_input_shape, "
         "max_input_shape, opt_input_shape, true"));
 #endif

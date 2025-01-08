@@ -104,7 +104,7 @@ Tensor PRelu(const Tensor &A,
   PADDLE_ENFORCE_EQ(A->shape[axis],
                     slope->shape[0],
                     ::common::errors::InvalidArgument(
-                        "Wrong slope shape: excepted %d but recieved %d.",
+                        "Wrong slope shape: excepted %d but received %d.",
                         A->shape[axis],
                         slope->shape[0]));
   return Compute(
@@ -163,7 +163,7 @@ std::vector<ir::Tensor> Conv2d_winograd_NCHW(const ir::Tensor &input,
       true,
       ::common::errors::InvalidArgument(
           "Filter's output channel size must be divisible by group, but "
-          "recieved %d as output channel size and %d as group.",
+          "received %d as output channel size and %d as group.",
           weights->shape[0] * weights->shape[1],
           input->shape[1]));
 
@@ -447,7 +447,7 @@ std::vector<ir::Tensor> Conv2d_NCHW(const ir::Tensor &input,
       true,
       ::common::errors::InvalidArgument(
           "Filter's output channel size must be divisible by group, but "
-          "recieved %d as output channel size and %d as group.",
+          "received %d as output channel size and %d as group.",
           weights->shape[0] * weights->shape[1],
           input->shape[1]));
   auto res = Compute(
@@ -838,7 +838,7 @@ std::vector<ir::Tensor> Conv2d_NHWC(const ir::Tensor &input,
       true,
       ::common::errors::InvalidArgument(
           "Filter's output channel size must be divisible by group, but "
-          "recieved %d as output channel size and %d as group.",
+          "received %d as output channel size and %d as group.",
           weights->shape[0] * weights->shape[1],
           input->shape[3]));
   auto res = Compute(
@@ -1683,7 +1683,7 @@ std::vector<Tensor> Pool2d(const Tensor &tensor,
       (tensor->shape.size() == 4U || tensor->shape.size() == 5U),
       true,
       ::common::errors::InvalidArgument(
-          "Pool2d requires tensor's shape_size to be 4 or 5, but recieved %d.",
+          "Pool2d requires tensor's shape_size to be 4 or 5, but received %d.",
           tensor->shape.size()));
   std::vector<int> axis = {height_axis, width_axis};
   return PoolImpl(tensor,

@@ -1028,7 +1028,7 @@ class SqueezeOpPattern
               in_shape[i],
               1,
               ::common::errors::PreconditionNotMet(
-                  "sequeze dim MUST be 1, but recive axis [%d] is [%d]",
+                  "squeeze dim MUST be 1, but receive axis [%d] is [%d]",
                   i,
                   in_shape[i]));
         }

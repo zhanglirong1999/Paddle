@@ -771,7 +771,7 @@ void cinn_call_cudnn_conv2d_forward(void *v_args,
       num_args,
       3,
       ::common::errors::InvalidArgument(
-          "Expected number of argruments is 3, but recived %d.", num_args));
+          "Expected number of argruments is 3, but received %d.", num_args));
   cudnnHandle_t &handle = CudnnHandle::GetInstance().GetCudnnHandle();
   CUDNN_CALL(cudnnSetStream(handle, static_cast<cudaStream_t>(stream)));
   cinn_pod_value_t *args = static_cast<cinn_pod_value_t *>(v_args);
@@ -925,7 +925,7 @@ void cinn_call_cudnn_conv2d_backward_data(void *v_args,
       num_args,
       3,
       ::common::errors::InvalidArgument(
-          "Expected number of argruments is 3, but recived %d.", num_args));
+          "Expected number of argruments is 3, but received %d.", num_args));
   cudnnHandle_t &handle = CudnnHandle::GetInstance().GetCudnnHandle();
   CUDNN_CALL(cudnnSetStream(handle, static_cast<cudaStream_t>(stream)));
   cinn_pod_value_t *args = static_cast<cinn_pod_value_t *>(v_args);
@@ -1082,7 +1082,7 @@ void cinn_call_cudnn_conv2d_backward_filter(void *v_args,
       num_args,
       3,
       ::common::errors::InvalidArgument(
-          "Expected number of argruments is 3, but recived %d.", num_args));
+          "Expected number of argruments is 3, but received %d.", num_args));
   cudnnHandle_t &handle = CudnnHandle::GetInstance().GetCudnnHandle();
   CUDNN_CALL(cudnnSetStream(handle, static_cast<cudaStream_t>(stream)));
   cinn_pod_value_t *args = static_cast<cinn_pod_value_t *>(v_args);
@@ -1236,7 +1236,7 @@ void cinn_call_cudnn_pool2d_forward(void *v_args,
       num_args,
       2,
       ::common::errors::InvalidArgument(
-          "Expected number of argruments is 2, but recived %d.", num_args));
+          "Expected number of argruments is 2, but received %d.", num_args));
   cudnnHandle_t &handle = CudnnHandle::GetInstance().GetCudnnHandle();
   CUDNN_CALL(cudnnSetStream(handle, static_cast<cudaStream_t>(stream)));
   cinn_pod_value_t *args = static_cast<cinn_pod_value_t *>(v_args);
@@ -1334,7 +1334,7 @@ void cinn_call_cudnn_pool2d_backward(void *v_args,
       num_args,
       4,
       ::common::errors::InvalidArgument(
-          "Expected number of argruments is 4, but recived %d.", num_args));
+          "Expected number of argruments is 4, but received %d.", num_args));
   cudnnHandle_t &handle = CudnnHandle::GetInstance().GetCudnnHandle();
   CUDNN_CALL(cudnnSetStream(handle, static_cast<cudaStream_t>(stream)));
   cinn_pod_value_t *args = static_cast<cinn_pod_value_t *>(v_args);
@@ -1448,7 +1448,7 @@ void cinn_call_cudnn_softmax_forward(void *v_args,
       num_args,
       2,
       ::common::errors::InvalidArgument(
-          "Expected number of argruments is 2, but recived %d.", num_args));
+          "Expected number of argruments is 2, but received %d.", num_args));
   cudnnHandle_t &handle = CudnnHandle::GetInstance().GetCudnnHandle();
   CUDNN_CALL(cudnnSetStream(handle, static_cast<cudaStream_t>(stream)));
   cinn_pod_value_t *args = static_cast<cinn_pod_value_t *>(v_args);
@@ -1522,7 +1522,7 @@ void cinn_call_cudnn_softmax_backward(void *v_args,
       num_args,
       3,
       ::common::errors::InvalidArgument(
-          "Expected number of argruments is 3, but recived %d.", num_args));
+          "Expected number of argruments is 3, but received %d.", num_args));
   cudnnHandle_t &handle = CudnnHandle::GetInstance().GetCudnnHandle();
   CUDNN_CALL(cudnnSetStream(handle, static_cast<cudaStream_t>(stream)));
   cinn_pod_value_t *args = static_cast<cinn_pod_value_t *>(v_args);

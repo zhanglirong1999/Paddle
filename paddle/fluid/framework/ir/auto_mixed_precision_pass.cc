@@ -1070,7 +1070,7 @@ void AutoMixedPrecisionPass::InsertCastOp() const {
             cache_kv_outputs.size(),
             common::errors::InvalidArgument(
                 "Cache inputs should be the same size with cache outputs, but "
-                "recieved %d as inputs and %d as outputs.",
+                "received %d as inputs and %d as outputs.",
                 cache_kv_inputs.size(),
                 cache_kv_outputs.size()));
         for (size_t i = 0; i < cache_kv_inputs.size(); ++i) {
