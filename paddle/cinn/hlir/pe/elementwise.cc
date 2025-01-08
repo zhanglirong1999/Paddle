@@ -222,7 +222,7 @@ Expr ReshapeHandler(const ir::Tensor& A,
       if (i > A_s) {
         temp = temp % A->shape[i];
       }
-      A_indice[i] = common::AutoSimplify(temp);
+      A_indice[i] = optim::ArithSimplify(temp);
     }
   };
 

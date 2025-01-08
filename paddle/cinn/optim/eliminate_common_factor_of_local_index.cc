@@ -136,7 +136,7 @@ CollectLocalVarToIndexes(ir::Expr* expr) {
 }
 
 int ExtractMulNumberFromExpr(const ir::Expr& expr) {
-  ir::Expr simplied_expr = cinn::common::AutoSimplify(expr);
+  ir::Expr simplied_expr = optim::ArithSimplify(expr);
   if (simplied_expr.is_constant()) {
     return static_cast<int>(simplied_expr.get_constant());
   } else if (expr.As<ir::Mul>()) {
@@ -151,7 +151,7 @@ int ExtractMulNumberFromExpr(const ir::Expr& expr) {
 }
 
 int ExtractAddNumberFromExpr(const ir::Expr& expr) {
-  ir::Expr simplied_expr = cinn::common::AutoSimplify(expr);
+  ir::Expr simplied_expr = optim::ArithSimplify(expr);
   if (simplied_expr.is_constant()) {
     return static_cast<int>(simplied_expr.get_constant());
   } else if (expr.As<ir::Add>()) {
@@ -173,7 +173,7 @@ int gcd(int a, int b) {
 }
 
 ir::Expr ExtractSymbolicFromExpr(const ir::Expr& expr) {
-  ir::Expr simplied_expr = cinn::common::AutoSimplify(expr);
+  ir::Expr simplied_expr = optim::ArithSimplify(expr);
   if (simplied_expr.is_constant()) {
     return ir::Expr(0);
   } else if (expr.As<ir::_Var_>()) {
@@ -210,7 +210,7 @@ struct CommonFactorTrait<Gcd> {
 
   static ir::Expr Simplify(const ir::Expr& expr, const ir::Expr& factor) {
     if (factor != unit) {
-      return cinn::common::AutoSimplify(ir::Div::Make(expr, factor));
+      return optim::ArithSimplify(ir::Div::Make(expr, factor));
     }
     return expr;
   }
@@ -229,7 +229,7 @@ struct CommonFactorTrait<Offset> {
 
   static ir::Expr Simplify(const ir::Expr& expr, const ir::Expr& factor) {
     if (factor != unit) {
-      return cinn::common::AutoSimplify(ir::Sub::Make(expr, factor));
+      return optim::ArithSimplify(ir::Sub::Make(expr, factor));
     }
     return expr;
   }
@@ -244,7 +244,7 @@ struct CommonFactorTrait<Symbolic> {
   static ir::Expr Calculate(const ir::Expr& expr1, const ir::Expr& expr2) {
     auto IsSymbolicNotEqual = [&](const ir::Expr& expr1,
                                   const ir::Expr& expr2) -> bool {
-      return cinn::common::AutoSimplify(
+      return optim::ArithSimplify(
                  ir::Sub::Make(ExtractSymbolicFromExpr(expr1),
                                ExtractSymbolicFromExpr(expr2))) != ir::Expr(0);
     };
@@ -256,7 +256,7 @@ struct CommonFactorTrait<Symbolic> {
 
   static ir::Expr Simplify(const ir::Expr& expr, const ir::Expr& factor) {
     if (factor != unit) {
-      return cinn::common::AutoSimplify(ir::Sub::Make(expr, factor));
+      return optim::ArithSimplify(ir::Sub::Make(expr, factor));
     }
     return expr;
   }

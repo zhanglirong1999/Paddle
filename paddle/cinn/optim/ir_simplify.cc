@@ -132,9 +132,8 @@ struct SimplifyRampMutator : public ir::IRMutator<Expr*> {
     auto b_ramp = b.As<ir::Ramp>();
 
     if (a_ramp && b_ramp && a_ramp->lanes == b_ramp->lanes) {
-      Expr base_add = cinn::common::AutoSimplify(a_ramp->base + b_ramp->base);
-      Expr stride_add =
-          cinn::common::AutoSimplify(a_ramp->stride + b_ramp->stride);
+      Expr base_add = optim::ArithSimplify(a_ramp->base + b_ramp->base);
+      Expr stride_add = optim::ArithSimplify(a_ramp->stride + b_ramp->stride);
       *expr = ir::Ramp::Make(base_add, stride_add, a_ramp->lanes);
     }
   }

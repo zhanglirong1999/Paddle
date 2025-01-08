@@ -101,8 +101,8 @@ Expr RampRelatedAdd(ir::Ramp *ramp, ir::Ramp *other) {
                           ::common::errors::InvalidArgument(
                               "Other ramp pointer should not be null."));
   if (ramp->lanes == other->lanes) {
-    Expr base_add = cinn::common::AutoSimplify(ramp->base + other->base);
-    Expr stride_add = cinn::common::AutoSimplify(ramp->stride + other->stride);
+    Expr base_add = optim::ArithSimplify(ramp->base + other->base);
+    Expr stride_add = optim::ArithSimplify(ramp->stride + other->stride);
     VLOG(2) << base_add;
     VLOG(2) << stride_add;
     return ir::Ramp::Make(base_add, stride_add, ramp->lanes);
@@ -641,8 +641,7 @@ ir::IndexExpr SimplifySymbolicDivide(const ir::IndexExpr &lhs,
 
 bool ProveDivisible(const ir::IndexExpr &lhs, const ir::IndexExpr &rhs) {
   if (IsZero(lhs % rhs)) return true;
-  // remove AutoSimplify later.
-  if (IsZero(AutoSimplify(lhs % rhs))) return true;
+  if (IsZero(optim::ArithSimplify(lhs % rhs))) return true;
   return false;
 }
 
