@@ -1407,7 +1407,7 @@ def set_gradient_clip(clip, param_list=None, program=None):
         "We recommend a new strategy: set 'grad_clip' "
         "when initializing the 'optimizer'. "
         "This method can reduce the mistakes, please "
-        "refer to documention of 'optimizer'."
+        "refer to documentation of 'optimizer'."
     )
 
     if not isinstance(clip, ClipGradBase):

@@ -3674,7 +3674,7 @@ function distribute_test() {
     parallel_fa_unit
     echo "End FA tests"
 
-    echo "Dowloading ...."
+    echo "Downloading ...."
     cd ${work_dir}
     wget https://paddlenlp.bj.bcebos.com/wheels/PaddleNLP_stable_paddle.tar.gz --no-proxy
     tar -zvxf PaddleNLP_stable_paddle.tar.gz

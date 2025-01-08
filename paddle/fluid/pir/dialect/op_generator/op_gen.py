@@ -342,7 +342,7 @@ scalar_type_maps = {
     'int': 'pir::Int32Attribute',
     'int64_t': 'pir::Int64Attribute',
     'float': 'pir::FloatAttribute',
-    'dobule': 'pir::DoubleAttribute',
+    'double': 'pir::DoubleAttribute',
     'bool': 'pir::BoolAttribute',
 }
 

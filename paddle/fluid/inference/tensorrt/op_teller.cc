@@ -2383,7 +2383,7 @@ struct SimpleOpTypeSetTeller : public Teller {
 
     // conv3d_transpose
     if (op_type == "conv3d_transpose") {
-      // trt doen't support output_padding when < 8406
+      // trt doesn't support output_padding when < 8406
       // output_padding is usually set when stride > 1
 #if !IS_TRT_VERSION_GE(8400)
       if (desc.HasAttr("output_padding")) {
