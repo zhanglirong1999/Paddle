@@ -3320,17 +3320,8 @@ void PNormInferMeta(const MetaTensor& x,
   auto x_dim = x.dims();
   auto x_rank = x_dim.size();
 
-  PADDLE_ENFORCE_GE(axis,
-                    -x_rank,
-                    errors::InvalidArgument(
-                        "Attr(axis) value should be in range [-R, R-1], R is "
-                        "the rank of Input(X). But received axis: %d, R: %d. "
-                        "Current Input(X)'s shape is=[%s].",
-                        axis,
-                        x_rank,
-                        x_dim));
-  PADDLE_ENFORCE_LT(axis,
-                    x_rank,
+  PADDLE_ENFORCE_EQ((axis >= -x_rank && axis < x_rank) || x_rank == 0,
+                    true,
                     errors::InvalidArgument(
                         "Attr(axis) value should be in range [-R, R-1], R is "
                         "the rank of Input(X). But received axis: %d, R: %d. "
