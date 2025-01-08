@@ -185,8 +185,8 @@ SymbolicPredicate DynamicShapeGroupScheduler::MakeBucketPredicate(
       }
     }
 
-    sp_extent = common::AutoSimplify(sp_extent);
-    rd_extent = common::AutoSimplify(rd_extent);
+    sp_extent = optim::ArithSimplify(sp_extent);
+    rd_extent = optim::ArithSimplify(rd_extent);
     return {sp_extent, rd_extent};
   }();
 

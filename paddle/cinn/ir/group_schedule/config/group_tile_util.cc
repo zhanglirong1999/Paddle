@@ -58,7 +58,7 @@ std::vector<int64_t> GetVarStrides(ir::Expr load_offset,
     ir::Expr expr = ir::ir_utils::IRCopy(load_offset);
     replacer.inspecting_var = var;
     replacer.IRMutator::Visit(&expr, &expr);
-    ir::Expr res = common::AutoSimplify(expr);
+    ir::Expr res = optim::ArithSimplify(expr);
     if (res.is_constant()) {
       return res.as_int64();
     }
@@ -90,7 +90,7 @@ ir::Expr GetLargestLoad(const std::vector<ir::Expr>& exprs) {
     for (size_t i = 1; i < tensor->shape.size(); i++) {
       size = size * tensor->shape[i];
     }
-    return common::AutoSimplify(size);
+    return optim::ArithSimplify(size);
   };
 
   ir::Expr res = exprs[0];
