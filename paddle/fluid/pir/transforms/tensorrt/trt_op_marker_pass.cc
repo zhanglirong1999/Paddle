@@ -94,7 +94,24 @@ DEFINE_GENERAL_PATTERN(Flip, paddle::dialect::FlipOp)
 DEFINE_GENERAL_PATTERN(Mish, paddle::dialect::MishOp)
 DEFINE_GENERAL_PATTERN(AssignValue, paddle::dialect::AssignValueOp)
 DEFINE_GENERAL_PATTERN(AssignValue_, paddle::dialect::AssignValue_Op)
+DEFINE_GENERAL_PATTERN(Exp, paddle::dialect::ExpOp)
+DEFINE_GENERAL_PATTERN(Abs, paddle::dialect::AbsOp)
+DEFINE_GENERAL_PATTERN(Abs_, paddle::dialect::Abs_Op)
+DEFINE_GENERAL_PATTERN(Sin, paddle::dialect::SinOp)
+DEFINE_GENERAL_PATTERN(Cos, paddle::dialect::CosOp)
+DEFINE_GENERAL_PATTERN(Sinh, paddle::dialect::SinhOp)
+DEFINE_GENERAL_PATTERN(Cosh, paddle::dialect::CoshOp)
+DEFINE_GENERAL_PATTERN(Asinh, paddle::dialect::AsinhOp)
+DEFINE_GENERAL_PATTERN(Acosh, paddle::dialect::AcoshOp)
+DEFINE_GENERAL_PATTERN(Atanh, paddle::dialect::AtanhOp)
+DEFINE_GENERAL_PATTERN(Ceil, paddle::dialect::CeilOp)
+DEFINE_GENERAL_PATTERN(Rsqrt, paddle::dialect::RsqrtOp)
+DEFINE_GENERAL_PATTERN(Reciprocal, paddle::dialect::ReciprocalOp)
+DEFINE_GENERAL_PATTERN(Erf, paddle::dialect::ErfOp)
+DEFINE_GENERAL_PATTERN(Sign, paddle::dialect::SignOp)
+DEFINE_GENERAL_PATTERN(Round, paddle::dialect::RoundOp)
 DEFINE_GENERAL_PATTERN(Numel, paddle::dialect::NumelOp)
+
 #undef DEFINE_GENERAL_PATTERN
 
 // Add ReduceCommonOpPattern base class to simplify code
@@ -267,8 +284,30 @@ class ActOpPattern : public pir::OpRewritePattern<OpType> {
 using TanhOpPattern = ActOpPattern<paddle::dialect::TanhOp>;
 using CeluOpPattern = ActOpPattern<paddle::dialect::CeluOp>;
 using TanhShrinkOpPattern = ActOpPattern<paddle::dialect::TanhShrinkOp>;
-using LogicalNotOpPattern = ActOpPattern<paddle::dialect::LogicalNotOp>;
-using LogicalNot_OpPattern = ActOpPattern<paddle::dialect::LogicalNot_Op>;
+
+template <typename OpType>
+class Logical_NotOpPattern : public pir::OpRewritePattern<OpType> {
+ public:
+  using pir::OpRewritePattern<OpType>::OpRewritePattern;
+  bool MatchAndRewrite(OpType op,
+                       pir::PatternRewriter &rewriter) const override {
+    if (op->HasAttribute(kCanRunTrtAttr) &&
+        op->template attribute<pir::BoolAttribute>(kCanRunTrtAttr).data()) {
+      return false;
+    }
+    pir::Value x = op.operand_source(0);
+    auto x_dtype = pir::GetDataTypeFromValue(x);
+    if (!x_dtype.isa<pir::BoolType>()) {
+      VLOG(3) << " logical_not op only support bool input in tensorrt.";
+      return false;
+    }
+    op->set_attribute(kCanRunTrtAttr, rewriter.bool_attr(true));
+    return true;
+  }
+};
+using LogicalNotOpPattern = Logical_NotOpPattern<paddle::dialect::LogicalNotOp>;
+using LogicalNot_OpPattern =
+    Logical_NotOpPattern<paddle::dialect::LogicalNot_Op>;
 
 class Pool2dOpPattern
     : public pir::OpRewritePattern<paddle::dialect::Pool2dOp> {
@@ -532,24 +571,6 @@ class ArangeOpPattern
       VLOG(3) << "The type of start is not float32 or float64";
       return false;
     }
-#endif
-    op->set_attribute(kCanRunTrtAttr, rewriter.bool_attr(true));
-    return true;
-  }
-};
-
-class SignOpPattern : public pir::OpRewritePattern<paddle::dialect::SignOp> {
- public:
-  using pir::OpRewritePattern<paddle::dialect::SignOp>::OpRewritePattern;
-  bool MatchAndRewrite(paddle::dialect::SignOp op,
-                       pir::PatternRewriter &rewriter) const override {
-    if (op->HasAttribute(kCanRunTrtAttr) &&
-        op->attribute<pir::BoolAttribute>(kCanRunTrtAttr).data()) {
-      return false;
-    }
-#if IS_TRT_VERSION_LT(8200)
-    VLOG(3) << "sign op is only supported by tensorrt8.2 above ";
-    return false;
 #endif
     op->set_attribute(kCanRunTrtAttr, rewriter.bool_attr(true));
     return true;
@@ -2273,6 +2294,23 @@ class TrtOpMarkerPass : public pir::PatternRewritePass {
     ADD_PATTERN(Mish)
     ADD_PATTERN(AssignValue)
     ADD_PATTERN(AssignValue_)
+    ADD_PATTERN(Exp)
+    ADD_PATTERN(Abs)
+    ADD_PATTERN(Abs_)
+    ADD_PATTERN(Cos)
+    ADD_PATTERN(Sin)
+    ADD_PATTERN(Cos)
+    ADD_PATTERN(Sinh)
+    ADD_PATTERN(Cosh)
+    ADD_PATTERN(Asinh)
+    ADD_PATTERN(Acosh)
+    ADD_PATTERN(Atanh)
+    ADD_PATTERN(Ceil)
+    ADD_PATTERN(Rsqrt)
+    ADD_PATTERN(Reciprocal)
+    ADD_PATTERN(Erf)
+    ADD_PATTERN(Sign)
+    ADD_PATTERN(Round)
     ADD_PATTERN(Numel)
 #if IS_TRT_VERSION_GE(8600)
     ADD_PATTERN(Layer_norm)
@@ -2283,7 +2321,6 @@ class TrtOpMarkerPass : public pir::PatternRewritePass {
     ps.Add(std::make_unique<DepthwiseConv2dTransposeOpPattern>(context));
     ps.Add(std::make_unique<DeformableConvOpPattern>(context));
     ps.Add(std::make_unique<ArangeOpPattern>(context));
-    ps.Add(std::make_unique<SignOpPattern>(context));
     ps.Add(std::make_unique<LogicalNotOpPattern>(context));
     ps.Add(std::make_unique<BitwiseAndOpPattern>(context));
     ps.Add(std::make_unique<BitwiseOrOpPattern>(context));
