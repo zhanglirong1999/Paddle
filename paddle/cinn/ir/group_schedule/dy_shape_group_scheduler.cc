@@ -16,6 +16,7 @@
 #include "paddle/cinn/common/cas.h"
 #include "paddle/cinn/hlir/framework/pir/trivial_op_impl.h"
 #include "paddle/cinn/ir/group_schedule/config/schedule_config_manager.h"
+#include "paddle/cinn/ir/group_schedule/tactic/align_iter_space_tactic.h"
 #include "paddle/cinn/ir/group_schedule/tactic/compute_at_reduction_tactic.h"
 #include "paddle/cinn/ir/group_schedule/tactic/compute_inline_tactic.h"
 #include "paddle/cinn/ir/group_schedule/tactic/tile_broadcast_tactic.h"
@@ -33,6 +34,7 @@ void DynamicShapeGroupScheduler::Init() {
   VLOG(4) << "original group func body: \n"
           << ir_sch_->GetModule().GetExprs()[0];
   InitBuckets();
+  tactics_.emplace_back(CreateAlignIterSpaceTactic());
   tactics_.emplace_back(CreateTileBroadcastTactic());
   tactics_.emplace_back(CreateTileFirstGeneralTactic());
   tactics_.emplace_back(CreateComputeInlineTactic());
