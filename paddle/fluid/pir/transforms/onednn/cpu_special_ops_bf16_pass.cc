@@ -1,4 +1,4 @@
-// Copyright (c) 2024 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2025 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -59,18 +59,15 @@ class ConcatBf16QuantizePattern
     auto onednn_data_type = op_attributes.at("mkldnn_data_type")
                                 .dyn_cast<pir::StrAttribute>()
                                 .AsString();
-    if (onednn_data_type == "bfloat16") return false;
-    op_attributes["mkldnn_data_type"] = rewriter.str_attr("bfloat16");
+    if (onednn_data_type != "bfloat16") return false;
 
     auto combine_inputs = pre_op.inputs();
 
     for (size_t idx = 0; idx < combine_inputs.size(); idx++) {
-      auto type = pre_op->operand_type(idx);
-      // Currently we only process case where elements are all DenseTensor(s)
-      if (!type.isa<pir::DenseTensorType>()) return false;
-      // All Tensors should be fp32
-      auto dtype = pir::GetDataTypeFromValue(pre_op->operand_source(idx));
-      if (!dtype.isa<pir::Float32Type>()) return false;
+      // Check if it's already quantized
+      auto pre_pre_op = pir::GetDefiningOpForInput(pre_op, idx);
+      if (pre_pre_op && pre_pre_op->name() == "onednn_op.quantize")
+        return false;
     }
 
     pir::IrContext *ctx = rewriter.ir_context();
@@ -95,6 +92,7 @@ class ConcatBf16QuantizePattern
       quant_op->result(0).set_type(new_type);
       new_combine_inputs[idx] = quant_op.output();
     }
+
     // Create new combine
     pir::CombineOp new_combine =
         rewriter.Build<pir::CombineOp>(new_combine_inputs);
@@ -146,7 +144,12 @@ class CPUSpecialOpsBf16Pass : public pir::PatternRewritePass {
 
     auto concat_bf16_quant_pattern =
         std::make_unique<ConcatBf16QuantizePattern>(
-            context, benefit--, std::vector<std::string>{});
+            context,
+            benefit--,
+            std::vector<std::string>{
+                paddle::onednn::dialect::QuantizeOp::name(),
+                paddle::onednn::dialect::DequantizeOp::name(),
+            });
     ps.Add(std::move(concat_bf16_quant_pattern));
 
     return ps;

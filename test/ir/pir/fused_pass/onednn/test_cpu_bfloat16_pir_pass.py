@@ -1,4 +1,4 @@
-# Copyright (c) 2024 PaddlePaddle Authors. All Rights Reserved.
+# Copyright (c) 2025 PaddlePaddle Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -1143,6 +1143,7 @@ class TestConcatBfloatQuantizePass(PassTest):
                 out = paddle.assign(out)
                 self.pass_attr_list = [
                     {'onednn_placement_pass': {}},
+                    {'cpu_bfloat16_placement_pass': {}},
                     {'cpu_special_ops_bf16_pass': {}},
                 ]
                 self.feeds = {
