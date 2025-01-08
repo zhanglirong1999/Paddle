@@ -908,11 +908,13 @@ void AnalysisPredictor::OptimizeInferencePirProgram() {
         });
         // Infer symbol shape for all ops before fused pass
         fused_op_pm.AddPass(pir::CreateShapeOptimizationPass());
-        const std::vector<std::string> FusedOpPasses{// Operator fusion pass
-                                                     "map_op_to_another_pass",
-                                                     "conv2d_bn_fuse_pass",
-                                                     "conv2d_add_act_fuse_pass",
-                                                     "conv2d_add_fuse_pass"};
+        const std::vector<std::string> FusedOpPasses{
+            // Operator fusion pass
+            "map_op_to_another_pass",
+            "conv2d_bn_fuse_pass",
+            "conv2d_add_act_fuse_pass",
+            "conv2d_add_fuse_pass",
+            "matmul_add_act_fuse_pass"};
 
         for (const auto &fused_op : FusedOpPasses) {
           fused_op_pm.AddPass(pir::PassRegistry::Instance().Get(fused_op));
