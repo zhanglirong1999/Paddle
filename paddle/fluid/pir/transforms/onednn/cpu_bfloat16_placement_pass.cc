@@ -51,7 +51,7 @@ class OneDNNBf16PlacementPattern : public pir::RewritePattern {
  public:
   explicit OneDNNBf16PlacementPattern(pir::IrContext* context)
       : pir::RewritePattern(MatchAnyOpTypeTag(),
-                            1 /*benefit*/,
+                            5 /*benefit*/,
                             context,
                             {} /*generated_names*/) {}
 
