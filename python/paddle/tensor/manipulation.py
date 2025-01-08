@@ -5295,6 +5295,19 @@ def atleast_2d(*inputs, name=None):
     """
     Convert inputs to tensors and return the view with at least 2-dimension. Two or high-dimensional inputs are preserved.
 
+    The following diagram illustrates the behavior of atleast_2d on different dimensional inputs for the following cases:
+
+        1. A 0-dim tensor input.
+        2. A 0-dim tensor and a 1-dim tensor input.
+        3. A 0-dim tensor and a 3-dim tensor input.
+
+    .. image:: https://githubraw.cdn.bcebos.com/PaddlePaddle/docs/develop/docs/images/api_legend/atleast_2d.png
+        :width: 600
+        :alt: legend of atleast_2d API
+        :align: center
+
+    In each case, the function returns the tensors (or a list of tensors) in views with at least 2 dimensions.
+
     Args:
         inputs (Tensor|list(Tensor)): One or more tensors. The data type is ``float16``, ``float32``, ``float64``, ``int16``, ``int32``, ``int64``, ``int8``, ``uint8``, ``complex64``, ``complex128``, ``bfloat16`` or ``bool``.
         name (str|None, optional): Name for the operation (optional, default is None). For more information, please refer to :ref:`api_guide_Name`.
