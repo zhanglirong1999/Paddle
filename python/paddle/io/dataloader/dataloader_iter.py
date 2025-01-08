@@ -52,7 +52,7 @@ from .worker import (
 # layers processing) after iterate **the first few data** in
 # distributed launch mode, distributed launch will call
 # terminate() to kill main process on each devices, but thread
-# is still iterating to fullfill blocking queue caches, which
+# is still iterating to fulfill blocking queue caches, which
 # may cause thread error `terminate called without an active
 # exception` for terminate is a strong signal and `__del__`
 # of DataLoader may not be called, so we add a global link to

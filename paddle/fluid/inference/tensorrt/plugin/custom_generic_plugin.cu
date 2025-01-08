@@ -311,9 +311,9 @@ bool CustomGenericPlugin::supportsFormatCombination(
   auto& op_meta_info_map = OpMetaInfoMap::Instance();
   const auto& meta_info_map = op_meta_info_map.GetMap();
   auto& op_info = meta_info_map.at(op_desc_.Type()).front();
-  auto& supports_formate_config =
+  auto& supports_format_config =
       OpMetaInfoHelper::GetTrtSupportsFormatConfig(op_info);
-  PADDLE_ENFORCE_NE(supports_formate_config.empty(),
+  PADDLE_ENFORCE_NE(supports_format_config.empty(),
                     true,
                     common::errors::InvalidArgument(
                         "The %s op has no tensorrt plugin "
@@ -325,7 +325,7 @@ bool CustomGenericPlugin::supportsFormatCombination(
   size_t output_num = OpMetaInfoHelper::GetOutputs(op_info).size();
   std::vector<std::vector<std::pair<std::string, std::string>>>
       format_combinations;
-  for (auto& config : supports_formate_config) {
+  for (auto& config : supports_format_config) {
     auto format_combination = parseConfig(op_desc_.Type(), config);
     PADDLE_ENFORCE_EQ(input_num + output_num,
                       format_combination.size(),

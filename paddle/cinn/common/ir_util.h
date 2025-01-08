@@ -191,7 +191,7 @@ inline void UnpackReduction(const ir::IndexExpr &expr, FLeaf fleaf) {
 }
 
 /*!
- * \brief Flattern the expression into a vector of expressions splited by `Add`
+ * \brief Flatten the expression into a vector of expressions splited by `Add`
  * or `Mul`.
  *
  * For example (Add):

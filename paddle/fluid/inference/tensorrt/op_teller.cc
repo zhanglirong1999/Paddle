@@ -3467,9 +3467,9 @@ struct CustomGenericPluginTeller : public Teller {
                    "SetTrtInferShapeFn.";
         return false;
       }
-      auto& trt_supports_formate_config =
+      auto& trt_supports_format_config =
           OpMetaInfoHelper::GetTrtSupportsFormatConfig(op_info);
-      if (trt_supports_formate_config.empty()) {
+      if (trt_supports_format_config.empty()) {
         VLOG(3)
             << op_type
             << " has no trt supportsFormatCombination config. Please set by "

@@ -1742,7 +1742,7 @@ void cinn_call_cholesky_nvgpu(void *v_args,
   cinn_buffer_t *x = args[0].operator cinn_buffer_t *();
   cinn_buffer_t *out = args[1].operator cinn_buffer_t *();
   // In cuSOLVER, dense matrix stores in COL_MAJOR, thus FILL_MODE needs to be
-  // filpped. See also:
+  // flipped. See also:
   // https://docs.nvidia.com/cuda/cusolver/index.html#matrix-dense-format
   cublasFillMode_t uplo =
       upper ? CUBLAS_FILL_MODE_LOWER : CUBLAS_FILL_MODE_UPPER;
