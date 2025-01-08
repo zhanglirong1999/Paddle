@@ -157,7 +157,7 @@ def check_memory_usage(msg=""):
         mem_msg = f"checking pinned memory usage {msg}:"
         for key in mem_dict:
             mem_msg += f"\n{key}: {mem_dict[key]}GB"
-        logger.infor(mem_msg)
+        logger.info(mem_msg)
 
     if hasattr(paddle.device, 'cpu') and hasattr(
         paddle.device.cpu, 'max_memory_allocated'

@@ -12,6 +12,13 @@ extend-exclude = [
 [default]
 # Ignore 1-3 letter words, refer to https://github.com/crate-ci/typos/issues/1079
 extend-ignore-words-re = ["^[a-zA-Z]{1,3}$"]
+# refer to https://github.com/crate-ci/typos/blob/master/docs/reference.md#example-configurations
+extend-ignore-re = [
+    # Ignore lines by `# typos: disable-line`
+    "(?Rm)^.*(#|//)\\s*typos:\\s*disable-line$",
+    # Ignore block by `# typos: off` and `# typos: on`
+    "(?s)(#|//)\\s*typos:\\s*off.*?\\n\\s*(#|//)\\s*typos:\\s*on"
+]
 
 [default.extend-words]
 # PaddlePaddle specific words
@@ -39,19 +46,8 @@ creater = 'creater'
 fetchs = 'fetchs'
 Indexs = 'Indexs'
 indexs = 'indexs'
-indiates = 'indiates'
-indeces = 'indeces'
-inferrence = 'inferrence'
 Infered = 'Infered'
 infered = 'infered'
-infering = 'infering'
-informations = 'informations'
-imformation = 'imformation'
-infomation = 'infomation'
-Infor = 'Infor'
-infor = 'infor'
-inheritted = 'inheritted'
-initilization = 'initilization'
 initilized = 'initilized'
 initalized = 'initalized'
 initalize = 'initalize'

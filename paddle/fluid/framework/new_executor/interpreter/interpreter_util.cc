@@ -859,7 +859,7 @@ void BuildOpFuncList(const phi::Place& place,
                 op->Attr<bool>(kAllKernelsMustComputeRuntimeShape))) {
             RuntimeInferShapeContext infer_shape_ctx(*op, runtime_context);
             // TODO(Aurelius84): In case of control flow ops, they are NOT
-            // inheritted from OperatorWithKernel.
+            // inherited from OperatorWithKernel.
             op_with_kernel->Info().infer_shape_(&infer_shape_ctx);
           }
         }

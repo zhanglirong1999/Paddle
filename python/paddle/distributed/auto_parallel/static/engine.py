@@ -1338,12 +1338,12 @@ class Engine:
             )
 
         if self._in_pir_mode:
-            # FIXME(ljz) avoid shared same tensro more than once in different mode
+            # FIXME(ljz) avoid shared same tensor more than once in different mode
             if mode != "train":
                 return
             # TODO(2024-Q2)
             # 1. unify random control
-            # 2. initilization of non-parameter buffer
+            # 2. initialization of non-parameter buffer
             # 3. run startup program for pir
             # 4. lazy init adaption
             # 5. amp init adaption

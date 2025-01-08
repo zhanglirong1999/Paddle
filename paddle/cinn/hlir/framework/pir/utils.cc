@@ -95,7 +95,7 @@ std::string GetDebugInfo(const std::unordered_set<std::string>& names) {
   return debug_info;
 }
 
-// OpTransInfo contains informations used to detect subgraphs
+// OpTransInfo contains information used to detect subgraphs
 // supported by the CINN compiler.
 class OpTransInfo {
   using DeParamCondT =

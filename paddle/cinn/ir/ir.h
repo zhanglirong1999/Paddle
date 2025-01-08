@@ -848,7 +848,7 @@ struct ForBase {
   BindInfo bind_info_;
 };
 
-/// LLVM loop unroll metadata infomation
+/// LLVM loop unroll metadata information
 struct LLVMForLoopMeta {
   enum UnrollMode { DefaultUnroll, FullyUnroll, NoUnroll };
 
