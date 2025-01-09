@@ -171,8 +171,10 @@ std::unique_ptr<llvm::MemoryBuffer> NaiveObjectCache::getObject(
 
 template <typename CodeGenT>
 void ExecutionEngine::Link(const ir::Module &module) {
+  if (module.functions().size() == 0) {
+    return;
+  }
   utils::RecordEvent("ExecutionEngine Link", utils::EventType::kOrdinary);
-
   auto ir_emitter = std::make_unique<CodeGenT>(m.get(), b.get());
   VLOG(3) << "ir_emitter->Compile(module) Begin";
   ir_emitter->Compile(module);
@@ -209,6 +211,16 @@ void ExecutionEngine::Link(const ir::Module &module) {
     os.flush();
     VLOG(5) << buffer;
   }
+}
+
+template <>
+void ExecutionEngine::Link<CodeGenGpuHost>(const ir::Module &module) {
+  if (module.functions().size() == 0) {
+    return;
+  }
+  utils::RecordEvent("ExecutionEngine Link", utils::EventType::kOrdinary);
+  auto ir_emitter = std::make_unique<CodeGenGpuHost>(m.get(), b.get());
+  ir_emitter->Compile(module);
 }
 
 bool ExecutionEngine::AddModule(std::unique_ptr<llvm::Module> module,
