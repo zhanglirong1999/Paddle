@@ -1707,7 +1707,7 @@ class ShardingOptimizer(MetaOptimizerBase):
         # offload and optimize_cast will insert broadcast op
         broadcast_params = set()
         for op in startup_block.ops:
-            if op.type == 'c_broadcast':
+            if op.type == 'broadcast':
                 broadcast_params.add(op.desc.output_arg_names()[0])
 
         for param in params_name:
@@ -1723,13 +1723,12 @@ class ShardingOptimizer(MetaOptimizerBase):
 
             for ring in rings:
                 startup_block.append_op(
-                    type='c_broadcast',
-                    inputs={'X': param},
-                    outputs={'Out': param},
+                    type='broadcast',
+                    inputs={'x': param},
+                    outputs={'out': param},
                     attrs={
                         'ring_id': ring,
                         'root': 0,
-                        'use_calc_stream': True,
                         OP_ROLE_KEY: OpRole.Forward,
                     },
                 )
