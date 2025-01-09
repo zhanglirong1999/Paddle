@@ -440,6 +440,20 @@ class RemovePasses:
                 elif op.name() == "cf.yield":
                     continue
                 elif op.name() == "pd_op.pylayer":
+                    # if the pylayer op is not on the current rank, we should delete it
+                    is_cur_rank = False
+                    for pylayer_block in list(op.blocks())[::-1]:
+                        for sub_block_op in pylayer_block.ops:
+                            if (
+                                sub_block_op.dist_attr
+                                and cur_rank
+                                in sub_block_op.dist_attr.process_mesh.process_ids
+                            ):
+                                is_cur_rank = True
+                                break
+                    if not is_cur_rank:
+                        op.erase()
+                        continue
                     for pylayer_block in list(op.blocks())[::-1]:
                         prune_op(pylayer_block)
                     # update pylayer op's inputs
