@@ -1066,12 +1066,6 @@ def complete_chunk_id(dist_program, startup_program, pipeline_strategy):
         dist_program.global_block().ops, seg_method
     )
     ops = dist_program.global_block().ops
-
-    assert (len(seg_struct_names) % num_chunks == 0) or (
-        (len(seg_struct_names) + 1) % num_chunks == 0
-        and (len(seg_struct_names) + 1) // num_chunks != 1
-    ), f"The number of layers[{seg_method}] ({len(seg_struct_names)}) should be divisible by part number ({num_chunks}),or ({len(seg_struct_names)} + 1) should be divisible by {num_chunks} and not equal to {num_chunks}."
-
     # Step2: analysis whether the pp_stage is non-decreasing among segments
     # 1. if non_use_custom_mesh is True, the ops' process_mesh will be changed by vpp strategy
     # 2. if non_use_custom_mesh is False, the ops's process_mesh will not be changed.
@@ -1080,20 +1074,41 @@ def complete_chunk_id(dist_program, startup_program, pipeline_strategy):
     # Step3: Get op index boundary, pp_stage, chunk_id, struct_names of each segment
     seg_pp_stages = [i % pp_degree for i in range(num_chunks)]
     seg_chunk_ids = [i // pp_degree for i in range(num_chunks)]
-    seg_layer_num = [0] * num_chunks
-    for j in range(0, len(seg_struct_names)):
-        i = j % num_chunks
-        seg_layer_num[i] = seg_layer_num[i] + 1
     seg_parts = [0]
-
+    last_struct_name = None
+    stage_ids = (
+        []
+    )  # stage_ids[i] represents the stage number assigned to the i-th layer.
     for idx, op in enumerate(ops):
         if len(seg_parts) == len(seg_struct_names):
             break
         struct_name = _extract_seg_method(op, seg_method)
+        if op.dist_attr is not None and last_struct_name != struct_name:
+            pp_stage = get_pp_stage_by_process_mesh(
+                op.dist_attr.process_mesh, pp_degree
+            )
+            if pp_stage is not None:
+                stage_ids.append(pp_stage)
+            last_struct_name = struct_name
         if struct_name == seg_struct_names[len(seg_parts)]:
             seg_parts.append(idx)
     seg_parts.append(len(ops))
-
+    pp_stage_layer_nums = [0] * pp_degree
+    for i in stage_ids:
+        pp_stage_layer_nums[i] = pp_stage_layer_nums[i] + 1
+    assert all(
+        value >= vpp_degree for value in pp_stage_layer_nums
+    ), "The number of layers on each pp_stage must not be less than the vpp_degree in the pp_stage to ensure that each chunk contains at least one layer."
+    seg_layer_num = [0] * num_chunks
+    for pp_stage in range(
+        0, pp_degree
+    ):  # Each pp_stage is assigned a number of layers based on user intent.
+        pp_stage_layer_num = pp_stage_layer_nums[pp_stage]
+        for i in range(0, pp_stage_layer_num):
+            # The pp_stage uses a Round robin scheduling algorithm to allocate layers one by one.
+            virtual_chunk_id = i % vpp_degree
+            real_chunk_id = (virtual_chunk_id) * pp_degree + pp_stage
+            seg_layer_num[real_chunk_id] = seg_layer_num[real_chunk_id] + 1
     # Step4: Set the process_mesh of each op
     seg_id = 0
     reshard_ops = []
