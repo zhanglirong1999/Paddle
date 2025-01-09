@@ -485,7 +485,7 @@ FORWARD_BODY_BEFORE_API_CALL_TEMPLATE = """  if (require_any_grad) {{
     // Node Construction
 {}
     // Set for forward trace
-  if (FLAGS_check_nan_inf) {{
+  if (FLAGS_check_nan_inf || FLAGS_call_stack_level == 3) {{
     grad_node->SetForwardTrace(egr::Controller::Instance().GetPythonStack());
   }}
     // SetAttributes if needed
@@ -590,6 +590,7 @@ FORWARD_CC_FILE_TEMPLATE = """
 #include "paddle/fluid/imperative/amp_utils.h"
 
 COMMON_DECLARE_bool(check_nan_inf);
+COMMON_DECLARE_int32(call_stack_level);
 COMMON_DECLARE_string(tensor_operants_mode);
 COMMON_DECLARE_bool(use_stride_kernel);
 {}

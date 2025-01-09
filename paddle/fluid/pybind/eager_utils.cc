@@ -51,6 +51,7 @@ limitations under the License. */
 
 COMMON_DECLARE_bool(check_nan_inf);
 COMMON_DECLARE_int32(check_nan_inf_level);
+COMMON_DECLARE_int32(call_stack_level);
 
 using egr::ConvertToDistTensor;
 
@@ -268,6 +269,19 @@ void SetPythonStack() {
     }
     std::string last = str + egr::Controller::Instance().GetPythonStack();
     egr::Controller::Instance().SetPythonStack(last);
+  }
+
+  if (FLAGS_call_stack_level == 3) {
+    VLOG(4) << "this is SetPythonStack";
+    pybind11::gil_scoped_acquire gil;
+    PyObject* mod = PyImport_ImportModule("traceback");
+    PyObject* traceback_list = PyObject_CallMethod(mod, "format_stack", "");
+    std::string str = "";
+    for (Py_ssize_t i = 0; i < PyList_Size(traceback_list); i++) {
+      PyObject* line = PyList_GetItem(traceback_list, i);
+      str += py::str(PyUnicode_AsUTF8(line));
+    }
+    egr::Controller::Instance().SetPythonStack(str);
   }
 }
 
