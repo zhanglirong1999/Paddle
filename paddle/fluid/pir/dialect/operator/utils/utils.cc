@@ -66,6 +66,8 @@ enum class AttrType {
 
   STRING,
 
+  TENSOR_NAME,
+
   NUM_ATTR_TYPES,
 };
 
@@ -90,6 +92,8 @@ static inline AttrType GetAttributeType(const pir::Attribute& attr) {
     return AttrType::DATA_TYPE;
   } else if (attr.isa<paddle::dialect::PlaceAttribute>()) {
     return AttrType::PLACE;
+  } else if (attr.isa<pir::TensorNameAttribute>()) {
+    return AttrType::TENSOR_NAME;
   } else {
     PADDLE_THROW(common::errors::Unimplemented(
         "Unsupported ir Attribute type when casting it into "
@@ -140,6 +144,10 @@ static std::function<T(const pir::Attribute& attr)> GetAttrCast(
           {AttrType::PLACE,
            [](const pir::Attribute& attr) {
              return T{attr.dyn_cast<paddle::dialect::PlaceAttribute>().data()};
+           }},
+          {AttrType::TENSOR_NAME,
+           [](const pir::Attribute& attr) {
+             return T{attr.dyn_cast<pir::TensorNameAttribute>().data()};
            }},
           {AttrType::ARRAY,
            [](const pir::Attribute& attr) {

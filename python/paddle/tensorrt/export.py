@@ -172,6 +172,7 @@ class TensorRTConfig:
         precision_mode: PrecisionMode = PrecisionMode.FP32,
         ops_run_float: str | list | None = None,
         optimization_level: int | None = 3,
+        disable_passes: list = [],
     ) -> None:
         """
         A class for configuring TensorRT optimizations.
@@ -196,6 +197,8 @@ class TensorRTConfig:
                 The directory where the optimized model will be saved (default is None).
             optimization_level (int, optional):
                 Set TensorRT optimization level (default is 3). Only supported in TensorRT versions greater than 8.6.
+            disable_passes : (str|list, optional):
+                A list of string representing the names of pass that should not be used for origin program (default is []).
         Returns:
             None
 
@@ -226,6 +229,7 @@ class TensorRTConfig:
         self.precision_mode = precision_mode
         self.ops_run_float = ops_run_float
         self.disable_ops = disable_ops
+        self.disable_passes = disable_passes
         self.optimization_level = optimization_level
         paddle.framework.set_flags(
             {'FLAGS_trt_min_group_size': min_subgraph_size}
@@ -257,17 +261,22 @@ def convert_to_trt(program, trt_config, scope):
             opt_shape_feed[feed_name[i]] = opt_data
             max_shape_feed[feed_name[i]] = max_data
 
-            # run warmup for collecting shape
-        program = warmup_shape_infer(
+        # run pir pass (including trt_op_marker_pass)
+        program_with_pir = run_pir_pass(
             program,
+            partition_mode=False,
+            disable_passes=trt_config.disable_passes,
+            scope=scope,
+        )
+
+        # run warmup for collecting shape
+        program = warmup_shape_infer(
+            program_with_pir,
             min_shape_feed=min_shape_feed,
             opt_shape_feed=opt_shape_feed,
             max_shape_feed=max_shape_feed,
             scope=scope,
         )
-
-        # run pir pass (including trt_op_marker_pass)
-        program_with_pir = run_pir_pass(program, partition_mode=False)
 
         # specify certain operators to be excluded from entering TensorRT
         if trt_config.disable_ops:
@@ -277,7 +286,9 @@ def convert_to_trt(program, trt_config, scope):
         mark_builtin_op(program)
 
         # run pir pass (including trt_sub_graph_extract_pass)
-        program_with_pir = run_pir_pass(program, partition_mode=True)
+        program_with_pir = run_pir_pass(
+            program, partition_mode=True, scope=scope
+        )
 
         # Step4: run TRTConverter (would lower group_op into tensorrt_engine_op)
         converter = PaddleToTensorRTConverter(

@@ -41,6 +41,7 @@ class TestConv2dTRTPattern(TensorRTBaseTest):
         self.min_shape = {"x": [1, 3, 8, 8]}
         self.opt_shape = {"x": [2, 3, 8, 8]}
         self.max_shape = {"x": [10, 3, 8, 8]}
+        self.disable_passes = ['constant_folding_pass', 'conv2d_add_fuse_pass']
 
     def test_trt_result_fp16(self):
         self.check_trt_result(precision_mode="fp16")
@@ -61,6 +62,7 @@ class TestConv2dPaddingAlgorithmTRTPattern(TensorRTBaseTest):
         self.min_shape = {"x": [1, 3, 8, 8]}
         self.opt_shape = {"x": [2, 3, 8, 8]}
         self.max_shape = {"x": [10, 3, 8, 8]}
+        self.disable_passes = ['constant_folding_pass', 'conv2d_add_fuse_pass']
 
     def test_trt_result(self):
         self.check_trt_result()
@@ -79,6 +81,7 @@ class TestConv2dPaddingTRTPattern(TensorRTBaseTest):
         self.min_shape = {"x": [1, 3, 8, 8]}
         self.opt_shape = {"x": [2, 3, 8, 8]}
         self.max_shape = {"x": [10, 3, 8, 8]}
+        self.disable_passes = ['constant_folding_pass', 'conv2d_add_fuse_pass']
 
     def test_trt_result(self):
         self.check_trt_result()
@@ -310,6 +313,25 @@ class TestDepthwiseConv2dTransposeValidTRTPattern(TensorRTBaseTest):
         self.max_shape = {"x": [10, 2, 8, 8]}
 
     def test_trt_result(self):
+        self.check_trt_result()
+
+
+class TestFusedConv2dAddActTRTPattern(TensorRTBaseTest):
+    def setUp(self):
+        self.python_api = conv2d_wrapper
+        self.api_args = {
+            "x": np.random.random([2, 3, 8, 8]).astype("float32"),
+        }
+        self.program_config = {"feed_list": ["x"]}
+        self.min_shape = {"x": [1, 3, 8, 8]}
+        self.opt_shape = {"x": [2, 3, 8, 8]}
+        self.max_shape = {"x": [10, 3, 8, 8]}
+        self.disable_passes = []
+
+    def test_trt_result_fp16(self):
+        self.check_trt_result(precision_mode="fp16")
+
+    def test_trt_result_fp32(self):
         self.check_trt_result()
 
 

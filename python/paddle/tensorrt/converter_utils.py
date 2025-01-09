@@ -453,6 +453,7 @@ def trt_reduce_to_scalar(network, tensor, dtype=trt.int32):
 def convert_conv2d(network, paddle_op, inputs):
     from paddle.tensorrt.util import support_fp32_mix_precision
 
+    bias = None
     if (
         paddle_op.name() == "pd_op.conv2d"
         or paddle_op.name() == "pd_op.depthwise_conv2d"
@@ -469,7 +470,8 @@ def convert_conv2d(network, paddle_op, inputs):
             output_size = None
         else:
             raise ValueError("Invalid number of inputs for conv2d_transpose")
-
+    if paddle_op.name() == "pd_op.fused_conv2d_add_act":
+        input_tensor, filter, bias, _ = inputs
     input_shape = paddle_op.operands()[0].source().shape
     filter_shape = paddle_op.operands()[1].source().shape
 
@@ -521,13 +523,14 @@ def convert_conv2d(network, paddle_op, inputs):
     if (
         paddle_op.name() == "pd_op.conv2d"
         or paddle_op.name() == "pd_op.depthwise_conv2d"
+        or paddle_op.name() == "pd_op.fused_conv2d_add_act"
     ):
         layer = network.add_convolution_nd(
             input=input_tensor,
             num_output_maps=n_output,
             kernel_shape=nv_ksize,
             kernel=filter,
-            bias=None,
+            bias=bias,
         )
     elif (
         paddle_op.name() == "pd_op.conv2d_transpose"
@@ -564,9 +567,21 @@ def convert_conv2d(network, paddle_op, inputs):
     return layer.get_output(0)
 
 
+def get_input_constant_value(paddle_op, inputs, input_index):
+    input_op = paddle_op.operands()[input_index].source().get_defining_op()
+    if input_op.name() == "builtin.constant":
+        return inputs[input_index].numpy().tolist()
+    elif input_op.name() == "pd_op.full_int_array":
+        return input_op.attrs()["value"]
+    elif input_op.name() == "pd_op.full":
+        return [input_op.attrs()["value"]]
+    else:
+        return None
+
+
 def add_reduce_layer(network, paddle_op, inputs, op_type):
     input_tensor = inputs[0]
-    axis = paddle_op.operands()[1].source().get_defining_op().attrs()["value"]
+    axis = get_input_constant_value(paddle_op, inputs, 1)
     input_shape = paddle_op.operands()[0].source().shape
     keepdim = paddle_op.attrs()["keepdim"]
     if network.has_implicit_batch_dimension:

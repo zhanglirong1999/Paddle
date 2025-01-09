@@ -21,6 +21,7 @@ from paddle.base.log_helper import get_logger
 from paddle.tensorrt.converter_utils import (
     add_1D_constant_layer,
     fill_constant_layer,
+    get_input_constant_value,
     get_shape_tensor_element,
     get_trt_plugin,
     trt_concat,
@@ -164,43 +165,13 @@ def set_value_converter(network, paddle_op, inputs):
         paddle_op.name() == "pd_op.set_value"
         or paddle_op.name() == "pd_op.set_value_"
     ):
-        starts = (
-            paddle_op.operands()[1]
-            .source()
-            .get_defining_op()
-            .attrs()["value"][0]
-        )
-        ends = (
-            paddle_op.operands()[2]
-            .source()
-            .get_defining_op()
-            .attrs()["value"][0]
-        )
-        steps = (
-            paddle_op.operands()[3]
-            .source()
-            .get_defining_op()
-            .attrs()["value"][0]
-        )
+        starts = get_input_constant_value(paddle_op, inputs, 1)[0]
+        ends = get_input_constant_value(paddle_op, inputs, 2)[0]
+        steps = get_input_constant_value(paddle_op, inputs, 3)[0]
     else:
-        starts = (
-            paddle_op.operands()[2]
-            .source()
-            .get_defining_op()
-            .attrs()["value"][0]
-        )
-        ends = (
-            paddle_op.operands()[3]
-            .source()
-            .get_defining_op()
-            .attrs()["value"][0]
-        )
-        steps = (
-            paddle_op.operands()[4]
-            .source()
-            .get_defining_op()
-            .attrs()["value"][0]
-        )
+        starts = get_input_constant_value(paddle_op, inputs, 2)[0]
+        ends = get_input_constant_value(paddle_op, inputs, 3)[0]
+        steps = get_input_constant_value(paddle_op, inputs, 4)[0]
     axes = paddle_op.attrs()["axes"][0]
 
     input_dims = x.shape
