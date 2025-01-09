@@ -1010,18 +1010,23 @@ class SqueezeOpPattern
     if (IsDefinedBy<FullIntArrayOp>(op, 1) && !is_dyshape) {
       const FullIntArrayOp axis_full_op = CastDefinedTo<FullIntArrayOp>(op, 1);
       auto axis_vec = cinn::dialect::ir::GetVectorAttr(axis_full_op, "value");
-      std::set<int64_t> axis_set(axis_vec.begin(), axis_vec.end());
-
       auto in_shape =
           phi::vectorize(op.operand_source(0)
                              .type()
                              .dyn_cast<paddle::dialect::DenseTensorType>()
                              .dims());
+      const std::set<int64_t> axis_set = [&] {
+        std::set<int64_t> axis_set;
+        for (int64_t axis : axis_vec) {
+          axis_set.insert(axis < 0 ? axis + in_shape.size() : axis);
+        }
+        return axis_set;
+      }();
 
       std::vector<int> output_shape;
 
       for (size_t i = 0; i < in_shape.size(); ++i) {
-        if (!axis_set.count(i)) {
+        if (!axis_set.count(i) || in_shape[i] != 1) {
           output_shape.push_back(in_shape[i]);
         } else {
           PADDLE_ENFORCE_EQ(
