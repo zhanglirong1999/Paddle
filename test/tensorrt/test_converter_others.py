@@ -437,7 +437,7 @@ class TestAffineChannelTRTPattern(TensorRTBaseTest):
         self.check_trt_result(precision_mode="fp16")
 
 
-class TestAffineChannelCas1TRTPattern(TensorRTBaseTest):
+class TestAffineChannelCase1TRTPattern(TensorRTBaseTest):
     def setUp(self):
         self.python_api = affine_channel
         self.api_args = {
@@ -450,6 +450,58 @@ class TestAffineChannelCas1TRTPattern(TensorRTBaseTest):
         self.min_shape = {"x": [1, 3, 3, 100]}
         self.opt_shape = {"x": [2, 3, 3, 100]}
         self.max_shape = {"x": [3, 3, 3, 100]}
+
+    def test_fp32_trt_result(self):
+        self.check_trt_result()
+
+    def test_fp16_trt_result(self):
+        self.check_trt_result(precision_mode="fp16")
+
+
+def anchor_generator(x, anchor_sizes, aspect_ratios, variances, stride, offset):
+    return _C_ops.anchor_generator(
+        x, anchor_sizes, aspect_ratios, variances, stride, offset
+    )
+
+
+class TestAnchorGeneratorTRTPattern(TensorRTBaseTest):
+    def setUp(self):
+        self.python_api = anchor_generator
+        self.api_args = {
+            "x": np.random.random((2, 3, 3, 100)).astype("float32"),
+            "anchor_sizes": [64.0, 128.0, 256.0],
+            "aspect_ratios": [0.5, 1, 2],
+            "variances": [1.0, 1.0, 1.0, 1.0],
+            "stride": [16.0, 16.0],
+            "offset": 0.5,
+        }
+        self.program_config = {"feed_list": ["x"]}
+        self.min_shape = {"x": [1, 3, 3, 100]}
+        self.opt_shape = {"x": [2, 3, 3, 100]}
+        self.max_shape = {"x": [3, 3, 3, 100]}
+
+    def test_fp32_trt_result(self):
+        self.check_trt_result()
+
+    def test_fp16_trt_result(self):
+        self.check_trt_result(precision_mode="fp16")
+
+
+class TestAnchorGeneratorCase1TRTPattern(TensorRTBaseTest):
+    def setUp(self):
+        self.python_api = anchor_generator
+        self.api_args = {
+            "x": np.random.random((2, 3, 64, 64)).astype("float32"),
+            "anchor_sizes": [64.0, 128.0, 256.0],
+            "aspect_ratios": [0.4, 1.2, 3],
+            "variances": [0.5, 1.0, 0.5, 1.0],
+            "stride": [16.0, 32.0],
+            "offset": 0.8,
+        }
+        self.program_config = {"feed_list": ["x"]}
+        self.min_shape = {"x": [2, 3, 64, 64]}
+        self.opt_shape = {"x": [2, 3, 64, 64]}
+        self.max_shape = {"x": [3, 3, 64, 64]}
 
     def test_fp32_trt_result(self):
         self.check_trt_result()

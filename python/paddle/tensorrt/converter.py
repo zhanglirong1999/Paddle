@@ -17,6 +17,10 @@ import hashlib
 import logging
 
 import numpy as np
+
+import paddle
+
+paddle.base.core.register_paddle_plugin()
 import tensorrt as trt
 
 import paddle

@@ -303,6 +303,66 @@ def share_data_converter(network, paddle_op, inputs):
     return identity_layer.get_output(0)
 
 
+@converter_registry.register("pd_op.anchor_generator", trt_version="8.x")
+def anchor_generator_converter(network, paddle_op, inputs):
+    inputs = inputs[0]
+    input_dims = inputs.shape
+    anchor_sizes = paddle_op.attrs().get("anchor_sizes")
+    aspect_ratios = paddle_op.attrs().get("aspect_ratios")
+    stride = paddle_op.attrs().get("stride")
+    variances = paddle_op.attrs().get("variances")
+    offset = paddle_op.attrs().get("offset")
+    num_anchors = len(aspect_ratios) * len(anchor_sizes)
+
+    height = input_dims[1]
+    width = input_dims[2]
+    box_num = width * height * num_anchors
+    data_type = trt.float32
+
+    plugin_fields = [
+        trt.PluginField(
+            "anchor_sizes",
+            np.array(anchor_sizes, dtype=np.float32),
+            trt.PluginFieldType.FLOAT32,
+        ),
+        trt.PluginField(
+            "aspect_ratios",
+            np.array(aspect_ratios, dtype=np.float32),
+            trt.PluginFieldType.FLOAT32,
+        ),
+        trt.PluginField(
+            "stride",
+            np.array(stride, dtype=np.float32),
+            trt.PluginFieldType.FLOAT32,
+        ),
+        trt.PluginField(
+            "variances",
+            np.array(variances, dtype=np.float32),
+            trt.PluginFieldType.FLOAT32,
+        ),
+        trt.PluginField(
+            "offset",
+            np.array(offset, dtype=np.float32),
+            trt.PluginFieldType.FLOAT32,
+        ),
+        trt.PluginField(
+            "num_anchors",
+            np.array(num_anchors, dtype=np.int32),
+            trt.PluginFieldType.INT32,
+        ),
+    ]
+    plugin_field_collection = trt.PluginFieldCollection(plugin_fields)
+    plugin_name = "pir_anchor_generator_plugin_dynamic"
+    plugin_version = "1"
+    plugin = get_trt_plugin(
+        plugin_name, plugin_field_collection, plugin_version
+    )
+    anchor_generator_layer = network.add_plugin_v2([inputs], plugin)
+    out0 = anchor_generator_layer.get_output(0)
+    out1 = anchor_generator_layer.get_output(1)
+    return (out0, out1)
+
+
 @converter_registry.register("pd_op.affine_channel", trt_version="8.x")
 def affine_channel_converter(network, paddle_op, inputs):
     x, scale_weights, bias_weights = inputs
