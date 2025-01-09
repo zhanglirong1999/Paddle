@@ -14,7 +14,6 @@
 
 import os
 
-import paddle
 from paddle.base import core
 from paddle.incubate.optimizer import PipelineOptimizer
 from paddle.static import (
@@ -705,11 +704,6 @@ class ShardingOptimizer(MetaOptimizerBase):
         self._recreate_not_persist_param_as_var()
 
         self._dump_program_for_debug()
-        use_new_comm = paddle.get_flags("FLAGS_dynamic_static_unified_comm")[
-            "FLAGS_dynamic_static_unified_comm"
-        ]
-        if not use_new_comm:
-            self._wait()
         return optimize_ops, params_grads
 
     def _init_pair_comm(self, pair, ring_id):
