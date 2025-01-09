@@ -80,7 +80,7 @@ DEFAULT_RECOMPUTABLE_OPS: list[str] = [
     "pd_op.slice",
     "pd_op.squeeze",
     "pd_op.unsqueeze",
-    # "pd_op.transpose",
+    "pd_op.transpose",
     # "pd_op.prod",
     "pd_op.log",
     "pd_op.log1p",
