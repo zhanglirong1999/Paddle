@@ -41,21 +41,21 @@ using paddle::dialect::FullOp;
 
 namespace {
 
-template <typename TagetOpT, typename SourceOpT>
+template <typename TargetOpT, typename SourceOpT>
 bool IsDefinedBy(const SourceOpT &op, const size_t idx) {
   const pir::Operation *defined_op = op->operand_source(idx).defining_op();
-  return defined_op && defined_op->isa<TagetOpT>();
+  return defined_op && defined_op->isa<TargetOpT>();
 }
 
-template <typename TagetOpT, typename SourceOpT>
-TagetOpT CastDefinedTo(const SourceOpT &op, const size_t idx) {
-  PADDLE_ENFORCE_EQ(IsDefinedBy<TagetOpT>(op, idx),
+template <typename TargetOpT, typename SourceOpT>
+TargetOpT CastDefinedTo(const SourceOpT &op, const size_t idx) {
+  PADDLE_ENFORCE_EQ(IsDefinedBy<TargetOpT>(op, idx),
                     true,
                     ::common::errors::PreconditionNotMet(
                         "Required defined op shall not be nullptr and can cast "
                         "to target type."));
   pir::Operation *defined_op = op->operand_source(idx).defining_op();
-  return defined_op->dyn_cast<TagetOpT>();
+  return defined_op->dyn_cast<TargetOpT>();
 }
 
 template <typename T = int>

@@ -4510,9 +4510,9 @@ def adaptive_log_softmax_with_loss(
             Tensor(shape=[], dtype=float32, place=Place(cpu), stop_gradient=True,
             1.14779019)
     """
-    targt_dim = label.dim()
+    target_dim = label.dim()
 
-    if targt_dim == 1:
+    if target_dim == 1:
         if input.shape[0] != label.shape[0]:
             raise ValueError(
                 'Input and label should have the same size '
@@ -4523,7 +4523,7 @@ def adaptive_log_softmax_with_loss(
                 '1D label tensor expects 2D input tensors, '
                 f'but found inputs with size {input.shape}'
             )
-    elif targt_dim == 0:
+    elif target_dim == 0:
         if input.dim() != 1:
             raise ValueError(
                 '0D label tensor expects 1D input tensors, '
@@ -4534,7 +4534,7 @@ def adaptive_log_softmax_with_loss(
             '0D or 1D label tensor expected, ' 'multi-label not supported'
         )
 
-    is_batched = targt_dim > 0
+    is_batched = target_dim > 0
     input = input if is_batched else input.unsqueeze(0)
     label = label if is_batched else label.unsqueeze(0)
 
