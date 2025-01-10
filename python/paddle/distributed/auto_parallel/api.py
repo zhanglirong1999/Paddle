@@ -336,6 +336,7 @@ def shard_tensor(
                 placements=placements,
                 **tensor.__dict__,
             )
+            dist_param.stop_gradient = tensor.stop_gradient
             if tensor._init_func is not None:
                 origin_init_func = tensor._init_func
                 dist_param.set_init_func(
