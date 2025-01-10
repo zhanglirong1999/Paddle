@@ -144,7 +144,7 @@ class LongLong2IntStmtPass : public StmtPass {
 class LongLong2IntExprPass : public ExprPass {
  public:
   LongLong2IntExprPass() : ExprPass("longlong2int_expr") {}
-  LogicalResult Run(ir::Expr expr) override;
+  LogicalResult Run(ir::Expr* expr) override;
 };
 }  // namespace
 
@@ -233,9 +233,9 @@ LogicalResult LongLong2IntStmtPass::Run(ir::stmt::StmtRef stmt) {
   return LogicalResult::success();
 }
 
-LogicalResult LongLong2IntExprPass::Run(ir::Expr expr) {
+LogicalResult LongLong2IntExprPass::Run(ir::Expr* expr) {
   CastLonglong2IntMutator narrow;
-  narrow(&expr);
+  narrow(expr);
   return LogicalResult::success();
 }
 std::unique_ptr<StmtPass> CreateLongLong2IntStmtPass() {
