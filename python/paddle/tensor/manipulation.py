@@ -5099,6 +5099,19 @@ def masked_scatter(
     each occurrence of `mask` being True. The shape of `mask` must be broadcastable with the shape of the underlying tensor.
     The `value` should have at least as many elements as the number of ones in `mask`.
 
+    The image illustrates a typical case of the masked_scatter operation.
+
+      1. Tensor  ``value``: Contains the data to be filled into the target tensor. Only the parts where the mask is True will take values from the value tensor, while the rest will be ignored;
+      2. Tensor  ``mask``: Specifies which positions should extract values from the value tensor and update the target tensor. True indicates the corresponding position needs to be updated;
+      3. Tensor  ``origin``: The input tensor, where only the parts satisfying the mask will be replaced, and the rest remains unchanged;
+
+    Result: After the ``masked_scatter`` operation, the parts of the ``origin`` tensor where the ``mask`` is ``True`` are updated with the corresponding values from the ``value`` tensor, while the parts where the ``mask`` is ``False`` remain unchanged, forming the final updated tensor.
+
+    .. image:: https://githubraw.cdn.bcebos.com/PaddlePaddle/docs/develop/docs/images/api_legend/masked_scatter.png
+        :width: 500
+        :alt: legend of masked_scatter API
+        :align: center
+
     Args:
         x (Tensor): An N-D Tensor. The data type is ``float16``, ``float32``, ``float64``, ``int32``,
             ``int64`` or ``bfloat16``.
