@@ -2008,7 +2008,7 @@ class Optimizer:
         Add a param group to parameter_list.
 
         Args:
-            param_group (dict): The group of Tensors to be optimzed with
+            param_group (dict): The group of Tensors to be optimized with
             different optimization options.
         """
         params = param_group['params']
@@ -2052,7 +2052,7 @@ class Optimizer:
         """
         Update the param group with new entry
         Args:
-            parameters (dict): The extra group of Tensors to be optimzed with
+            parameters (dict): The extra group of Tensors to be optimized with
             different optimization options. Only used in child class.
         """
         pass

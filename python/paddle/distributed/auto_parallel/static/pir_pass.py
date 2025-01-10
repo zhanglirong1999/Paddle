@@ -231,7 +231,7 @@ class ReshardPasses:
 
     @staticmethod
     def decompose_reshard_pass(dist_program):
-        # split composed reshard op into atomic reshard ops, which would increase the oppotunity of reshard Re-Use in following fold_reshard_pass.
+        # split composed reshard op into atomic reshard ops, which would increase the opportunity of reshard Re-Use in following fold_reshard_pass.
         del_ops = []
         for op in dist_program.global_block().ops:
             if op.name() != 'dist_op.reshard':
