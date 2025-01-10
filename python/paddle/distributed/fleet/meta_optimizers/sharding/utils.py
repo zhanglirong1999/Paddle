@@ -118,9 +118,16 @@ def check_allreduce_sum(block, shard, sharding_ring_id, dp_ring_id=-1):
 
     for idx, op in enumerate(block.ops):
         # sharding use both allreduce and reduce to sync grad
-        if op.type == "c_allreduce_sum" or (
-            op.type == "reduce"
-            and op.desc.attr("reduce_type") == dist.ReduceOp.SUM
+        if (
+            op.type == "c_allreduce_sum"
+            or (
+                op.type == "reduce"
+                and op.desc.attr("reduce_type") == dist.ReduceOp.SUM
+            )
+            or (
+                op.type == "all_reduce"
+                and op.desc.attr("reduce_type") == dist.ReduceOp.SUM
+            )
         ):
             if not op.all_attrs()["use_calc_stream"]:
                 ring_id = op.desc.attr("ring_id")
@@ -182,7 +189,7 @@ def check_allreduce_sum(block, shard, sharding_ring_id, dp_ring_id=-1):
                         raise ValueError(
                             "There should be a sync_calc op "
                             f"after generate Var: {var_name} and before the"
-                            "c_allreduce_sum op"
+                            "all_reduce sum op"
                         )
                     assert _status == 1
                     if var_name in vars_status:
@@ -397,12 +404,12 @@ def insert_allreduce_ops(
         for var in allreduce_vars:
             block._insert_op_without_sync(
                 insert_idx,
-                type='c_allreduce_sum',
-                inputs={'X': var},
-                outputs={'Out': var},
+                type='all_reduce',
+                inputs={'x': var},
+                outputs={'out': var},
                 attrs={
                     'ring_id': ring_id,
-                    'use_calc_stream': use_calc_stream,
+                    'reduce_type': dist.ReduceOp.SUM,
                     OP_ROLE_KEY: op_role,
                 },
             )
@@ -926,7 +933,10 @@ def comm_analyse(main_program):
             broadcast_vars[var_name] = (
                 get_var_size(block.var(var_name)) * 1024.0
             )
-        elif op.type == "c_allreduce_sum":
+        elif op.type == "c_allreduce_sum" or (
+            op.type == "all_reduce"
+            and op.desc.attr("reduce_type") == dist.ReduceOp.SUM
+        ):
             var_name = op.desc.input_arg_names()[0]
             reduce_vars[var_name] = get_var_size(block.var(var_name)) * 1024.0
 
@@ -1058,12 +1068,12 @@ def append_naive_sync(block, sync_var, ring_id):
         },
     )
     block.append_op(
-        type='c_allreduce_sum',
-        inputs={'X': sync_var},
-        outputs={'Out': sync_var},
+        type='all_reduce',
+        inputs={'x': sync_var},
+        outputs={'out': sync_var},
         attrs={
             'ring_id': ring_id,
-            'use_calc_stream': True,
+            'reduce_type': dist.ReduceOp.SUM,
             OP_ROLE_KEY: OpRole.Forward,
         },
     )
