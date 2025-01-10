@@ -257,12 +257,13 @@ std::optional<ItersTransformRoute> ItersFusionPolicy::SearchItersTransformRoute(
   auto squeezed_source = source;
   if (squeeze_source) {
     // Remove iters equal to one in source
-    auto source_ones = MapVectorIfTrue<std::pair<std::string, int>, int>(
-        Enumerate(source.loop_iters),
-        [this](std::pair<std::string, int> p) { return p.second; },
-        [this](std::pair<std::string, int> p) {
-          return this->iters_manager_->IterSymbolEqualOne(p.first);
-        });
+    std::vector<int> source_ones;
+    for (int i = 0; i < source.loop_iters.size() - source.reduce_iter_nums;
+         ++i) {
+      if (iters_manager_->IterSymbolEqualOne(source.loop_iters[i])) {
+        source_ones.push_back(i);
+      }
+    }
     if (!source_ones.empty() &&
         source_ones.size() != source.loop_iters.size()) {
       iters_transforms.emplace_back(RemoveOnesTransform(source_ones));
