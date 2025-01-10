@@ -3241,8 +3241,6 @@ class ShardDataloader:
             raise ValueError(
                 f"process_id {process_id} is in more than one mesh, the meshes are {self._meshes}"
             )
-        if input_keys is not None:
-            assert len(input_keys) == 2, "input_keys lengths must be 2"
 
         self._all_inputs_in_one_mesh = len(self._meshes) == 1
         self._input_keys = input_keys
@@ -3431,14 +3429,14 @@ class ShardDataloader:
                     )
             return dist_batch_data
         elif isinstance(batch_data, dict):
-            if self._all_inputs_in_one_mesh is False:
-                assert len(self._input_keys) == len(self._meshes)
-            dist_batch_data = {}
             input_keys = (
                 batch_data.keys()
                 if self._input_keys is None
                 else self._input_keys
             )
+            if self._all_inputs_in_one_mesh is False:
+                assert len(input_keys) == len(self._meshes)
+            dist_batch_data = {}
             for i, key in enumerate(input_keys):
                 input_data = batch_data[key]
                 if isinstance(input_data, (list, tuple)):
