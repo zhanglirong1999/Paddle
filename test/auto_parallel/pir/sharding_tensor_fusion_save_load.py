@@ -158,7 +158,7 @@ class TestSimpleNetShardingTensorFusionSaveLoad:
         strategy.sharding.enable = True
         strategy.sharding.degree = 2
         strategy.sharding.stage = 1
-        strategy.sharding.enable_stage1_tensor_fusion = True
+        strategy.sharding.enable_tensor_fusion = True
         strategy.sharding.save_unbalanced_param = self.save_unbalanced_param
 
         if self._amp:
