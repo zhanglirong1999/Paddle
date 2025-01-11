@@ -6274,7 +6274,10 @@ def moveaxis(
     """
     src = [source] if isinstance(source, int) else source
     dst = [destination] if isinstance(destination, int) else destination
-
+    if isinstance(source, tuple):
+        src = list(source)
+    if isinstance(destination, tuple):
+        dst = list(destination)
     assert len(src) == len(
         dst
     ), "'source' must have the same number with 'destination'"
