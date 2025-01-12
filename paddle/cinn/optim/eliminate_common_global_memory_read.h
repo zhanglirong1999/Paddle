@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "paddle/cinn/ir/ir.h"
+#include "paddle/cinn/ir/stmt.h"
 
 namespace cinn {
 namespace optim {
@@ -46,7 +46,7 @@ namespace optim {
  * significant speedups in memory-intensive computations.
  *
  */
-void EliminateCommonGlobalMemoryRead(Expr* e);
+void EliminateCommonGlobalMemoryRead(ir::stmt::BlockRef block);
 
 }  // namespace optim
 }  // namespace cinn

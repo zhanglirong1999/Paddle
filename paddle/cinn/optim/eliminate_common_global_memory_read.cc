@@ -58,9 +58,17 @@ std::unordered_map<ir::Var, ir::Var> ConstructForVarReplaceMap(
   return ret;
 }
 
-struct GlobalTensorInfoCollector : public ir::IRMutator<Expr*> {
+struct GlobalTensorInfoCollector : public ir::IRMutator<Expr*>,
+                                   public ir::stmt::StmtMutator<> {
  public:
-  void operator()(ir::Expr* expr) { ir::IRMutator<>::Visit(expr, expr); }
+  void operator()(const ir::Expr& expr) {
+    ir::Expr _expr = expr;
+    ir::IRMutator<>::Visit(&_expr, &_expr);
+  }
+
+  void operator()(ir::stmt::BlockRef block) {
+    ir::stmt::StmtMutator<>::VisitBlock(block);
+  }
 
   std::unordered_set<std::string> GetEliminateBufferNames() const {
     auto IndiceToExprWithForVar =
@@ -114,7 +122,7 @@ struct GlobalTensorInfoCollector : public ir::IRMutator<Expr*> {
       for (const auto& index : indice_and_extent.indices) {
         std::set<Expr> load_tensors = ir::ir_utils::CollectLoadTensors(
             index, /*teller=*/[&](const Expr*) -> bool { return true; });
-        if (load_tensors.size() > 0) {
+        if (!load_tensors.empty()) {
           return true;
         }
       }
@@ -218,41 +226,58 @@ struct GlobalTensorInfoCollector : public ir::IRMutator<Expr*> {
   }
 
  private:
-  void Visit(const ir::ScheduleBlockRealize* op, ir::Expr* expr) override {
-    const auto* sbr_node = expr->As<ir::ScheduleBlockRealize>();
-    PADDLE_ENFORCE_NOT_NULL(
-        sbr_node,
-        ::common::errors::InvalidArgument(
-            "The input expr should be a ScheduleBlockRealize"));
-    const auto& iter_values = sbr_node->iter_values;
-    const auto* sb_node = sbr_node->schedule_block.As<ir::ScheduleBlock>();
-    const auto& iter_vars = sb_node->iter_vars;
+  void VisitStmt(ir::stmt::Schedule stmt) override {
+    const auto& iter_vars = stmt->iter_vars();
+    const auto& iter_values = stmt->iter_values();
     PADDLE_ENFORCE_EQ(
         iter_values.size(),
         iter_vars.size(),
-        ::common::errors::InvalidArgument(
-            "The size of iter_values should equal to the size of iter_vars, as "
-            "they comes from the same ScheduleBlockRealize"));
+        ::common::errors::InvalidArgument("The size of iter_values should be "
+                                          "equal to the size of iter_vars."));
 
     for (std::size_t i = 0; i < iter_values.size(); ++i) {
       var_to_sb_expr_[iter_vars[i]] = iter_values[i];
     }
-    ir::IRMutator<>::Visit(op, expr);
+    operator()(stmt->body());
   }
 
-  void Visit(const ir::For* op, ir::Expr* expr) override {
-    auto* node = expr->As<ir::For>();
-    PADDLE_ENFORCE_NOT_NULL(
-        node,
-        ::common::errors::InvalidArgument("The input expr should be a For"));
+  void VisitStmt(ir::stmt::For stmt) override {
     for_var_extents_.push_back(
-        {node->loop_var, ir::ir_utils::IRCopy(node->extent)});
-    if (!node->is_binded()) {
-      iter_var_name_to_extent_[node->loop_var->name] = node->extent;
+        {stmt->loop_var(), ir::ir_utils::IRCopy(stmt->extent())});
+    if (!stmt->is_binded()) {
+      iter_var_name_to_extent_[stmt->loop_var()->name] = stmt->extent();
     }
-    ir::IRMutator<>::Visit(op, expr);
+    operator()(stmt->body());
     for_var_extents_.pop_back();
   }
+
+  void VisitStmt(ir::stmt::Store stmt) override {
+    const auto& store_buffer = stmt->tensor().as_tensor_ref()->buffer;
+    if (store_buffer->memory_type == ir::MemoryType::Heap) {
+      global_store_buffer_names_.insert(store_buffer->name);
+    }
+    operator()(stmt->value());
+  }
+
+  void VisitStmt(ir::stmt::IfThenElse stmt) override {
+    operator()(stmt->condition());
+    operator()(stmt->true_case());
+    if (stmt->false_case().defined()) operator()(stmt->false_case());
+  }
+
+  void VisitStmt(ir::stmt::Alloc stmt) override {
+    for (const auto& extent : stmt->extents()) operator()(extent);
+    if (stmt->condition().defined()) operator()(stmt->condition());
+    if (stmt->body().defined()) operator()(stmt->body());
+  }
+
+  void VisitStmt(ir::stmt::Let stmt) override {
+    if (stmt->body().defined()) operator()(stmt->body());
+  }
+
+  void VisitStmt(ir::stmt::Evaluate stmt) override {}
+
+  void VisitStmt(ir::stmt::Free stmt) override {}
 
   void Visit(const ir::Load* op, ir::Expr* expr) override {
     auto* node = expr->As<ir::Load>();
@@ -275,18 +300,6 @@ struct GlobalTensorInfoCollector : public ir::IRMutator<Expr*> {
     }
   }
 
-  void Visit(const ir::Store* op, ir::Expr* expr) override {
-    auto* node = expr->As<ir::Store>();
-    PADDLE_ENFORCE_NOT_NULL(
-        node,
-        ::common::errors::InvalidArgument("The input expr should be a Store"));
-    const auto& store_buffer = node->tensor.as_tensor_ref()->buffer;
-    if (store_buffer->memory_type == ir::MemoryType::Heap) {
-      global_store_buffer_names_.insert(store_buffer->name);
-    }
-    ir::IRMutator<>::Visit(op, expr);
-  }
-
   void Visit(const ir::Select* op, ir::Expr* expr) override {
     contains_select_ = true;
     ir::IRMutator<>::Visit(op, expr);
@@ -301,44 +314,72 @@ struct GlobalTensorInfoCollector : public ir::IRMutator<Expr*> {
   bool contains_select_ = false;
 };
 
-struct CommonGlobalMemoryEliminator : public ir::IRMutator<Expr*> {
+struct CommonGlobalMemoryEliminator : public ir::IRMutator<Expr*>,
+                                      public ir::stmt::StmtMutator<> {
   CommonGlobalMemoryEliminator(
       const std::unordered_set<std::string>& eliminate_buffer_names)
       : eliminate_buffer_names_(eliminate_buffer_names) {}
 
-  void operator()(ir::Expr* expr) { ir::IRMutator<>::Visit(expr, expr); }
+  void operator()(const ir::Expr& expr) {
+    ir::Expr _expr = expr;
+    ir::IRMutator<>::Visit(&_expr, &_expr);
+  }
+
+  void operator()(ir::stmt::BlockRef block) { VisitBlock(block); }
 
  private:
-  void Visit(const ir::Block* op, Expr* expr) override {
-    auto* node = expr->As<ir::Block>();
-    PADDLE_ENFORCE_NOT_NULL(
-        node,
-        ::common::errors::InvalidArgument("The input expr should be a Block"));
-    current_block_ = node;
-    IRMutator<>::Visit(op, expr);
+  void VisitBlock(ir::stmt::BlockRef block) override {
+    current_block_ = block;
+    ir::stmt::StmtMutator<>::VisitBlock(block);
 
     // Insert buffer declare after visit current block.
-    if (block_to_insert_stmts_.find(node) != block_to_insert_stmts_.end()) {
-      const std::vector<ir::Expr>& insert_schedule_blocks =
-          block_to_insert_stmts_[node];
-      for (const ir::Expr& block : insert_schedule_blocks) {
-        node->stmts.insert(node->stmts.begin(), block);
+    auto iter_block = block_to_insert_stmts_.find(block);
+    if (iter_block != block_to_insert_stmts_.end()) {
+      const std::vector<ir::stmt::StmtRef>& insert_schedule_stmts =
+          iter_block->second;
+      std::vector<ir::stmt::StmtRef> new_stmts = block->stmts();
+      for (const auto& stmt : insert_schedule_stmts) {
+        new_stmts.insert(new_stmts.begin(), stmt);
       }
+      block->set_stmts(new_stmts);
     }
   }
 
-  void Visit(const ir::ScheduleBlockRealize* op, Expr* expr) override {
-    auto* node = expr->As<ir::ScheduleBlockRealize>();
-    PADDLE_ENFORCE_NOT_NULL(
-        node,
-        ::common::errors::InvalidArgument(
-            "The input expr should be a ScheduleBlockRealize"));
-    current_sbr_ = node;
-    if (current_block_) {
-      insert_block_ = current_block_;
-    }
-    IRMutator<>::Visit(op, expr);
+  void VisitStmt(ir::stmt::For stmt) override {
+    operator()(stmt->min());
+    operator()(stmt->extent());
+    operator()(stmt->body());
   }
+
+  void VisitStmt(ir::stmt::Schedule stmt) override {
+    current_sch_ = stmt;
+    if (current_block_.defined()) insert_block_ = current_block_;
+    operator()(stmt->body());
+  }
+
+  void VisitStmt(ir::stmt::IfThenElse stmt) override {
+    operator()(stmt->condition());
+    operator()(stmt->true_case());
+    if (stmt->false_case().defined()) operator()(stmt->false_case());
+  }
+
+  void VisitStmt(ir::stmt::Alloc stmt) override {
+    for (const auto& extent : stmt->extents()) {
+      operator()(extent);
+    }
+    if (stmt->condition().defined()) operator()(stmt->condition());
+    if (stmt->body().defined()) operator()(stmt->body());
+  }
+
+  void VisitStmt(ir::stmt::Let stmt) override {
+    if (stmt->body().defined()) operator()(stmt->body());
+  }
+
+  void VisitStmt(ir::stmt::Store stmt) override { operator()(stmt->value()); }
+
+  void VisitStmt(ir::stmt::Evaluate stmt) override {}
+
+  void VisitStmt(ir::stmt::Free stmt) override {}
 
   void Visit(const ir::Load* op, Expr* expr) override {
     auto* node = expr->As<ir::Load>();
@@ -346,24 +387,15 @@ struct CommonGlobalMemoryEliminator : public ir::IRMutator<Expr*> {
         node,
         ::common::errors::InvalidArgument("The input expr should be a Load"));
     const auto& buffer_name = node->tensor.as_tensor_ref()->buffer->name;
-    if (eliminate_buffer_names_.count(buffer_name) == 0) {
-      return;
-    }
-
-    if (global_buffer_to_local_buffer_.count(buffer_name) == 0) {
+    if (eliminate_buffer_names_.count(buffer_name) == 0) return;
+    if (global_buffer_to_local_buffer_.count(buffer_name) == 0)
       InsertLocalTensorBlock(node, buffer_name);
-    }
     SubstituteGlobalTensor(node, buffer_name);
   }
 
   void InsertLocalTensorBlock(ir::Load* load_node,
                               const std::string& buffer_name) {
-    ir::Expr sb = ir::ir_utils::IRCopy(current_sbr_->schedule_block);
-    ir::ScheduleBlock* sb_node = sb.As<ir::ScheduleBlock>();
-    PADDLE_ENFORCE_NOT_NULL(
-        sb_node,
-        ::common::errors::InvalidArgument(
-            "The input expr should be a ScheduleBlockRealize"));
+    ir::stmt::Schedule sch_node = current_sch_;
     const auto& old_tensor = load_node->tensor.as_tensor_ref();
     ir::Expr new_tensor =
         ir::_Tensor_::Make(old_tensor->name + "_local",
@@ -373,15 +405,18 @@ struct CommonGlobalMemoryEliminator : public ir::IRMutator<Expr*> {
                            old_tensor->reduce_axis);
     new_tensor.as_tensor_ref()->WithBuffer(
         "local", new_tensor.as_tensor_ref()->name + "_buffer");
-    ir::Expr new_body =
-        ir::Store::Make(new_tensor,
+    ir::stmt::Store new_store =
+        ir::stmt::Store(new_tensor,
                         ir::ir_utils::IRCopy(ir::Expr(load_node)),
                         ir::ir_utils::IRCopy(load_node->indices));
-    ir::Expr new_sb = ir::ScheduleBlock::Make(
-        sb_node->iter_vars, {}, {}, sb_node->name + "_local", new_body);
-
-    ir::Expr new_sbr = ir::ScheduleBlockRealize::Make(
-        ir::ir_utils::IRCopy(current_sbr_->iter_values), new_sb);
+    std::vector<ir::stmt::StmtRef> new_stmts{new_store};
+    ir::stmt::BlockRef new_block = ir::stmt::BlockRef(new_stmts);
+    ir::stmt::Schedule new_sch = ir::stmt::Schedule(sch_node->iter_vars(),
+                                                    sch_node->iter_values(),
+                                                    {},
+                                                    {},
+                                                    sch_node->name() + "_local",
+                                                    new_block);
     PADDLE_ENFORCE_EQ(
         global_buffer_to_local_buffer_.count(buffer_name),
         0,
@@ -390,10 +425,12 @@ struct CommonGlobalMemoryEliminator : public ir::IRMutator<Expr*> {
             buffer_name));
     global_buffer_to_local_buffer_[buffer_name] = new_tensor;
 
-    PADDLE_ENFORCE_NOT_NULL(
-        insert_block_,
-        ::common::errors::InvalidArgument("insert block CAN NOT be nullptr"));
-    block_to_insert_stmts_[insert_block_].push_back(new_sbr);
+    if (!insert_block_.defined()) {
+      PADDLE_THROW(::common::errors::InvalidArgument(
+          "insert block CAN NOT be undefined"));
+    }
+
+    block_to_insert_stmts_[insert_block_].push_back(new_sch);
   }
 
   void SubstituteGlobalTensor(ir::Load* load_node,
@@ -409,25 +446,27 @@ struct CommonGlobalMemoryEliminator : public ir::IRMutator<Expr*> {
 
   std::unordered_set<std::string> eliminate_buffer_names_;
   std::unordered_map<std::string, ir::Expr> global_buffer_to_local_buffer_;
-  std::unordered_map<ir::Block*, std::vector<ir::Expr>> block_to_insert_stmts_;
+  std::map<ir::stmt::BlockRef, std::vector<ir::stmt::StmtRef>>
+      block_to_insert_stmts_;
 
-  ir::Block* current_block_{nullptr};
-  ir::Block* insert_block_{nullptr};
-  ir::ScheduleBlockRealize* current_sbr_;
+  ir::stmt::BlockRef current_block_{nullptr};
+  ir::stmt::BlockRef insert_block_{nullptr};
+  ir::stmt::Schedule current_sch_;
 };
 
 }  // namespace
 
-void EliminateCommonGlobalMemoryRead(Expr* e) {
-  VLOG(4) << "Before EliminateCommonGlobalMemoryRead: \n" << *e;
+void EliminateCommonGlobalMemoryRead(ir::stmt::BlockRef block) {
+  VLOG(4) << "Before EliminateCommonGlobalMemoryRead: \n" << block;
   GlobalTensorInfoCollector collector;
-  collector(e);
+  collector(block);
 
-  const auto& eliminate_buffer_names = collector.GetEliminateBufferNames();
+  const std::unordered_set<std::string>& eliminate_buffer_names =
+      collector.GetEliminateBufferNames();
 
   CommonGlobalMemoryEliminator eliminator(eliminate_buffer_names);
-  eliminator(e);
-  VLOG(4) << "After EliminateCommonGlobalMemoryRead: \n" << *e;
+  eliminator(block);
+  VLOG(4) << "After EliminateCommonGlobalMemoryRead: \n" << block;
 }
 
 }  // namespace optim
