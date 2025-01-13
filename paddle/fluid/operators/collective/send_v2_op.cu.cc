@@ -45,7 +45,6 @@ void send_shape_info(const phi::DenseTensor& x,
             "to send the shape info."));
   }
   phi::DataType shape_dtype = phi::DataType::INT32;
-  ncclDataType_t nccl_dtype = phi::ToNCCLDataType(shape_dtype);
   auto dims = x.dims();
   int shape_size = dims.size();
 
@@ -67,17 +66,7 @@ void send_shape_info(const phi::DenseTensor& x,
     gpu_shape_size_tensor->mutable_data(place, shape_dtype);
     framework::TensorCopySync(
         cpu_shape_size_tensor, place, gpu_shape_size_tensor);
-    if (comm_ctx) {
-      comm_ctx->Send(*gpu_shape_size_tensor, 1, peer, stream);
-    } else {
-      PADDLE_ENFORCE_GPU_SUCCESS(
-          phi::dynload::ncclSend(gpu_shape_size_tensor->data<int>(),
-                                 1,
-                                 nccl_dtype,
-                                 peer,
-                                 comm->comm(),
-                                 stream));
-    }
+    comm_ctx->Send(*gpu_shape_size_tensor, 1, peer, stream);
   }
   VLOG(3) << "send the shape size: " << shape_size << " to peer";
 
@@ -100,17 +89,7 @@ void send_shape_info(const phi::DenseTensor& x,
     gpu_shape_tensor->Resize({shape_size});
     gpu_shape_tensor->mutable_data(place, shape_dtype);
     framework::TensorCopySync(cpu_shape_tensor, place, gpu_shape_tensor);
-    if (comm_ctx) {
-      comm_ctx->Send(*gpu_shape_tensor, shape_size, peer, stream);
-    } else {
-      PADDLE_ENFORCE_GPU_SUCCESS(
-          phi::dynload::ncclSend(gpu_shape_tensor->data<int>(),
-                                 shape_size,
-                                 nccl_dtype,
-                                 peer,
-                                 comm->comm(),
-                                 stream));
-    }
+    comm_ctx->Send(*gpu_shape_tensor, shape_size, peer, stream);
   }
   VLOG(3) << "send the shape: (" << dims << ") to peer";
 }
@@ -201,15 +180,7 @@ class SendOpV2CUDAKernel : public framework::OpKernel<T> {
         VLOG(3) << "DenseTensorArray: idx(" << idx << ")";
         auto& x = x_array.at(idx);
         int numel = x.numel();
-        ncclDataType_t dtype = phi::ToNCCLDataType(x.dtype());
-        if (comm_ctx) {
-          comm_ctx->Send(x, numel, peer, stream);
-        } else {
-          PADDLE_ENFORCE_GPU_SUCCESS(phi::dynload::ncclSend(
-              x.data<T>(), numel, dtype, peer, comm->comm(), stream));
-          VLOG(3) << "rank " << comm->rank() << " send "
-                  << common::product(x.dims()) << " to " << peer;
-        }
+        comm_ctx->Send(x, numel, peer, stream);
       }
       return;
     }
@@ -227,15 +198,7 @@ class SendOpV2CUDAKernel : public framework::OpKernel<T> {
                       /* ProcessGroup* */ nullptr);
     }
 
-    if (comm_ctx) {
-      comm_ctx->Send(*x, numel, peer, stream);
-    } else {
-      ncclDataType_t dtype = phi::ToNCCLDataType(x->dtype());
-      PADDLE_ENFORCE_GPU_SUCCESS(phi::dynload::ncclSend(
-          x->data<T>(), numel, dtype, peer, comm->comm(), stream));
-      VLOG(3) << "rank " << comm->rank() << " send "
-              << common::product(x->dims()) << " to " << peer;
-    }
+    comm_ctx->Send(*x, numel, peer, stream);
 #else
     PADDLE_THROW(
         common::errors::Unavailable("PaddlePaddle should be compiled with NCCL "

@@ -135,11 +135,7 @@ class CAllReduceOpXPUKernel : public framework::OpKernel<T> {
     int rid = ctx.Attr<int>("ring_id");
 
     auto place = ctx.GetPlace();
-    BKCLDataType dtype = phi::ToBKCLDataType(in->dtype());
-    int64_t numel = in->numel();
-    const void* sendbuff = in->data<T>();
     out->Resize(in->dims());
-    void* recvbuff = out->mutable_data<T>(place);
 
     auto map = phi::distributed::ProcessGroupMapFromGid::getInstance();
     if (map->has(rid)) {
@@ -225,17 +221,7 @@ class CAllReduceOpXPUKernel : public framework::OpKernel<T> {
                                                      red_type));
     }
 
-    if (comm_ctx) {
-      comm_ctx->AllReduce(out, *in, bkcl_red_type, stream);
-    } else {
-      PADDLE_ENFORCE_XPU_SUCCESS(bkcl_all_reduce(comm->comm(),
-                                                 sendbuff,
-                                                 recvbuff,
-                                                 numel,
-                                                 dtype,
-                                                 bkcl_red_type,
-                                                 stream));
-    }
+    comm_ctx->AllReduce(out, *in, bkcl_red_type, stream);
 #else
     PADDLE_THROW(common::errors::PreconditionNotMet(
         "PaddlePaddle should be compiled with XPU."));
@@ -273,12 +259,10 @@ class CAllReduceOpCUDAKernel : public framework::OpKernel<T> {
     auto out = ctx.Output<phi::DenseTensor>("Out");
     int rid = ctx.Attr<int>("ring_id");
 
-    auto place = ctx.GetPlace();
     ncclDataType_t dtype = phi::ToNCCLDataType(in->dtype());
     int64_t numel = in->numel();
     const void* sendbuff = in->data<T>();
     out->Resize(in->dims());
-    void* recvbuff = out->mutable_data<T>(place);
 
     auto map = phi::distributed::ProcessGroupMapFromGid::getInstance();
     if (map->has(rid)) {
@@ -377,17 +361,7 @@ class CAllReduceOpCUDAKernel : public framework::OpKernel<T> {
                                                      red_type));
     }
 
-    if (comm_ctx) {
-      comm_ctx->AllReduce(out, *in, nccl_red_type, stream);
-    } else {
-      PADDLE_ENFORCE_GPU_SUCCESS(phi::dynload::ncclAllReduce(sendbuff,
-                                                             recvbuff,
-                                                             numel,
-                                                             dtype,
-                                                             nccl_red_type,
-                                                             comm->comm(),
-                                                             stream));
-    }
+    comm_ctx->AllReduce(out, *in, nccl_red_type, stream);
 #else
     PADDLE_THROW(common::errors::PreconditionNotMet(
         "PaddlePaddle should compile with GPU."));

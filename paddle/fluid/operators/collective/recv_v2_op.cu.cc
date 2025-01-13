@@ -46,21 +46,14 @@ phi::DDim recv_shape_info(const phi::Place &place,
   }
 
   phi::DataType shape_dtype = phi::DataType::INT32;
-  ncclDataType_t nccl_dtype = phi::ToNCCLDataType(shape_dtype);
 
   // step1: recv the shape size
   phi::DenseTensor gpu_shape_size_tensor(shape_dtype);
   if (!group) {
     gpu_shape_size_tensor.Resize({1});
     gpu_shape_size_tensor.mutable_data(place, shape_dtype);
-    auto *gpu_data = gpu_shape_size_tensor.data<int>();
 
-    if (comm_ctx) {
-      comm_ctx->Recv(&gpu_shape_size_tensor, 1, peer, stream);
-    } else {
-      PADDLE_ENFORCE_GPU_SUCCESS(phi::dynload::ncclRecv(
-          gpu_data, 1, nccl_dtype, peer, comm->comm(), stream));
-    }
+    comm_ctx->Recv(&gpu_shape_size_tensor, 1, peer, stream);
   }
 
   // copy the shape size tensor to cpu
@@ -84,13 +77,7 @@ phi::DDim recv_shape_info(const phi::Place &place,
   if (!group) {
     gpu_shape_tensor.Resize({shape_size});
     gpu_shape_tensor.mutable_data(place, shape_dtype);
-    auto *gpu_shape_data = gpu_shape_tensor.data<int>();
-    if (comm_ctx) {
-      comm_ctx->Recv(&gpu_shape_tensor, shape_size, peer, stream);
-    } else {
-      PADDLE_ENFORCE_GPU_SUCCESS(phi::dynload::ncclRecv(
-          gpu_shape_data, shape_size, nccl_dtype, peer, comm->comm(), stream));
-    }
+    comm_ctx->Recv(&gpu_shape_tensor, shape_size, peer, stream);
   }
 
   // copy the shape tensor to cpu
@@ -196,11 +183,6 @@ class RecvOpV2CUDAKernel : public framework::OpKernel<T> {
       // should ExecutionContext for calc stream.
       stream = ctx.cuda_device_context().stream();
     }
-    int data_type = ctx.Attr<int>("dtype");
-    framework::proto::VarType::Type type =
-        framework::proto::VarType::Type(data_type);
-    ncclDataType_t dtype = platform::ToNCCLDataType(type);
-
     auto *out_var = ctx.OutputVar("Out");
     if (out_var->IsType<phi::TensorArray>()) {
       PADDLE_ENFORCE_EQ(
@@ -212,17 +194,9 @@ class RecvOpV2CUDAKernel : public framework::OpKernel<T> {
       for (size_t idx = 0; idx < out_array->size(); ++idx) {
         VLOG(3) << "DenseTensorArray: idx(" << idx << ")";
         auto out = &out_array->at(idx);
-        auto out_dims = out->dims();
         ctx.cuda_device_context().Alloc<T>(out);
         auto numel = out->numel();
-        if (comm_ctx) {
-          comm_ctx->Recv(out, numel, peer, stream);
-        } else {
-          PADDLE_ENFORCE_GPU_SUCCESS(phi::dynload::ncclRecv(
-              out->data<T>(), numel, dtype, peer, comm->comm(), stream));
-          VLOG(3) << "rank " << comm->rank() << " recv "
-                  << common::product(out_dims) << " from " << peer;
-        }
+        comm_ctx->Recv(out, numel, peer, stream);
       }
       return;
     }
@@ -246,22 +220,7 @@ class RecvOpV2CUDAKernel : public framework::OpKernel<T> {
     } else {
       ctx.cuda_device_context().Alloc<T>(out);
     }
-    if (comm_ctx) {
-      comm_ctx->Recv(out, numel, peer, stream);
-    } else {
-      comm = platform::NCCLCommContext::Instance().Get(rid, place);
-      PADDLE_ENFORCE_LT(
-          peer,
-          comm->nranks(),
-          common::errors::InvalidArgument("The value of peer (%d) you set must "
-                                          "be less than comm->nranks (%d).",
-                                          peer,
-                                          comm->nranks()));
-      PADDLE_ENFORCE_GPU_SUCCESS(phi::dynload::ncclRecv(
-          out->data<T>(), numel, dtype, peer, comm->comm(), stream));
-      VLOG(3) << "rank " << comm->rank() << " recv "
-              << common::product(out->dims()) << " from " << peer;
-    }
+    comm_ctx->Recv(out, numel, peer, stream);
 #else
     PADDLE_THROW(common::errors::Unavailable(
         "PaddlePaddle should be compiled with NCCL and "
