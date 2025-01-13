@@ -66,6 +66,7 @@ def scale_converter(network, paddle_op, inputs):
 
     scale = get_input_constant_value(paddle_op, inputs, 1)
     if scale is not None:
+        scale = scale[0]
         has_scale_tensor = False
         if is_int:
             scale_tensor = add_1D_constant_layer(

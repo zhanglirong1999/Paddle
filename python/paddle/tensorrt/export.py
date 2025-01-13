@@ -39,6 +39,7 @@ from paddle.tensorrt.util import (
     forbid_op_lower_trt,
     mark_builtin_op,
     run_pir_pass,
+    run_trt_partition,
     warmup_shape_infer,
 )
 
@@ -264,7 +265,6 @@ def convert_to_trt(program, trt_config, scope):
         # run pir pass (including trt_op_marker_pass)
         program_with_pir = run_pir_pass(
             program,
-            partition_mode=False,
             disable_passes=trt_config.disable_passes,
             scope=scope,
         )
@@ -286,9 +286,7 @@ def convert_to_trt(program, trt_config, scope):
         mark_builtin_op(program)
 
         # run pir pass (including trt_sub_graph_extract_pass)
-        program_with_pir = run_pir_pass(
-            program, partition_mode=True, scope=scope
-        )
+        program_with_pir = run_trt_partition(program)
 
         # Step4: run TRTConverter (would lower group_op into tensorrt_engine_op)
         converter = PaddleToTensorRTConverter(

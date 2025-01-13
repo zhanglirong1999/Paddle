@@ -19,7 +19,7 @@ import sys
 import numpy as np
 import tensorrt as trt
 
-from paddle.tensorrt.util import TensorRTConfigManager
+from paddle.tensorrt.util import TensorRTConfigManager, TensorRTConstantManager
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.abspath(os.path.join(current_dir, os.pardir))
@@ -171,8 +171,8 @@ def add_elementwise_layer(network, paddle_op, inputs, op_type):
 def add_1D_constant_layer(network, data, dtype=np.int32, is_scalar=False):
     if not isinstance(data, list):
         data = [data]
-    constant_data = np.array(data, dtype=dtype)
     shape = () if is_scalar else (len(data),)
+    constant_data = np.array(data, dtype=dtype)
     constant_layer = network.add_constant(shape, constant_data)
     return constant_layer.get_output(0)
 
@@ -569,8 +569,11 @@ def convert_conv2d(network, paddle_op, inputs):
 
 def get_input_constant_value(paddle_op, inputs, input_index):
     input_op = paddle_op.operands()[input_index].source().get_defining_op()
+    constant_manager = TensorRTConstantManager()
     if input_op.name() == "builtin.constant":
-        return inputs[input_index].numpy().tolist()
+        return constant_manager.get_constant_value(
+            input_op.attrs()["value"]
+        ).tolist()
     elif input_op.name() == "pd_op.full_int_array":
         return input_op.attrs()["value"]
     elif input_op.name() == "pd_op.full":
