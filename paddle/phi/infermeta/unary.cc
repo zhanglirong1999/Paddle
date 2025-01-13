@@ -1973,7 +1973,7 @@ void FractionalMaxPoolInferMeta(const MetaTensor& x,
   PADDLE_ENFORCE_EQ(
       (x_dims.size() == 4 || x_dims.size() == 5),
       true,
-      errors::InvalidArgument("Pooling intput should be 4-D or "
+      errors::InvalidArgument("Pooling input should be 4-D or "
                               "5-D tensor but received %dD-Tensor",
                               x_dims.size()));
 
@@ -2578,7 +2578,7 @@ void MaxPoolWithIndexInferMeta(const MetaTensor& x,
   PADDLE_ENFORCE_EQ(
       (x_dims.size() == 4 || x_dims.size() == 5),
       true,
-      errors::InvalidArgument("Pooling intput should be 4-D or "
+      errors::InvalidArgument("Pooling input should be 4-D or "
                               "5-D tensor but received %dD-Tensor",
                               x_dims.size()));
 

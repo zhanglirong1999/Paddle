@@ -2030,7 +2030,7 @@ bool MaxPool2dWithIndexOpInferSymbolicShape(
   PADDLE_ENFORCE_EQ(
       x_shape.size(),
       4,
-      common::errors::InvalidArgument("Pooling intput should be 4-D Tensor"
+      common::errors::InvalidArgument("Pooling input should be 4-D Tensor"
                                       "but received %dD-Tensor",
                                       x_shape.size()));
 
@@ -2064,7 +2064,7 @@ bool MaxPool3dWithIndexOpInferSymbolicShape(
   PADDLE_ENFORCE_EQ(
       x_shape.size(),
       5,
-      common::errors::InvalidArgument("Pooling intput should be 5-D Tensor"
+      common::errors::InvalidArgument("Pooling input should be 5-D Tensor"
                                       "but received %dD-Tensor",
                                       x_shape.size()));
 

@@ -303,23 +303,25 @@ void FakeInitializeTensor(const phi::DeviceContext& dev_ctx,
                           const phi::DataType& dtype,
                           const phi::DataLayout& layout,
                           TensorType* tensor) {
-  PADDLE_ENFORCE_NE(place.GetType(),
-                    phi::AllocationType::UNDEFINED,
-                    common::errors::InvalidArgument(
-                        "The place %s to fake intialize is not valid.", place));
-  PADDLE_ENFORCE_NE(dtype,
-                    phi::DataType::UNDEFINED,
-                    common::errors::InvalidArgument(
-                        "The dtype %s to fake intialize is not valid.", dtype));
+  PADDLE_ENFORCE_NE(
+      place.GetType(),
+      phi::AllocationType::UNDEFINED,
+      common::errors::InvalidArgument(
+          "The place %s to fake initialize is not valid.", place));
+  PADDLE_ENFORCE_NE(
+      dtype,
+      phi::DataType::UNDEFINED,
+      common::errors::InvalidArgument(
+          "The dtype %s to fake initialize is not valid.", dtype));
   PADDLE_ENFORCE_NE(
       layout,
       phi::DataLayout::UNDEFINED,
       common::errors::InvalidArgument(
-          "The layout %s to fake intialize is not valid.", layout));
+          "The layout %s to fake initialize is not valid.", layout));
   PADDLE_ENFORCE_NOT_NULL(
       tensor,
       common::errors::InvalidArgument(
-          "The tensor to fake intialize should not be null."));
+          "The tensor to fake initialize should not be null."));
 
   if (tensor->initialized() && place == tensor->place() &&
       dtype == tensor->dtype() && tensor->layout() == layout) {
@@ -764,7 +766,7 @@ phi::DataType InferDTypeFromAttr(const framework::OperatorBase& op,
                                  const RuntimeContext& runtime_ctx,
                                  const std::string& attr_name) {
   int dtype_attr = op.Attr<int>(attr_name);
-  if (dtype_attr == -1) {  // -1 means the dtype is same as intput
+  if (dtype_attr == -1) {  // -1 means the dtype is same as input
     return GetInputDType(runtime_ctx, "X");
   }
   return phi::TransToPhiDataType(dtype_attr);

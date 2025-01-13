@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-TestCases for Dataset consistency insepection of use_var_list and data_generator.
+TestCases for Dataset consistency inspection of use_var_list and data_generator.
 """
 
 import math
@@ -392,9 +392,9 @@ class TestDataset(unittest.TestCase):
         # epoch_num = 10
         # drop_last = False
 
-    def test_var_consistency_insepection(self):
+    def test_var_consistency_inspection(self):
         """
-        Testcase for InMemoryDataset of consistency insepection of use_var_list and data_generator.
+        Testcase for InMemoryDataset of consistency inspection of use_var_list and data_generator.
         """
 
         temp_dir = tempfile.TemporaryDirectory()

@@ -4423,7 +4423,7 @@ void UnpoolInferMeta(const MetaTensor& x,
   PADDLE_ENFORCE_EQ(in_x_dims.size() == 4,
                     true,
                     common::errors::InvalidArgument(
-                        "Unpool Intput(X) must be of 4-dimensional, but "
+                        "Unpool Input(X) must be of 4-dimensional, but "
                         "received Input(X)'s dimensions is %d.",
                         in_x_dims.size()));
   PADDLE_ENFORCE_EQ(in_x_dims,
@@ -4469,7 +4469,7 @@ void Unpool3dInferMeta(const MetaTensor& x,
   PADDLE_ENFORCE_EQ(in_x_dims.size() == 5,
                     true,
                     common::errors::InvalidArgument(
-                        "Unpool Intput(X) must be of 5-dimensional, but "
+                        "Unpool Input(X) must be of 5-dimensional, but "
                         "received Input(X)'s dimensions is %d.",
                         in_x_dims.size()));
   PADDLE_ENFORCE_EQ(in_x_dims,
