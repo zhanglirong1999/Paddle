@@ -247,12 +247,12 @@ static __global__ void BNForwardTraining2DChannelLastCompStat(
     }
 
     // vertical block sum
-    funcs::BlockReduceByVetical<T, BatchNormParamType<T>>(x_sum,
-                                                          x_square_sum,
-                                                          &smem_sum[0],
-                                                          &smem_square_sum[0],
-                                                          &x_sum,
-                                                          &x_square_sum);
+    funcs::BlockReduceByVertical<T, BatchNormParamType<T>>(x_sum,
+                                                           x_square_sum,
+                                                           &smem_sum[0],
+                                                           &smem_square_sum[0],
+                                                           &x_sum,
+                                                           &x_square_sum);
 
     if (gridDim.y > 1) {
       __shared__ bool is_last_block_done;
