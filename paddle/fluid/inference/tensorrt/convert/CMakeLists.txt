@@ -168,7 +168,6 @@ elseif(WITH_CINN)
          common
          custom_operator
          init_phi
-         fleet_executor
          python)
 else()
   nv_test(
@@ -180,7 +179,6 @@ else()
          common
          custom_operator
          init_phi
-         fleet_executor
          python)
 endif()
 
