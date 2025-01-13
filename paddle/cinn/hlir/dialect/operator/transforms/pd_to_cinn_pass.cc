@@ -352,7 +352,7 @@ class FlipOpPattern : public pir::OpRewritePattern<paddle::dialect::FlipOp> {
       for (size_t i = 0; i < axis_attr.size(); ++i) {
         PADDLE_ENFORCE(axis_attr[i].dyn_cast<::pir::Int32Attribute>(),
                        ::common::errors::PreconditionNotMet(
-                           "Reqiured attr element must be Int32Attribute."));
+                           "Required attr element must be Int32Attribute."));
         axis_value.push_back(
             axis_attr[i].dyn_cast<::pir::Int32Attribute>().data());
       }

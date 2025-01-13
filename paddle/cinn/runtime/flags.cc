@@ -256,10 +256,11 @@ PD_DEFINE_bool(
     BoolFromEnv("FLAGS_enhance_vertical_fusion_with_recompute", true),
     "Whether to enhance check logic on vertical fusion with recompute");
 
-PD_DEFINE_bool(verbose_function_register,
-               BoolFromEnv("FLAGS_verbose_function_register", false),
-               "Whether to verbose function regist log. This will only work if "
-               "CINN build with flag -DWITH_DEBUG=ON.");
+PD_DEFINE_bool(
+    verbose_function_register,
+    BoolFromEnv("FLAGS_verbose_function_register", false),
+    "Whether to verbose function register log. This will only work if "
+    "CINN build with flag -DWITH_DEBUG=ON.");
 
 PD_DEFINE_int32(
     cinn_profiler_state,

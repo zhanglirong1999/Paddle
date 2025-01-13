@@ -590,7 +590,7 @@ Expr DyScheduleImpl::Reorder(const std::string& block_name,
                       static_cast<int>(all_loops.size()),
                       ::common::errors::InvalidArgument(
                           "[IRScheduleError] An error occurred in the schedule "
-                          "primitive <Reoder>.\n"
+                          "primitive <Reorder>.\n"
                           "[Error info] The loop index in Reorder should be "
                           "less than total loop's number!\n"
                           "[Expr info] The Expr of current schedule is: %s.",
@@ -601,7 +601,7 @@ Expr DyScheduleImpl::Reorder(const std::string& block_name,
         0,
         ::common::errors::InvalidArgument(
             "[IRScheduleError] An error occurred in the schedule primitive "
-            "<Reoder>.\n"
+            "<Reorder>.\n"
             "[Error info] The loop index in Reorder should be >= 0!\n"
             "[Expr info] The Expr of current schedule is: %s.",
             module_expr_.GetExprs()));
@@ -626,7 +626,7 @@ Expr DyScheduleImpl::Reorder(const Expr& block,
                       static_cast<int>(all_loops.size()),
                       ::common::errors::InvalidArgument(
                           "[IRScheduleError] An error occurred in the schedule "
-                          "primitive <Reoder>.\n"
+                          "primitive <Reorder>.\n"
                           "[Error info] The loop index in Reorder should be "
                           "less than total loop's number!\n"
                           "[Expr info] The Expr of current schedule is: %s.",
@@ -637,7 +637,7 @@ Expr DyScheduleImpl::Reorder(const Expr& block,
         0,
         ::common::errors::InvalidArgument(
             "[IRScheduleError] An error occurred in the schedule primitive "
-            "<Reoder>.\n"
+            "<Reorder>.\n"
             "[Error info] The loop index in Reorder should be >= 0!\n"
             "[Expr info] The Expr of current schedule is: %s.",
             module_expr_.GetExprs()));

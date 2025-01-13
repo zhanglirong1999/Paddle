@@ -1790,7 +1790,7 @@ def fuse_attention_ffn_qkv_pass(
                         )
                         concated_param._clear()
 
-                    # Pop and relase original params from concrete_program
+                    # Pop and release original params from concrete_program
                     for param in concated_dy_param_list:
                         param.get_tensor()._clear()
 

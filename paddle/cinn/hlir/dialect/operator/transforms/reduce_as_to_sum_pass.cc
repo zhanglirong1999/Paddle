@@ -79,9 +79,9 @@ class ReduceAsOpPattern
       ProcessStaticShape(
           x_shape, y_shape, &reduce_axis, &keep_dim, &need_squeeze);
     } else {
-      bool can_repalce = ProcessDynamicShape(
+      bool can_replace = ProcessDynamicShape(
           op, &reduce_axis, &x_y_shape_equal, &keep_dim, &need_squeeze);
-      if (!can_repalce) {
+      if (!can_replace) {
         return true;
       }
     }

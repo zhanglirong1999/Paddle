@@ -382,7 +382,7 @@ void _Tensor_::Bind(lang::Buffer &buffer) {
   PADDLE_ENFORCE_EQ(buffer->binded_tensor_names().empty(),
                     false,
                     ::common::errors::PreconditionNotMet(
-                        "Reqiured binded_tensor_names shall not be empty."));
+                        "Required binded_tensor_names shall not be empty."));
   this->buffer = buffer.buffer();
   PADDLE_ENFORCE_EQ(this->buffer.defined(),
                     true,
