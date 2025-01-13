@@ -2081,6 +2081,7 @@ def get_setup_parameters():
         'paddle._typing',
         'paddle._typing.libs',
         'paddle.tensorrt',
+        'paddle.tensorrt.impls',
     ]
 
     paddle_bins = ''
