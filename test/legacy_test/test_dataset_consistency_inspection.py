@@ -106,10 +106,10 @@ class CTRDataset(fleet.MultiSlotDataGenerator):
                 pos_url_feas.append(pos_url_fea)
                 pos_click_feas.append(stat_fea)
 
-                query_serach = float(item[5])
-                if query_serach > 0.0:
-                    query_serach = min(math.log(query_serach), 10.0) / 10.0
-                pos_context_fea = [[query_serach], [query_len]]
+                query_search = float(item[5])
+                if query_search > 0.0:
+                    query_search = min(math.log(query_search), 10.0) / 10.0
+                pos_context_fea = [[query_search], [query_len]]
                 pos_context_feas.append(pos_context_fea)
 
             # negative url fea parse
@@ -145,10 +145,10 @@ class CTRDataset(fleet.MultiSlotDataGenerator):
                 neg_click_feas.append(stat_fea)
                 neg_url_feas.append(neg_url_fea)
 
-                query_serach = float(item[5])
-                if query_serach > 0.0:
-                    query_serach = min(math.log(query_serach), 10.0) / 10.0
-                neg_context_fea = [[query_serach], [query_len]]
+                query_search = float(item[5])
+                if query_search > 0.0:
+                    query_search = min(math.log(query_search), 10.0) / 10.0
+                neg_context_fea = [[query_search], [query_len]]
                 neg_context_feas.append(neg_context_fea)
 
             # make train data

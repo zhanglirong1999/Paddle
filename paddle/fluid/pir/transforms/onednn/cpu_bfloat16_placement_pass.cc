@@ -116,7 +116,7 @@ class OneDNNBf16PlacementPattern : public pir::RewritePattern {
       bool bias_after_scale =
           op_attr.at("bias_after_scale").dyn_cast<pir::BoolAttribute>().data();
       if (bias_after_scale) {
-        // If bias after scale, add quant/dequant for sacle will cause some
+        // If bias after scale, add quant/dequant for scale will cause some
         // error
         return false;
       }

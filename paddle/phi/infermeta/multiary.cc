@@ -2307,7 +2307,7 @@ void FusedBiasActInferMeta(const MetaTensor& x,
         dim % 2,
         0,
         common::errors::InvalidArgument(
-            "The seconde dimension of x must be even, but receive %d", dim));
+            "The second dimension of x must be even, but receive %d", dim));
     x_shapes[x_last_dim] /= 2;
     out->set_dims(common::make_ddim(x_shapes));
   } else if (act_method == "gelu" || act_method == "relu") {
