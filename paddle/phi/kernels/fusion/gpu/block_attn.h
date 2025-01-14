@@ -1600,6 +1600,10 @@ void dispatch_blha_impl_headsize(const phi::GPUContext &dev_ctx,
       dispatch_blha_impl_blocksize<T, 64, 64>(
           params, dev_ctx.stream(), load_func, store_func, use_cachekv_int8);
       break;
+    case 96:
+      dispatch_blha_impl_blocksize<T, 96, 128>(
+          params, dev_ctx.stream(), load_func, store_func, use_cachekv_int8);
+      break;
     case 128:
       dispatch_blha_impl_blocksize<T, 128, 128>(
           params, dev_ctx.stream(), load_func, store_func, use_cachekv_int8);
