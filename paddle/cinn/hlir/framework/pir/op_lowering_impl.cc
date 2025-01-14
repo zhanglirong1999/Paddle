@@ -418,16 +418,9 @@ std::vector<ir::LoweredFunc> OpLowererImpl::PostProcess(
     lowered_funcs.push_back(std::move(func));
   }
 
-  // collect temp space sizes
-  if (lowered_funcs.size() > 1) {
-    for (auto& temp_space : lowered_funcs[0]->temp_spaces) {
-      int64_t size = -1;
-      if (temp_space.size().is_constant()) {
-        size = temp_space.size().as_int64();
-      }
-      group->mut_temp_space_sizes().push_back(size);
-    }
-  }
+  // 5. Unify temp_space args and set temp_space sizes
+  UnifyTempSpaceArgs(&lowered_funcs);
+  group->mut_temp_space_sizes() = CollectTempSpaceSizes(lowered_funcs);
 
   return lowered_funcs;
 }
