@@ -89,10 +89,13 @@ def init_communicator(block, rank, ranks, ring_id):
         type='fill_constant', outputs={'Out': tmp_var}, attrs={'value': 1}
     )
     block.append_op(
-        type='c_allreduce_sum',
-        inputs={'X': tmp_var},
-        outputs={'Out': tmp_var},
-        attrs={'ring_id': ring_id, 'use_calc_stream': True},
+        type='all_reduce',
+        inputs={'x': tmp_var},
+        outputs={'out': tmp_var},
+        attrs={
+            'ring_id': ring_id,
+            'reduce_type': paddle.distributed.ReduceOp.SUM,
+        },
     )
     block.append_op(
         type='c_sync_calc_stream',
