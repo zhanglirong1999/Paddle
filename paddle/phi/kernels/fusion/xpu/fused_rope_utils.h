@@ -362,6 +362,8 @@ void XPUFusedRotaryHalf(const Context& dev_ctx,
                         nullptr,
                         {batch_size, seq_len, num_heads, head_dim},
                         {batch_size, seq_len, 1, head_dim},
+                        {},
+                        "BLHD",
                         -1,
                         10000.0f);
     PADDLE_ENFORCE_XDNN_SUCCESS(ret, single_func_name);
@@ -376,6 +378,8 @@ void XPUFusedRotaryHalf(const Context& dev_ctx,
                         reinterpret_cast<XPUType*>(out_k->data()),
                         {batch_size, seq_len, num_heads, head_dim},
                         {batch_size, seq_len, 1, head_dim},
+                        {},
+                        "BLHD",
                         num_heads_k,
                         10000.0f);
     PADDLE_ENFORCE_XDNN_SUCCESS(ret, fusion_func_name);
@@ -392,6 +396,8 @@ void XPUFusedRotaryHalf(const Context& dev_ctx,
                         nullptr,
                         {batch_size, seq_len, num_heads_v, head_dim},
                         {batch_size, seq_len, 1, head_dim},
+                        {},
+                        "BLHD",
                         -1,
                         10000.0f);
     PADDLE_ENFORCE_XDNN_SUCCESS(ret, single_func_name);
