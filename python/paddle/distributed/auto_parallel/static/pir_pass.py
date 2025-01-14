@@ -468,7 +468,10 @@ class RemovePasses:
                         op.erase()
                     continue
 
-                if cur_rank not in op.dist_attr.process_mesh.process_ids:
+                if (
+                    op.dist_attr
+                    and cur_rank not in op.dist_attr.process_mesh.process_ids
+                ):
                     op.erase()
                 elif op.name() == "dist_op.reshard":
                     assert op.result(
