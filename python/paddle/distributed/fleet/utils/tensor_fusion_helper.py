@@ -201,7 +201,7 @@ class ShardingGradView:
         self._use_main_grad = use_main_grad
         self._release_grad = release_grad
         shard_size = param_buffer._numel() // sharding_degree
-        rank_begin = rank * shard_size
+        rank_begin = max(rank, 0) * shard_size
         rank_end = rank_begin + shard_size
 
         param_begin = max(self._index, rank_begin)
@@ -660,10 +660,11 @@ class FusedCommBuffer:
         group = self._comm_group
         shard_size = full_buffer._numel() // group.nranks
 
-        begin = shard_size * group.rank
+        begin = shard_size * max(group.rank, 0)
         end = begin + shard_size
         slice_buffer = full_buffer._slice(begin, end)
-
+        if group.nranks == 1:
+            return
         if sync:
             # default sync_op is False, so we need to wait here.
             # this will call distributed_py.cc in paddle. In distributed_py.cc, there defines two all gather function, their parameters are different.
@@ -744,7 +745,7 @@ class FusedCommBuffer:
             if paddle.distributed.in_auto_parallel_align_mode():
                 reduce_op = paddle.distributed.ReduceOp.SUM
             shard_size = self.grad_storage._numel() // self._comm_group.nranks
-            begin = shard_size * self._comm_group.rank
+            begin = shard_size * max(self._comm_group.rank, 0)
             end = begin + shard_size
             reduce_scattered = (
                 paddle.empty_like(self.grad_storage._slice(begin, end))
@@ -766,6 +767,8 @@ class FusedCommBuffer:
     @imperative_base.no_grad
     def scale_grads(self):
         if self.need_reduce_scale_sync():
+            if self._comm_group.nranks == 1 and self._task is None:
+                return
             assert self._task is not None, "Task is not initialized."
             self._task.wait()
 
