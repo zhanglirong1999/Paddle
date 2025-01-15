@@ -31,7 +31,7 @@ gather_srcs(
   resize_buffer.cc
   update_buffer_axis_pass.cc
   trans_buffer_with_dynamic_shape.cc
-  schedule_block_dce_pass.cc
+  schedule_block_dce.cc
   eliminate_common_factor_of_local_index.cc
   if_fusion_pass.cc
   merge_block_utils.cc
