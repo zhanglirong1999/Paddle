@@ -47,7 +47,6 @@ unpacket = "unpacket"
 vaccum = 'vaccum'
 
 # These words need to be fixed
-Indexs = 'Indexs'
 indexs = 'indexs'
 Infered = 'Infered'
 infered = 'infered'
