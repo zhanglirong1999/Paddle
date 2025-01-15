@@ -208,7 +208,7 @@ class _Tensor_ : public ExprNode<_Tensor_> {
   bool IsDependOnStatement(absl::string_view statement);
 
   /**
-   * Get the names of the tensors thouse this tensor depends on.
+   * Get the names of the tensors those this tensor depends on.
    */
   std::set<std::string> DependingTensorNames();
 
@@ -272,7 +272,7 @@ class _Tensor_ : public ExprNode<_Tensor_> {
   std::vector<Var> axis_with_reduce() const;
 
   /**
-   * Get the tensors thouse depend on the same buffer belong to this tensor.
+   * Get the tensors those depend on the same buffer belong to this tensor.
    */
   const std::set<std::string>& buffer_depended_tensor_names() const {
     return buffer_depended_tensor_names_;

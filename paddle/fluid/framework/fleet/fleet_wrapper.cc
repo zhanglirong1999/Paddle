@@ -1850,7 +1850,7 @@ void FleetWrapper::ShrinkDenseTable(int table_id,
   push_status.wait();
   auto status = push_status.get();
   if (status != 0) {
-    // PADDLE_THORW(common::errors::Fatal(
+    // PADDLE_THROW(common::errors::Fatal(
     //    "push shrink dense param failed, status is [%d].", status));
     sleep(sleep_seconds_before_fail_exit_);
     exit(-1);

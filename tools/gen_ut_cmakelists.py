@@ -565,8 +565,8 @@ class CMakeGenerator:
         for sub in sub_dirs:
             cmds += f"add_subdirectory({sub})\n"
 
-        # check whether the generated file are thge same with the existing file, ignoring the blank chars
-        # if the are same, skip the weiting process
+        # check whether the generated file are the same with the existing file, ignoring the blank chars
+        # if they are same, skip the waiting process
         if os.path.isfile(f"{current_work_dir}/CMakeLists.txt"):
             with open(
                 f"{current_work_dir}/CMakeLists.txt", "r"

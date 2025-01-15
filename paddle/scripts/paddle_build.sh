@@ -875,7 +875,7 @@ set +x
         if [ -n "$failed_test_lists" ];then
             EXIT_CODE=1
             if [ ${TIMEOUT_DEBUG_HELP:-OFF} == "ON" ];then
-                bash $PADDLE_ROOT/tools/timeout_debug_help.sh "$failed_test_lists"    # cat logs for tiemout uts which killed by ctest
+                bash $PADDLE_ROOT/tools/timeout_debug_help.sh "$failed_test_lists"    # cat logs for timeout uts which killed by ctest
             fi
             need_retry_ut_str=$(echo "$failed_test_lists" | grep -oEi "\-.+\(.+\)" | sed 's/(.\+)//' | sed 's/- //' )
             need_retry_ut_arr=(${need_retry_ut_str})
@@ -1795,7 +1795,7 @@ set +x
         rerun_ut_startTime_s=`date +%s`
         if [ -n "$failed_test_lists" ];then
             if [ ${TIMEOUT_DEBUG_HELP:-OFF} == "ON" ];then
-                bash $PADDLE_ROOT/tools/timeout_debug_help.sh "$failed_test_lists"    # cat logs for tiemout uts which killed by ctest
+                bash $PADDLE_ROOT/tools/timeout_debug_help.sh "$failed_test_lists"    # cat logs for timeout uts which killed by ctest
             fi
             need_retry_ut_str=$(echo "$failed_test_lists" | grep -oEi "\-.+\(.+\)" | sed 's/(.\+)//' | sed 's/- //' )
             need_retry_ut_arr=(${need_retry_ut_str})
@@ -2998,7 +2998,7 @@ set +x
         rerun_ut_startTime_s=`date +%s`
         if [ -n "$failed_test_lists" ];then
             if [ ${TIMEOUT_DEBUG_HELP:-OFF} == "ON" ];then
-                bash $PADDLE_ROOT/tools/timeout_debug_help.sh "$failed_test_lists"    # cat logs for tiemout uts which killed by ctest
+                bash $PADDLE_ROOT/tools/timeout_debug_help.sh "$failed_test_lists"    # cat logs for timeout uts which killed by ctest
             fi
             need_retry_ut_str=$(echo "$failed_test_lists" | grep -oEi "\-.+\(.+\)" | sed 's/(.\+)//' | sed 's/- //' )
             need_retry_ut_arr=(${need_retry_ut_str})
@@ -3119,7 +3119,7 @@ set +x
         rerun_ut_startTime_s=`date +%s`
         if [ -n "$failed_test_lists" ];then
             if [ ${TIMEOUT_DEBUG_HELP:-OFF} == "ON" ];then
-                bash $PADDLE_ROOT/tools/timeout_debug_help.sh "$failed_test_lists"    # cat logs for tiemout uts which killed by ctest
+                bash $PADDLE_ROOT/tools/timeout_debug_help.sh "$failed_test_lists"    # cat logs for timeout uts which killed by ctest
             fi
             need_retry_ut_str=$(echo "$failed_test_lists" | grep -oEi "\-.+\(.+\)" | sed 's/(.\+)//' | sed 's/- //' )
             need_retry_ut_arr=(${need_retry_ut_str})

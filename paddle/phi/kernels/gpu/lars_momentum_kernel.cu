@@ -578,7 +578,7 @@ void LarsMomentumKernel(
                           reinterpret_cast<void*>(&epsilon_),
                           reinterpret_cast<void*>(&rescale_grad_),
                           reinterpret_cast<void*>(&multi_precision)};
-    // Launch all sm theads, and thead of each block synchronizedly cooperate.
+    // Launch all sm threads, and thead of each block synchronized cooperate.
     cudaLaunchCooperativeKernel(
         reinterpret_cast<void*>(MergedMomentumLarsKernel<T, MT>),
         lars_thread_config.grid_for_lars,
@@ -630,7 +630,7 @@ void LarsMomentumKernel(
         reinterpret_cast<void*>(&thresh),  // Just a placeholder
         reinterpret_cast<void*>(&numel),
         reinterpret_cast<void*>(&multi_precision)};
-    // Launch all sm theads.
+    // Launch all sm threads.
     cudaLaunchCooperativeKernel(
         reinterpret_cast<void*>(MomentumLarsKernel<T, MT>),
         lars_thread_config.grid_for_lars,

@@ -1023,8 +1023,8 @@ struct Block : public ExprNode<Block> {
 // IndexExpr, it will be separated later.
 
 /**
- * \brief IterMark is a special ExprNode, which can be used to mark ther entire
- * ierator. source is a IterSum or iterator. extent is the extent of the
+ * \brief IterMark is a special ExprNode, which can be used to mark the entire
+ * iterator. source is a IterSum or iterator. extent is the extent of the
  * iterator or IterSum.
  */
 struct IterMark : public ExprNode<IterMark> {
