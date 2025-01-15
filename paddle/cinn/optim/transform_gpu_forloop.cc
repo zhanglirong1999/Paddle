@@ -317,7 +317,7 @@ class SharedAxisVisitor : public ir::IRMutator<> {
         for (auto axis : gpu_axis) {
           optim::ReplaceVarWithExpr(&indice, ir::Var(axis), ir::Expr(0));
         }
-        indice = cinn::optim::ArithSimplify(indice);
+        indice = cinn::common::AutoSimplify(indice);
       }
     }
     ir::IRMutator<>::Visit(op, expr);
@@ -338,7 +338,7 @@ class SharedAxisVisitor : public ir::IRMutator<> {
         for (auto axis : gpu_axis) {
           optim::ReplaceVarWithExpr(&indice, ir::Var(axis), ir::Expr(0));
         }
-        indice = cinn::optim::ArithSimplify(indice);
+        indice = cinn::common::AutoSimplify(indice);
       }
     }
     ir::IRMutator<>::Visit(op, expr);
@@ -367,7 +367,7 @@ class LocalAxisVisitor : public ir::IRMutator<> {
         for (auto axis : gpu_axis) {
           optim::ReplaceVarWithExpr(&indice, ir::Var(axis), ir::Expr(0));
         }
-        indice = cinn::optim::ArithSimplify(indice);
+        indice = cinn::common::AutoSimplify(indice);
       }
     }
   }
@@ -388,7 +388,7 @@ class LocalAxisVisitor : public ir::IRMutator<> {
         for (auto axis : gpu_axis) {
           optim::ReplaceVarWithExpr(&indice, ir::Var(axis), ir::Expr(0));
         }
-        indice = cinn::optim::ArithSimplify(indice);
+        indice = cinn::common::AutoSimplify(indice);
       }
     }
     ir::IRMutator<>::Visit(op, expr);
@@ -418,7 +418,7 @@ class ReplaceUnitVarToZero : public ir::IRMutator<> {
       for (auto var_ : loop_var_) {
         optim::ReplaceVarWithExpr(&indice, ir::Var(var_), ir::Expr(0));
       }
-      indice = cinn::optim::ArithSimplify(indice);
+      indice = cinn::common::AutoSimplify(indice);
     }
     ir::IRMutator<>::Visit(op, expr);
   }
@@ -434,7 +434,7 @@ class ReplaceUnitVarToZero : public ir::IRMutator<> {
       for (auto var_ : loop_var_) {
         optim::ReplaceVarWithExpr(&indice, ir::Var(var_), ir::Expr(0));
       }
-      indice = cinn::optim::ArithSimplify(indice);
+      indice = cinn::common::AutoSimplify(indice);
     }
 
     ir::IRMutator<>::Visit(op, expr);

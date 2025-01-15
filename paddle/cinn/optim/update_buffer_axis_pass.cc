@@ -38,6 +38,24 @@ using ir::stmt::Let;
 using ir::stmt::Schedule;
 using ir::stmt::Store;
 
+bool ExprMathEqual(const Expr& expr1, const Expr& expr2) {
+  ir::Expr cmp_expr = common::AutoSimplify(ir::Sub::Make(expr1, expr2));
+  // This is ugly code since AutoSimplify is not powerful enough. Modify it
+  // after we make auto simplify better
+  ir::Expr simplified = common::AutoSimplify(cmp_expr);
+  int count = 0;
+  while (simplified != cmp_expr) {
+    cmp_expr = simplified;
+    simplified = common::AutoSimplify(cmp_expr);
+    ++count;
+    // Control dead loop
+    if (count >= 5) {
+      break;
+    }
+  }
+  return simplified.is_constant() && simplified.get_constant() == 0;
+}
+
 void FormalizeSingleIndex(const ir::Tensor& tensor,
                           std::vector<ir::Expr>* indices) {
   if (tensor->shape.size() > 1 && indices->size() == 1) {
@@ -48,7 +66,7 @@ void FormalizeSingleIndex(const ir::Tensor& tensor,
       mul = ir::Mul::Make(tensor->shape[i + 1], mul);
       ir::Expr div_expr = ir::Div::Make(origin_index_expr, mul);
       ir::Expr index_expr = ir::Mod::Make(div_expr, tensor->shape[i]);
-      indices->insert(indices->begin(), optim::ArithSimplify(index_expr));
+      indices->insert(indices->begin(), common::AutoSimplify(index_expr));
     }
   }
 }
@@ -171,7 +189,7 @@ class AnalyzeBufferAxis : public ir::IRMutator<>,
         buffer_name_access_same_index_expr[buffer_name];
     for (int i = 0; i < indices.size(); ++i) {
       if (index_expr.count(i)) {
-        if (index_expr[i] != GetIndexBindExpr(indices[i])) {
+        if (!ExprMathEqual(index_expr[i], GetIndexBindExpr(indices[i]))) {
           index_expr.erase(i);
         }
       }
