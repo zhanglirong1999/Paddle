@@ -1840,7 +1840,7 @@ PHI_DEFINE_EXPORTED_string(cublaslt_device_best_config,
                            "offline in cublaslt gemm.");
 
 /**
- * Wether to use xqa optim in block_multihead_attention kernel (GQA)
+ * Whether to use xqa optim in block_multihead_attention kernel (GQA)
  * Name: use_xqa_optim
  * Since Version: 3.0.0
  * Value Range: bool, default=false

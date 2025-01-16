@@ -916,7 +916,7 @@ class FlashAttnWithGating {
       VLOG(6) << TensorDebugString(fmha_out, "fmha_out");
     }
 
-    // 4. Get worksapce size and run the flash-attention kernel.
+    // 4. Get workspace size and run the flash-attention kernel.
     uint64_t workspace_size = 0;
     phi::DenseTensor workspace;
     cudaStream_t stream = dev_ctx_.stream();
@@ -1046,7 +1046,7 @@ class FlashAttnWithGating {
       VLOG(6) << TensorDebugString(&bias_d, "bias_d");
     }
 
-    // 2. Get worksapce size and run the flash-attention kernel.
+    // 2. Get workspace size and run the flash-attention kernel.
     uint64_t workspace_size = 0;
     phi::DenseTensor workspace;
     cudaStream_t stream = dev_ctx_.stream();

@@ -186,7 +186,7 @@ class OneDNNHandlerT {
       PADDLE_ENFORCE_NOT_NULL(
           bwd_w_pd_,
           errors::Unavailable("BWD_PD should be set when "
-                              "getting BWD prim witk key: %s .",
+                              "getting BWD prim with key: %s .",
                               key_p));
       backward_p = std::make_shared<TBackward_params>(*bwd_w_pd_);
       dev_ctx_.SetBlob(key_p, backward_p);

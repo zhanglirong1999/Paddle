@@ -147,7 +147,7 @@ void StreamAnalyzer::ConstructEvents(std::vector<Instruction>* instructions) {
                 "The program_force_events_to_wait_ had the event "
                 "that belongs to the operator : %s before the operator create "
                 "the event, "
-                "This is is werid.",
+                "This is is weird.",
                 instruction.OpBase()->Type().c_str()));
         std::shared_ptr<DeviceEvent> device_event =
             std::make_shared<DeviceEvent>(place,
@@ -780,7 +780,7 @@ void PirStreamAnalyzer::ConstructEvents(
                 "The program_force_events_to_wait_ had the event "
                 "that belongs to the operator : %s before the operator create "
                 "the event, "
-                "This is is werid.",
+                "This is is weird.",
                 instr->Name()));
         std::shared_ptr<DeviceEvent> device_event =
             std::make_shared<DeviceEvent>(place,
