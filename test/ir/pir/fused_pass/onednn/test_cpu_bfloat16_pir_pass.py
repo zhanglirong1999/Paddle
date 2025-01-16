@@ -1169,7 +1169,7 @@ class TestConcatBfloatQuantizePass(PassTest):
         self.check_pass_correct(rtol=1e-02, atol=1e-02)
 
 
-class TestSplitPattern(PassTest):
+class TestConv2dBf16PlacementPass(PassTest):
     def is_program_valid(self, program=None):
         return True
 
@@ -1178,24 +1178,42 @@ class TestSplitPattern(PassTest):
             main_prog = paddle.static.Program()
             start_prog = paddle.static.Program()
             with paddle.pir.core.program_guard(main_prog, start_prog):
-                x = paddle.static.data(name='x', shape=[6, 6, 6], dtype='float32')
-                out0, out1 = paddle.tensor_split(x, 2, axis=0)
-                out = paddle.add(out0, out1)
+                x = paddle.static.data(
+                    name='x', shape=[5, 5, 5, 5], dtype='float32'
+                )
+                w_attr = paddle.ParamAttr(
+                    learning_rate=0.0,
+                    initializer=paddle.nn.initializer.Normal(mean=0.0, std=2.0),
+                )
+                conv2d = paddle.nn.Conv2D(
+                    in_channels=5,
+                    out_channels=1,
+                    kernel_size=[1, 1],
+                    groups=1,
+                    stride=[1, 1],
+                    padding=[1, 1, 1, 1],
+                    dilation=[1, 1],
+                    data_format='NCHW',
+                    bias_attr=False,
+                    weight_attr=w_attr,
+                )
+
+                out = conv2d(x)
                 out = paddle.assign(out)
                 self.pass_attr_list = [
                     {'onednn_placement_pass': {}},
                     {'cpu_bfloat16_placement_pass': {}},
                     {'cpu_bfloat16_pass': {}},
-                    {'cpu_special_ops_bf16_pass': {}},
                     {'cpu_bfloat16_type_placement_pass': {}},
-                    {'cpu_bf16_quantize_squash_pass': {}},
                 ]
                 self.feeds = {
-                    "x": np.random.random((6, 6, 6)).astype("float32"),
+                    "x": np.random.random((5, 5, 5, 5)).astype("float32"),
+                    "bias": np.random.random(1).astype("float32"),
                 }
                 self.fetch_list = [out]
                 self.valid_op_map = {
-                    "onednn_op.split": 1,
+                    "onednn_op.conv2d": 1,
+                    "pd_op.conv2d": 0,
                 }
                 return [main_prog, start_prog]
 
