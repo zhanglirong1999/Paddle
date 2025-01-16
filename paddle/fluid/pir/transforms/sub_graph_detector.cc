@@ -40,12 +40,15 @@
 #include "paddle/pir/include/pass/pass_registry.h"
 
 #include "paddle/common/flags.h"
+#include "paddle/common/macros.h"
 
 #ifdef PADDLE_WITH_DNNL
 #include "paddle/fluid/pir/dialect/operator/ir/onednn_op.h"
 #include "paddle/fluid/pir/dialect/operator/ir/op_onednn_dialect.h"
 #include "paddle/fluid/pir/dialect/operator/trait/onednn.h"
 #endif
+
+REGISTER_FILE_SYMBOLS(sub_graph_detector);
 namespace pir {
 std::vector<pir::Operation*> InverselyTopologicalSort(pir::Block* block) {
   std::vector<pir::Operation*> sort_ops;
