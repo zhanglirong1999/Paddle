@@ -209,9 +209,10 @@ class SplitSliceBf16QuantizePattern
   bool MatchAndRewrite(
       paddle::onednn::dialect::SplitOp op,
       pir::PatternRewriter &rewriter) const override {  // NOLINT
-    // The output op should be builtin.slice to deal vector.
-    // split(out:vector) -> slice(in: vector, out: dense tensor) -> dequant
     /**
+     * In op_translator, all op with vector as input need add SliceOp
+     * The output op should be builtin.slice to deal vector.
+     * split(out:vector) -> slice(in: vector, out: dense tensor) -> dequant
      *                   split
      *  vec[tensor<3x6x6xbf16>,tensor<3x6x6xbf16>]
      *               |                  |
@@ -222,7 +223,6 @@ class SplitSliceBf16QuantizePattern
      */
 
     auto next_op_list = pir::GetUseOpsForOutput(op, 0);
-    // if (next_op_list.size() != 1) return false;
     for (auto i = 0; i < static_cast<int>(next_op_list.size()); i++) {
       pir::SliceOp next_op = (next_op_list[i].first)->dyn_cast<pir::SliceOp>();
       if (!next_op) {
@@ -252,15 +252,15 @@ class SplitSliceBf16QuantizePattern
 
     // Insert quantize before split
     pir::Value split_input = op.x();
-    paddle::onednn::dialect::QuantizeOp quant_op =
-        rewriter.Build<paddle::onednn::dialect::QuantizeOp>(split_input,
-                                                            q_attributes);
     auto type = op->result_type(0);
     if (!type.isa<pir::VectorType>()) {
       return false;
     }
+    paddle::onednn::dialect::QuantizeOp quant_op =
+        rewriter.Build<paddle::onednn::dialect::QuantizeOp>(split_input,
+                                                            q_attributes);
     auto vec_type = type.dyn_cast<pir::VectorType>();
-    auto quantize_type_ = vec_type[0];
+    auto quantize_type_ = quant_op->result_type(0);
     pir::Type new_type_quantize =
         create_type<pir::DenseTensorType, paddle::dialect::DenseTensorType>(
             quantize_type_, pir::BFloat16Type::get(ctx), ctx);
@@ -272,14 +272,17 @@ class SplitSliceBf16QuantizePattern
     for (size_t idx = 0; idx < output_num; ++idx) {
       auto dense_type =
           vec_type[idx].dyn_cast<paddle::dialect::DenseTensorType>();
-      auto new_type = paddle::dialect::DenseTensorType::get(
-          rewriter.ir_context(),
-          paddle::dialect::TransToIrDataType(phi::DataType::BFLOAT16,
-                                             rewriter.ir_context()),
-          dense_type.dims(),
-          dense_type.data_layout(),
-          dense_type.lod(),
-          dense_type.offset());
+      pir::Type new_type = create_type<paddle::dialect::DenseTensorType,
+                                       paddle::dialect::DenseTensorType>(
+          dense_type, pir::BFloat16Type::get(ctx), ctx);
+      // auto new_type = paddle::dialect::DenseTensorType::get(
+      //     rewriter.ir_context(),
+      //     paddle::dialect::TransToIrDataType(phi::DataType::BFLOAT16,
+      //                                        rewriter.ir_context()),
+      //     dense_type.dims(),
+      //     dense_type.data_layout(),
+      //     dense_type.lod(),
+      //     dense_type.offset());
       results_type[idx] = new_type;
     }
 
@@ -393,7 +396,7 @@ class SplitdoubleBf16QuantizePattern
                                                             q_attributes);
     auto type = op->result_type(0);
     auto vec_type = type.dyn_cast<pir::VectorType>();
-    auto quantize_type_ = vec_type[0];
+    auto quantize_type_ = quant_op->result_type(0);
     pir::Type new_type_quantize =
         create_type<pir::DenseTensorType, paddle::dialect::DenseTensorType>(
             quantize_type_, pir::BFloat16Type::get(ctx), ctx);
