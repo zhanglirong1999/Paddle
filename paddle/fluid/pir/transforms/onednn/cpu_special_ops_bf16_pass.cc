@@ -275,14 +275,6 @@ class SplitSliceBf16QuantizePattern
       pir::Type new_type = create_type<paddle::dialect::DenseTensorType,
                                        paddle::dialect::DenseTensorType>(
           dense_type, pir::BFloat16Type::get(ctx), ctx);
-      // auto new_type = paddle::dialect::DenseTensorType::get(
-      //     rewriter.ir_context(),
-      //     paddle::dialect::TransToIrDataType(phi::DataType::BFLOAT16,
-      //                                        rewriter.ir_context()),
-      //     dense_type.dims(),
-      //     dense_type.data_layout(),
-      //     dense_type.lod(),
-      //     dense_type.offset());
       results_type[idx] = new_type;
     }
 
