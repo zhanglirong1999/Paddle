@@ -43,14 +43,14 @@ void SimplifyBindingsInStaticShape(const cinn::ir::DyScheduleImpl* sch,
                                    const Expr& loop,
                                    const std::string& sch_name,
                                    Expr* stmt) {
-  // Get outter loops of current loops.
+  // Get outer loops of current loops.
   Expr root = sch->GetRootBlock(loop);
-  std::vector<Expr> outter_loops = GetLoopsOfExpr(loop, root);
+  std::vector<Expr> outer_loops = GetLoopsOfExpr(loop, root);
 
   // TODO(liujinnan): Deal dynamic shape.
   if (!ContainDynamicShape(root)) {
-    // Create an analyzer of outter loops and new fused loop.
-    std::vector<Expr> combine_loops = outter_loops;
+    // Create an analyzer of outer loops and new fused loop.
+    std::vector<Expr> combine_loops = outer_loops;
     combine_loops.push_back(*stmt);
     common::cas_intervals_t var_intervals_t =
         common::CollectVarIntervalsOfExprs(combine_loops);
@@ -59,7 +59,7 @@ void SimplifyBindingsInStaticShape(const cinn::ir::DyScheduleImpl* sch,
     // Simplify the bindings of new loop.
     VLOG(4) << "Before SimplifyBindings in " << sch_name << ", ir is:\n"
             << *stmt;
-    common::SimplifyBlockBinding::SimplifyBindings(*stmt, outter_loops, ana);
+    common::SimplifyBlockBinding::SimplifyBindings(*stmt, outer_loops, ana);
     VLOG(4) << "After SimplifyBindings in " << sch_name << ", ir is:\n"
             << *stmt;
   }

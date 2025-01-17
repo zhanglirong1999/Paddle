@@ -523,8 +523,8 @@ bool IsSumPartialBySymbol(const ir::IndexExpr &expr,
 }
 ir::IndexExpr SimplifySymbolicAdd(const ir::IndexExpr &lhs,
                                   const ir::IndexExpr &sym,
-                                  const ir::IndexExpr &outter_mul_factor) {
-  if (lhs == sym) return sym * (outter_mul_factor + ir::IndexExpr(1));
+                                  const ir::IndexExpr &outer_mul_factor) {
+  if (lhs == sym) return sym * (outer_mul_factor + ir::IndexExpr(1));
   switch (lhs.node_type()) {
     case ir::IrNodeTy::IntImm: {
       auto imm = lhs.As<ir::IntImm>();
@@ -533,29 +533,29 @@ ir::IndexExpr SimplifySymbolicAdd(const ir::IndexExpr &lhs,
       return ir::IndexExpr(0);
     }
     case ir::IrNodeTy::_Var_: {
-      return sym * (outter_mul_factor + ir::IndexExpr(1));
+      return sym * (outer_mul_factor + ir::IndexExpr(1));
     }
     case ir::IrNodeTy::Add: {
       if (!common::IsSumPartialBySymbol(lhs.operand(0), sym))
         return lhs.operand(0) +
-               SimplifySymbolicAdd(lhs.operand(1), sym, outter_mul_factor);
-      return SimplifySymbolicAdd(lhs.operand(0), sym, outter_mul_factor) +
+               SimplifySymbolicAdd(lhs.operand(1), sym, outer_mul_factor);
+      return SimplifySymbolicAdd(lhs.operand(0), sym, outer_mul_factor) +
              lhs.operand(1);
     }
     case ir::IrNodeTy::Mul: {
       if (lhs.operand(1).is_constant() && lhs.operand(1).as_int64() == -1) {
-        return SimplifySymbolicAdd(lhs.operand(0), sym, -outter_mul_factor) *
+        return SimplifySymbolicAdd(lhs.operand(0), sym, -outer_mul_factor) *
                lhs.operand(1);
       }
       if (lhs.operand(0) == sym)
-        return lhs.operand(0) * (lhs.operand(1) + outter_mul_factor);
-      return (lhs.operand(0) + outter_mul_factor) * lhs.operand(1);
+        return lhs.operand(0) * (lhs.operand(1) + outer_mul_factor);
+      return (lhs.operand(0) + outer_mul_factor) * lhs.operand(1);
     }
     case ir::IrNodeTy::Mod:
       PADDLE_THROW(::common::errors::Fatal("Error in SimplifySymbolicAdd!"));
     case ir::IrNodeTy::Div: {
       return SimplifySymbolicAdd(
-                 lhs.operand(0), sym, lhs.operand(1) * outter_mul_factor) /
+                 lhs.operand(0), sym, lhs.operand(1) * outer_mul_factor) /
              lhs.operand(1);
     }
     default:

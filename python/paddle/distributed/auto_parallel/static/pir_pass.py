@@ -1717,7 +1717,7 @@ def fuse_attention_ffn_qkv_pass(
     for op in del_ops:
         op.erase()
 
-    # 4. Initialize fused parameters and delete orignal parameters.
+    # 4. Initialize fused parameters and delete original parameters.
     concated_dy_param_index = []
     # for key, pat_list in fused_name_map.items():
     for key, pat_list in fusion_map.items():
