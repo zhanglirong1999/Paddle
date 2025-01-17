@@ -2172,7 +2172,7 @@ class OpcodeExecutor(OpcodeExecutorBase):
             null_indices=null_indices,
         )
 
-        # 4. setup vars which is created in loop as Undefind
+        # 4. setup vars which is created in loop as Undefined
         for name in true_fn_input_var_names[:-1]:
             if not self.has_var(name):
                 self._graph.pycode_gen.gen_load_const(SotUndefinedVar())
@@ -2484,7 +2484,7 @@ class OpcodeExecutor(OpcodeExecutorBase):
 
         after_loop_fn = create_after_loop_fn()
 
-        # 4. setup vars which is created in loop as Undefind
+        # 4. setup vars which is created in loop as Undefined
         for name in loop_body_inputs[:-1]:
             if not self.has_var(name):
                 self._graph.pycode_gen.gen_load_const(SotUndefinedVar())
