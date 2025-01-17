@@ -382,11 +382,14 @@ class SplitdoubleBf16QuantizePattern
     q_attributes["bfloat16"] = rewriter.bool_attr(true);
 
     // Insert quantize before split
+    auto type = op->result_type(0);
+    if (!type.isa<pir::VectorType>()) {
+      return false;
+    }
     pir::Value split_input = op.x();
     paddle::onednn::dialect::QuantizeOp quant_op =
         rewriter.Build<paddle::onednn::dialect::QuantizeOp>(split_input,
                                                             q_attributes);
-    auto type = op->result_type(0);
     auto vec_type = type.dyn_cast<pir::VectorType>();
     auto quantize_type_ = quant_op->result_type(0);
     pir::Type new_type_quantize =
@@ -395,9 +398,6 @@ class SplitdoubleBf16QuantizePattern
 
     quant_op->result(0).set_type(new_type_quantize);
 
-    if (!type.isa<pir::VectorType>()) {
-      return false;
-    }
     auto output_num = vec_type.size();
     std::vector<pir::Type> results_type(output_num);
     for (size_t idx = 0; idx < output_num; ++idx) {
