@@ -770,22 +770,6 @@ class OpcodeExecutorBase:
 
     def binary_subscr_operation(self, key, container, opname):
         assert isinstance(key, VariableBase)
-        # TODO(xiongkun): getitem / getattr support key and attr as variable.
-        if isinstance(key, TensorVariable) and isinstance(
-            container, TensorVariable
-        ):
-            # NOTE(xiongkun): tensor[tensor] should support.
-            output = self._graph.call_tensor_method(
-                "__getitem__", container, key
-            )
-            self.stack.push(output)
-            return
-
-        if isinstance(key, TensorVariable):
-            raise BreakGraphError(
-                f"Key is a TensorVariable in {opname}, {container}[{key}]"
-            )
-
         result = BuiltinVariable(
             operator.getitem, self._graph, DanglingTracker()
         )(container, key)
@@ -989,20 +973,15 @@ class OpcodeExecutorBase:
 
     def store_subscr_operation(self, key, container, value, opname):
         assert isinstance(key, VariableBase)
-        self._graph.add_global_guarded_variable(key)
-        if isinstance(key, TensorVariable):
-            raise BreakGraphError(
-                f"Key is a TensorVariable in {opname}, {container}[{key}] = {value}"
-            )
-        # TODO(xiongkun): support tensor[tensor] = tensor, dy2static is not the same with dygraph.
-        container[key.get_py_value()] = value
+        BuiltinVariable(operator.setitem, self._graph, DanglingTracker())(
+            container, key, value
+        )
         value.debug_name = f"{container.debug_name}[{key.debug_name}]"
 
     def DELETE_SUBSCR(self, instr: Instruction):
         key = self.stack.pop()
         container = self.stack.pop()
         assert isinstance(key, VariableBase)
-        self._graph.add_global_guarded_variable(key)
         BuiltinVariable(operator.delitem, self._graph, DanglingTracker())(
             container, key
         )
@@ -2079,7 +2058,7 @@ class OpcodeExecutor(OpcodeExecutorBase):
             _var = self.get_var(name, allow_undefined=True)
             if _var is SotUndefinedVar():
                 continue
-            if _var not in stack:
+            if _var not in store_vars:
                 store_vars.append(_var)
             store_var_info.setdefault(_var.id, [])
             store_var_info[_var.id].append(name)
@@ -2499,9 +2478,12 @@ class OpcodeExecutor(OpcodeExecutorBase):
             OrderedSet(loop_body_inputs[:-1]) | after_loop_read_names
         )
         extra_store_vars = (
-            [iterator]
+            [
+                item
+                for item in iterator.flatten_items()
+                if isinstance(item, (TensorVariable, SymbolicVariable))
+            ]
             if isinstance(iterator, IterVariable)
-            and isinstance(iterator.hold, TensorVariable)
             else []
         )
         var_loader = self.get_compute_fn_and_update_changed_vars(

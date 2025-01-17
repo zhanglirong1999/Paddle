@@ -50,6 +50,11 @@ class IterVariable(VariableBase):
     def get_iter(self):
         return self
 
+    def get_items(self):
+        if isinstance(self.hold, (ContainerVariable, IterVariable)):
+            return self.hold.get_items()
+        return [self.hold]
+
 
 class SequenceIterVariable(IterVariable):
     """
@@ -156,6 +161,15 @@ class ZipVariable(SequenceIterVariable):
 
     def __init__(self, iters, graph, tracker):
         super().__init__(iters, graph, tracker)
+
+    def get_items(self):
+        items = []
+        for hold in self.hold:
+            if isinstance(hold, (ContainerVariable, IterVariable)):
+                items.extend(hold.get_items())
+            else:
+                items.append(hold)
+        return items
 
     def next(self):
         # can not use <listcomp> here, because it will raise a RuntimeError("StopIteration")

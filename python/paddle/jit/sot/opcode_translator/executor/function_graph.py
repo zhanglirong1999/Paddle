@@ -369,8 +369,9 @@ class FunctionGraph:
         # here is not update changed values, it just give names to stack vars
         # and want keep same interface as _build_compile_fn_with_name_store
         for var in stack_vars[::-1]:
-            if not store_var_info[var.id]:
+            if not store_var_info.get(var.id, []):
                 name = name_gen.next()
+                store_var_info.setdefault(var.id, [])
                 store_var_info[var.id].append(name)
                 self.pycode_gen.gen_store_fast(name)
             else:
@@ -398,8 +399,9 @@ class FunctionGraph:
         name_gen = NameGenerator("___graph_fn_saved_")
 
         for var in to_store_vars[::-1]:
-            if not store_var_info[var.id]:
+            if not store_var_info.get(var.id, []):
                 name = name_gen.next()
+                store_var_info.setdefault(var.id, [])
                 store_var_info[var.id].append(name)
                 self.pycode_gen.gen_store_fast(name)
             else:

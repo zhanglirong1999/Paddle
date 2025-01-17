@@ -430,8 +430,9 @@ class VariableBase:
             list[VariableBase]: Flattened items of a container variable.
         """
         from .container import ContainerVariable
+        from .iter import IterVariable
 
-        if not isinstance(self, ContainerVariable):
+        if not isinstance(self, (ContainerVariable, IterVariable)):
             return [self]
         flattened_items = []
         for item in self.get_items():
