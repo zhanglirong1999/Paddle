@@ -1237,7 +1237,9 @@ class TestSplitPattern(PassTest):
             main_prog = paddle.static.Program()
             start_prog = paddle.static.Program()
             with paddle.pir.core.program_guard(main_prog, start_prog):
-                x = paddle.static.data(name='x', shape=[6, 6, 6], dtype='float32')
+                x = paddle.static.data(
+                    name='x', shape=[6, 6, 6], dtype='float32'
+                )
                 out0, out1 = paddle.tensor_split(x, 2, axis=0)
                 out = paddle.add(out0, out1)
                 out = paddle.assign(out)
