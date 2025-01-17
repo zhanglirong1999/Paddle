@@ -839,7 +839,7 @@ struct GPUContext::Impl {
   mutable std::future<void> last_future_;
 
   Allocator* allocator_{nullptr};  // external resource.
-  // A internal resouce to initinalize eigen_device.
+  // A internal resource to initinalize eigen_device.
   std::unique_ptr<internal::EigenGpuStreamDevice> eigen_stream_{nullptr};
 
   // Holds some attributes only used by the gpudnn kernel calculation

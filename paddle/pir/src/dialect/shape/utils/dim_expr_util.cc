@@ -1033,10 +1033,10 @@ struct SimplifyBroadcast {
 };
 
 template <typename PassT>
-void DoPass(bool* rewrited, DimExpr* expr) {
+void DoPass(bool* rewritten, DimExpr* expr) {
   const auto old_expr = *expr;
   *expr = TrySimplifyPass<PassT>(*expr);
-  *rewrited = *rewrited || (old_expr != *expr);
+  *rewritten = *rewritten || (old_expr != *expr);
 }
 
 DimExpr Simplify(const DimExpr& expr) {

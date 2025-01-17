@@ -106,18 +106,18 @@ void QrKernel(const Context& ctx,
     auto sliced_qr = Slice<T, Context>(
         ctx, trans_qr, {trans_qr.dims().size() - 2}, {0}, {min_mn});
     auto tmp_r = TrilTriu<T, Context>(ctx, sliced_qr, 0, false);
-    // Transpose 'tmp_r' to retore the original row-major order
+    // Transpose 'tmp_r' to restore the original row-major order
     phi::Copy(ctx, tmp_r, r->place(), false, r);
   } else {
     auto trans_qr = TransposeLast2Dim<T, Context>(ctx, qr);
     auto tmp_r = TrilTriu<T, Context>(ctx, trans_qr, 0, false);
-    // Transpose 'tmp_r' to retore the original row-major order
+    // Transpose 'tmp_r' to restore the original row-major order
     phi::Copy(ctx, tmp_r, r->place(), false, r);
   }
 
   if (compute_q) {
     // Perform QRGQR for Q using the result from GEQRF
-    // Transpose 'q' to retore the original row-major order
+    // Transpose 'q' to restore the original row-major order
     if (reduced_mode) {
       BatchedOrgqr<Context, T>(ctx,
                                batch_size,

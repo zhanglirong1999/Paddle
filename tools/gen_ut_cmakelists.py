@@ -626,7 +626,7 @@ if __name__ == "__main__":
         type=lambda x: x.lower() not in ["false", "0", "off"],
         required=False,
         default=False,
-        help="Only check whether the CMake files should be rewriten, do not write it even if it should be write",
+        help="Only check whether the CMake files should be rewritten, do not write it even if it should be write",
     )
     args = parser.parse_args()
 
