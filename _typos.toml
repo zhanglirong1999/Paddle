@@ -43,6 +43,7 @@ Halfs = 'Halfs'
 kinf = 'kinf'
 Optin = 'Optin'
 pash = 'pash'
+statis = 'statis'
 UNEXPECT = 'UNEXPECT'
 tood = 'tood'
 unpacket = "unpacket"
