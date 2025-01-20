@@ -824,7 +824,7 @@ packages=['paddle',
           'paddle.api_tracer',
         ]
 
-if '@WITH_PIP_TENSORRT@' =='ON':
+if '@WITH_TENSORRT@' =='ON':
     packages.extend([
         'paddle.tensorrt',
         'paddle.tensorrt.impls',
