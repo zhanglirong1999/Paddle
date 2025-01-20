@@ -898,7 +898,7 @@ PHI_DEFINE_EXPORTED_bool(enable_neighbor_list_use_uva,
  */
 PHI_DEFINE_EXPORTED_double(graph_neighbor_size_percent,
                            1.0,
-                           "It controls whether precent of neighbor_size.");
+                           "It controls whether percent of neighbor_size.");
 
 /**
  * Distributed related FLAG

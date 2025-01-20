@@ -202,7 +202,7 @@ class ShardingOptimizerStage1(Optimizer):
 
             assert (
                 param_dist_attr.partial_dims == set()
-            ), f"Sharding fusion do not support parital parameter. but received {param.name} : {param}."
+            ), f"Sharding fusion do not support partial parameter. but received {param.name} : {param}."
             assert (
                 param_dist_attr.dims_mapping == grad_dist_attr.dims_mapping
             ), f"Parameter and grad should have same dims_mapping. but received name:{param.name}, parameter:{param}, grad: {grad}."

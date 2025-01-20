@@ -1445,14 +1445,14 @@ void BindValue(py::module *m) {
       .def_property(
           "place_attr",
           [](Value self) -> phi::Place {
-            auto palce_attr = self.attribute<PlaceAttribute>("place");
-            return palce_attr ? palce_attr.data() : phi::Place();
+            auto place_attr = self.attribute<PlaceAttribute>("place");
+            return place_attr ? place_attr.data() : phi::Place();
           },
           [](Value self, const phi::Place &place) {
             // auto place = CastPyArg2Place(place_obj.release().ptr(), 1);
             auto place_attr =
                 dialect::PlaceAttribute::get(pir::IrContext::Instance(), place);
-            self.set_attribute("palce", place_attr);
+            self.set_attribute("place", place_attr);
           })
       .def("initialized",
            [](Value self) {
