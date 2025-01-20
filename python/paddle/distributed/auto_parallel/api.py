@@ -2647,7 +2647,6 @@ class DistModel:
         self,
         mode: Literal['opt', 'param', 'all'] = "all",
         split_fusion: bool = True,
-        load_sharded_model: bool = True,
     ) -> dict[str, Tensor]:
         """
         Get the state dict of model and optimizer.
@@ -2725,39 +2724,6 @@ class DistModel:
                                     ] = dist_tensor
                                 dist_state_dict.pop(param)
 
-        # When tensor fusion is enabled, optimizer parameters can become unbalanced in
-        # sharding. We need to either balance them or rename unbalanced parameters for each
-        # rank and directly load them.
-        enable_tensor_fusion = (
-            self._inner_strategy.sharding.enable_tensor_fusion
-            if self._inner_strategy
-            else False
-        )
-        if (
-            self._engine._optimizer is not None
-            and load_sharded_model
-            and enable_tensor_fusion
-        ):
-            optimizer = self._engine._optimizer
-            if isinstance(
-                optimizer,
-                paddle.static.amp.decorator.OptimizerWithMixedPrecision,
-            ):
-                optimizer = optimizer._optimizer
-
-            assert isinstance(
-                optimizer, ShardingOptimizerStage1
-            ), "The optimizer should be ShardingOptimizerStage1 when stage1 tensor fusion is enabled."
-
-            if self._inner_strategy.sharding.save_unbalanced_param:
-                optimizer.convert_state_dict_with_rank_unique_name(
-                    dist_state_dict
-                )
-            else:
-                optimizer.convert_state_dict_without_tensor_fusion_param(
-                    dist_state_dict
-                )
-
         mapping_names = [
             (
                 self._parameter_to_structured_name[k]
@@ -2826,43 +2792,19 @@ class DistModel:
     def set_state_dict(self, state_dict: dict[str, Tensor]) -> None:
         local_state_dict = {}
         dist_main_program = self.dist_main_program(mode=self._engine._mode)
-        cur_state_dict = self.state_dict(
-            split_fusion=False, load_sharded_model=False
-        )
+        cur_state_dict = self.state_dict(split_fusion=False)
         copy_tensor = False
 
-        # For sharding with tensor-fusion, we need to convert the state_dict
-        # to include tensor-fusion parameters before calling set_state_dict,
-        # as stored parameters are processed as if tensor-fusion is not applied
-        # or we can choose to load the unblanced parameters directly.
+        # When using the tensor-fusion strategy, model parameters are shared with
+        # slice@ parameters. When setting the state_dict, we must copy the tensor
+        # instead of changing the handle directly, as this could cause errors in
+        # the slice@ parameters and increase memory usage.
         enable_tensor_fusion = (
             self._inner_strategy.sharding.enable_tensor_fusion
             if self._inner_strategy
             else False
         )
         if self._engine._optimizer is not None and enable_tensor_fusion:
-            optimizer = self._engine._optimizer
-            if isinstance(
-                optimizer,
-                paddle.static.amp.decorator.OptimizerWithMixedPrecision,
-            ):
-                optimizer = optimizer._optimizer
-
-            assert isinstance(
-                optimizer, ShardingOptimizerStage1
-            ), "The optimizer should be ShardingOptimizerStage1 when stage1 tensor fusion is enabled."
-
-            if self._inner_strategy.sharding.save_unbalanced_param:
-                optimizer.convert_state_dict_with_origin_name(state_dict)
-            else:
-                optimizer.convert_state_dict_with_tensor_fusion_param(
-                    state_dict
-                )
-
-            # When using the tensor-fusion strategy, model parameters are shared with
-            # slice@ parameters. When setting the state_dict, we must copy the tensor
-            # instead of changing the handle directly, as this could cause errors in
-            # the slice@ parameters and increase memory usage.
             copy_tensor = True
 
         for k, v in state_dict.items():
@@ -2947,6 +2889,92 @@ class DistModel:
             dist_main_program.set_state_dict(
                 local_state_dict, paddle.static.global_scope()
             )
+
+    def _get_shard_stage1_optimizer(self):
+        optimizer = self._engine._optimizer
+        if optimizer is None:
+            return optimizer
+
+        if isinstance(
+            optimizer,
+            paddle.static.amp.decorator.OptimizerWithMixedPrecision,
+        ):
+            optimizer = optimizer._optimizer
+
+        assert isinstance(
+            optimizer, ShardingOptimizerStage1
+        ), "The optimizer should be ShardingOptimizerStage1 when stage1 tensor fusion is enabled."
+
+        return optimizer
+
+    def _convert_state_dict_tensor_fusion(self, state_dict, optimizer_function):
+        enable_tensor_fusion = (
+            self._inner_strategy.sharding.enable_tensor_fusion
+            if self._inner_strategy
+            else False
+        )
+
+        assert (
+            enable_tensor_fusion
+        ), "Can only convert state_dict when tensor fusion is enabled."
+        optimizer = self._get_shard_stage1_optimizer()
+        assert optimizer is not None, "The optimizer should not be None."
+
+        parameter_names = [
+            (
+                self._structured_to_parameter_name[k]
+                if k in self._structured_to_parameter_name
+                else k
+            )
+            for k in state_dict.keys()
+        ]
+        state_dict = dict(zip(parameter_names, list(state_dict.values())))
+
+        optimizer_function(optimizer, state_dict)
+
+        structured_names = [
+            (
+                self._parameter_to_structured_name[k]
+                if k in self._parameter_to_structured_name
+                else k
+            )
+            for k in state_dict.keys()
+        ]
+        state_dict = dict(zip(structured_names, list(state_dict.values())))
+
+        return state_dict
+
+    def _convert_state_dict_with_rank_unique_name(self, state_dict):
+        def optimizer_function(optimizer, state_dict):
+            optimizer.convert_state_dict_with_rank_unique_name(state_dict)
+
+        return self._convert_state_dict_tensor_fusion(
+            state_dict, optimizer_function
+        )
+
+    def _convert_state_dict_without_tensor_fusion_param(self, state_dict):
+        def optimizer_function(optimizer, state_dict):
+            optimizer.convert_state_dict_without_tensor_fusion_param(state_dict)
+
+        return self._convert_state_dict_tensor_fusion(
+            state_dict, optimizer_function
+        )
+
+    def _convert_state_dict_with_tensor_fusion_param(self, state_dict):
+        def optimizer_function(optimizer, state_dict):
+            optimizer.convert_state_dict_with_tensor_fusion_param(state_dict)
+
+        return self._convert_state_dict_tensor_fusion(
+            state_dict, optimizer_function
+        )
+
+    def _convert_state_dict_with_origin_name(self, state_dict):
+        def optimizer_function(optimizer, state_dict):
+            optimizer.convert_state_dict_with_origin_name(state_dict)
+
+        return self._convert_state_dict_tensor_fusion(
+            state_dict, optimizer_function
+        )
 
 
 def to_static(
