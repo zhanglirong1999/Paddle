@@ -821,6 +821,7 @@ packages=['paddle',
           'paddle.decomposition',
           'paddle._typing',
           'paddle._typing.libs',
+          'paddle.api_tracer',
         ]
 
 if '@WITH_PIP_TENSORRT@' =='ON':

@@ -2080,6 +2080,7 @@ def get_setup_parameters():
         'paddle.decomposition',
         'paddle._typing',
         'paddle._typing.libs',
+        'paddle.api_tracer',
     ]
 
     if env_dict.get("WITH_PIP_TENSORRT") == 'ON':
