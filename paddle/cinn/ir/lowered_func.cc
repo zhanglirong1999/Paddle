@@ -68,11 +68,44 @@ LoweredFunc _LoweredFunc_::Make(const std::string& name,
 
 LoweredFunc _LoweredFunc_::Make(const std::string& name,
                                 const std::vector<Argument>& args,
+                                const stmt::BlockRef& body,
+                                const std::vector<ir::Buffer>& temp_bufs) {
+  auto* n = make_shared<_LoweredFunc_>();
+  n->name = name;
+  n->args = args;
+  n->body_block = body;
+  n->temp_bufs = temp_bufs;
+
+  n->CheckValid();
+  n->PrepareAllocOutputBufferExprs();
+  n->PrepareCreateTempBufferExprs();
+  n->PrepareAllocTempBufferExprs();
+  n->AllocTempBuffer();
+  bool with_expr_gen_tensor = false;
+  n->PrepareBufferCastExprs(with_expr_gen_tensor);
+  n->PrepareArgumentExprs();
+  n->PrepareDeallocTempBufferExprs();
+  n->PrepareDeallocOutputBufferExprs();
+  return LoweredFunc(n);
+}
+
+LoweredFunc _LoweredFunc_::Make(const std::string& name,
+                                const std::vector<Argument>& args,
                                 const Expr& body) {
   auto* n = make_shared<_LoweredFunc_>();
   n->name = name;
   n->args = args;
   n->body = body;
+  return LoweredFunc(n);
+}
+
+LoweredFunc _LoweredFunc_::Make(const std::string& name,
+                                const std::vector<Argument>& args,
+                                const stmt::BlockRef& body) {
+  auto* n = make_shared<_LoweredFunc_>();
+  n->name = name;
+  n->args = args;
+  n->body_block = body;
   return LoweredFunc(n);
 }
 
