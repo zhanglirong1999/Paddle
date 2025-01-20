@@ -128,7 +128,7 @@ std::pair<std::vector<int64_t>, bool> GetSliceAxis(pir::Operation* slice_op) {
   return std::make_pair(slice_axis, keepdim);
 }
 
-std::optional<std::pair<pir::Value, pir::Value>> GetBroadcastOpInputOuputValue(
+std::optional<std::pair<pir::Value, pir::Value>> GetBroadcastOpInputOutputValue(
     pir::Operation* op) {
   auto* mut_op = const_cast<pir::Operation*>(op);
   if (op->isa<paddle::dialect::ExpandOp>()) {
@@ -149,7 +149,7 @@ std::vector<std::pair<size_t, size_t>> GetNonBroadCastDims(pir::Operation* op) {
   auto* shape_analysis =
       &pir::ShapeAnalysisManager::Instance().Get(op->GetParentProgram());
 
-  const auto& broad_cast_value = GetBroadcastOpInputOuputValue(op);
+  const auto& broad_cast_value = GetBroadcastOpInputOutputValue(op);
   CHECK(broad_cast_value.has_value());
 
   const auto& [input_value, output_value] = broad_cast_value.value();

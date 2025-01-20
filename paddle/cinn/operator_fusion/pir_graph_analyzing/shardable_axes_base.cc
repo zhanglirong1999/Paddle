@@ -263,7 +263,7 @@ ShardableAxesSignature CreateSignatureForBroadcast(
     pir::Operation* op, pir::ShapeConstraintIRAnalysis* shape_analysis) {
   ShardableAxesSignature result = ShardableAxesSignature();
 
-  const auto& broad_cast_value = GetBroadcastOpInputOuputValue(op);
+  const auto& broad_cast_value = GetBroadcastOpInputOutputValue(op);
   PADDLE_ENFORCE_EQ(broad_cast_value.has_value(),
                     true,
                     ::common::errors::PreconditionNotMet(

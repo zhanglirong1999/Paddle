@@ -721,7 +721,7 @@ void Reducer::MarkVarReady(const size_t var_index, const bool is_used_var) {
         "parameters participate in the backward calculation "
         "again at a later time (e.g. after the forward function, "
         "the loss calculation uses the unused "
-        "paramters of the forward and trigger backward), "
+        "parameters of the forward and trigger backward), "
         "its gradient will be wrong.";
 
     PADDLE_ENFORCE_EQ(has_marked_unused_vars_,

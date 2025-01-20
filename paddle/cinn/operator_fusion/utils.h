@@ -80,7 +80,7 @@ std::pair<std::vector<int64_t>, bool> GetSliceAxis(pir::Operation* slice_op);
 
 bool GetReduceOpKeepDims(pir::Operation* reduce_op);
 
-std::optional<std::pair<pir::Value, pir::Value>> GetBroadcastOpInputOuputValue(
+std::optional<std::pair<pir::Value, pir::Value>> GetBroadcastOpInputOutputValue(
     pir::Operation* op);
 
 std::vector<std::pair<size_t, size_t>> GetNonBroadCastDims(pir::Operation* op);
