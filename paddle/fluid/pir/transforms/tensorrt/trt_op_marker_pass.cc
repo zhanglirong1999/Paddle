@@ -2353,6 +2353,27 @@ class AffineChannelOpPattern
   }
 };
 
+class YoloBoxOpPattern
+    : public pir::OpRewritePattern<paddle::dialect::YoloBoxOp> {
+ public:
+  using pir::OpRewritePattern<paddle::dialect::YoloBoxOp>::OpRewritePattern;
+  bool MatchAndRewrite(paddle::dialect::YoloBoxOp op,
+                       pir::PatternRewriter &rewriter) const override {
+    if (op->HasAttribute(kCanRunTrtAttr) &&
+        op->attribute<pir::BoolAttribute>(kCanRunTrtAttr).data()) {
+      return false;
+    }
+    if (!op->HasAttribute("iou_aware") &&
+        !op->HasAttribute("iou_aware_factor")) {
+      VLOG(3)
+          << "pd_op.yolo_box must has iou_aware and iou_aware_factor attribute";
+      return false;
+    }
+    op->set_attribute(kCanRunTrtAttr, rewriter.bool_attr(true));
+    return true;
+  }
+};
+
 class TrtOpMarkerPass : public pir::PatternRewritePass {
  public:
   TrtOpMarkerPass() : pir::PatternRewritePass("trt_op_marker_pass", 2) {}
@@ -2507,6 +2528,7 @@ class TrtOpMarkerPass : public pir::PatternRewritePass {
     ps.Add(std::make_unique<EinsumOpPattern>(context));
     ps.Add(std::make_unique<PNormOpPattern>(context));
     ps.Add(std::make_unique<AffineChannelOpPattern>(context));
+    ps.Add(std::make_unique<YoloBoxOpPattern>(context));
     return ps;
   }
 };

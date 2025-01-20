@@ -777,3 +777,15 @@ def get_axis_length(network, input_tensor, axis, is_scalar=False):
             network, dynamic_shape, axis, is_scalar
         )
     return output_tensor
+
+
+def WithFp16():
+    from paddle.tensorrt import PrecisionMode
+
+    trt_manager = TensorRTConfigManager()
+    precision_mode = trt_manager.get_precision_mode()
+    enable_fp16 = False
+    if precision_mode == PrecisionMode.FP16:
+        enable_fp16 = True
+    # TODO(lizexu123) WithInt8() and use_dla are not yet implemented
+    return enable_fp16
