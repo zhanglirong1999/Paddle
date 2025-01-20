@@ -528,11 +528,11 @@ class Optimizer:
                         initializer = paddle.nn.initializer.Constant(
                             value=lr_value
                         )
-                        paramete_meta = paddle.pir.core.ParameterMeta(
+                        parameter_meta = paddle.pir.core.ParameterMeta(
                             [], _lr_dtype
                         )
                         init_result = initializer(
-                            paramete_meta, startup_program.global_block()
+                            parameter_meta, startup_program.global_block()
                         )
                         init_result.persistable = True
                         set_parameter(init_result, lr_name)
