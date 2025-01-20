@@ -2374,8 +2374,8 @@ def get_sub_process_mesh_by_program(dist_program):
     all_ops = dist_program.global_block().ops
     process_meshes = []
 
-    for op in all_ops:
-        if "pd_op" in op.name():
+    for idx, op in enumerate(all_ops):
+        if "pd_op" in op.name() and op.dist_attr:
             process_mesh = op.dist_attr.process_mesh
             if process_mesh not in process_meshes:
                 process_meshes.append(process_mesh)
