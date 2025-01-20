@@ -125,7 +125,7 @@ def get_trt_plugin(plugin_name, field_collection, version, plugin_namespace=""):
     )
     assert (
         plugin_creator
-    ), f"Unabled to find plugin creator with name{plugin_name}"
+    ), f"Unable to found plugin creator with name {plugin_name}"
     plugin = plugin_creator.create_plugin(
         name=plugin_name, field_collection=field_collection
     )
