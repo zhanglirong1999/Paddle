@@ -91,6 +91,7 @@ class OneDNNBf16PlacementPattern : public pir::RewritePattern {
         !op->isa<paddle::onednn::dialect::Squeeze_Op>() &&
         !op->isa<paddle::onednn::dialect::SumOp>() &&
         !op->isa<paddle::onednn::dialect::TransposeOp>() &&
+        !op->isa<paddle::onednn::dialect::SplitOp>() &&
         !op->isa<paddle::onednn::dialect::Transpose_Op>() &&
         !op->isa<paddle::onednn::dialect::FusedConv2dOp>() &&
         !op->isa<paddle::onednn::dialect::FusedMatmulOp>()) {
@@ -261,6 +262,7 @@ class RemoveOrphanedPattern : public pir::RewritePattern {
         !op->isa<paddle::onednn::dialect::Squeeze_Op>() &&
         !op->isa<paddle::onednn::dialect::SumOp>() &&
         !op->isa<paddle::onednn::dialect::TransposeOp>() &&
+        !op->isa<paddle::onednn::dialect::SplitOp>() &&
         !op->isa<paddle::onednn::dialect::Transpose_Op>() &&
         !op->isa<paddle::onednn::dialect::FusedConv2dOp>() &&
         !op->isa<paddle::onednn::dialect::FusedMatmulOp>()) {
