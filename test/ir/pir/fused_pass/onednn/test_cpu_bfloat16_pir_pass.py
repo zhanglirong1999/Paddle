@@ -1020,7 +1020,7 @@ class TestCastBf16Pass(PassTest):
                 self.pass_attr_list = [
                     {'onednn_placement_pass': {}},
                     {'cpu_bfloat16_placement_pass': {}},
-                    {'cpu_bfloat16_pass': {}},
+                    {'cpu_special_ops_bf16_pass': {}},
                 ]
                 self.feeds = {
                     "x1": np.random.random((1, 30)).astype("float32"),

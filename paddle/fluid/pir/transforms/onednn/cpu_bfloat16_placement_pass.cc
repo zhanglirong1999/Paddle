@@ -57,6 +57,8 @@ class OneDNNBf16PlacementPattern : public pir::RewritePattern {
 
   bool Match(pir::Operation* op) const override {  // NOLINT
     if (!op->isa<paddle::onednn::dialect::BilinearInterpOp>() &&
+        !op->isa<paddle::onednn::dialect::CastOp>() &&
+        !op->isa<paddle::onednn::dialect::Cast_Op>() &&
         !op->isa<paddle::onednn::dialect::ClipOp>() &&
         !op->isa<paddle::onednn::dialect::Clip_Op>() &&
         !op->isa<paddle::onednn::dialect::ConcatOp>() &&
@@ -225,6 +227,8 @@ class RemoveOrphanedPattern : public pir::RewritePattern {
   // revert mkldnn_data_type attr to float32
   bool Match(pir::Operation* op) const override {  // NOLINT
     if (!op->isa<paddle::onednn::dialect::BilinearInterpOp>() &&
+        !op->isa<paddle::onednn::dialect::CastOp>() &&
+        !op->isa<paddle::onednn::dialect::Cast_Op>() &&
         !op->isa<paddle::onednn::dialect::ClipOp>() &&
         !op->isa<paddle::onednn::dialect::Clip_Op>() &&
         !op->isa<paddle::onednn::dialect::ConcatOp>() &&

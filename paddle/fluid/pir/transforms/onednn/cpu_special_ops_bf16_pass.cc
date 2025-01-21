@@ -16,6 +16,7 @@
 
 #include "paddle/fluid/pir/dialect/kernel/ir/kernel_type.h"
 #include "paddle/fluid/pir/dialect/operator/ir/onednn_op.h"
+#include "paddle/fluid/pir/dialect/operator/ir/op_attribute.h"
 #include "paddle/fluid/pir/dialect/operator/ir/pd_op.h"
 #include "paddle/fluid/pir/drr/include/drr_pattern_base.h"
 #include "paddle/fluid/pir/utils/general_functions.h"
@@ -38,6 +39,73 @@ static pir::Type create_type(pir::Type type,
                       input_type.lod(),
                       input_type.offset());
 }
+
+// Move cast quantize to cpu_special_op_bf16_pass.h
+template <typename OpType>
+class CastBf16Pattern : public pir::OpRewritePattern<OpType> {
+ public:
+  using pir::OpRewritePattern<OpType>::OpRewritePattern;
+
+  bool MatchAndRewrite(
+      OpType op,
+      pir::PatternRewriter &rewriter) const override {  // NOLINT
+    std::string target_op_name = op->name();
+    if (!(target_op_name == "onednn_op.cast" ||
+          target_op_name == "onednn_op.cast_"))
+      return false;
+    auto *pre_op = pir::GetDefiningOpForInput(op, 0);
+    if (pre_op && pre_op->name() == "onednn_op.quantize") return false;
+
+    auto attributes = op->attributes();
+    auto onednn_data_type = attributes["mkldnn_data_type"];
+    std::string onednn_dtype =
+        onednn_data_type.template dyn_cast<pir::StrAttribute>().AsString();
+    if (onednn_dtype != "bfloat16") return false;
+
+    pir::IrContext *ctx = rewriter.ir_context();
+
+    auto dtype_attr = attributes["dtype"];
+    phi::DataType dtype =
+        dtype_attr.template dyn_cast<paddle::dialect::DataTypeAttribute>()
+            .data();
+    if (dtype == phi::DataType::FLOAT32) {
+      pir::Attribute new_dtype =
+          paddle::dialect::DataTypeAttribute::get(ctx, phi::DataType::BFLOAT16);
+      attributes["dtype"] = new_dtype;
+    } else {
+      return false;
+    }
+
+    std::unordered_map<std::string, pir::Attribute> q_attributes;
+    q_attributes["scale"] = rewriter.float_attr(1.0f);
+    q_attributes["shift"] = rewriter.float_attr(0.0f);
+    q_attributes["is_negative_input"] = rewriter.bool_attr(false);
+    q_attributes["output_format"] = rewriter.str_attr("NCHW");
+    q_attributes["bfloat16"] = rewriter.bool_attr(true);
+
+    paddle::onednn::dialect::QuantizeOp q_op =
+        rewriter.Build<paddle::onednn::dialect::QuantizeOp>(
+            op->operand_source(0), q_attributes);
+
+    auto type = q_op->result_type(0);
+    pir::Type new_type =
+        create_type<pir::DenseTensorType, paddle::dialect::DenseTensorType>(
+            type, pir::BFloat16Type::get(ctx), ctx);
+    q_op->result(0).set_type(new_type);
+
+    OpType new_cast = rewriter.Build<OpType>(q_op.output(), attributes);
+
+    std::unordered_map<std::string, pir::Attribute> dq_attributes;
+    dq_attributes["scale"] = rewriter.float_attr(1.0f);
+    dq_attributes["shift"] = rewriter.float_attr(0.0f);
+    paddle::onednn::dialect::DequantizeOp dq_op =
+        rewriter.Build<paddle::onednn::dialect::DequantizeOp>(new_cast.out(),
+                                                              dq_attributes);
+    rewriter.ReplaceAllUsesWith(op->result(0), dq_op.output());
+    rewriter.EraseOp(op);
+    return true;
+  }
+};
 
 // For ops like conv and concat, their input is sometimes packed as VectorType,
 // hence current quantization doesn't work. Here we deal with them specifically.
@@ -141,6 +209,26 @@ class CPUSpecialOpsBf16Pass : public pir::PatternRewritePass {
   pir::RewritePatternSet InitializePatterns(pir::IrContext *context) override {
     pir::RewritePatternSet ps(context);
     uint32_t benefit = 100;
+
+    auto cast_bf16_pattern =
+        std::make_unique<CastBf16Pattern<paddle::onednn::dialect::CastOp>>(
+            context,
+            benefit--,
+            std::vector<std::string>{
+                paddle::onednn::dialect::QuantizeOp::name(),
+                paddle::onednn::dialect::DequantizeOp::name(),
+            });
+    ps.Add(std::move(cast_bf16_pattern));
+
+    auto cast_bf16_pattern_2 =
+        std::make_unique<CastBf16Pattern<paddle::onednn::dialect::Cast_Op>>(
+            context,
+            benefit--,
+            std::vector<std::string>{
+                paddle::onednn::dialect::QuantizeOp::name(),
+                paddle::onednn::dialect::DequantizeOp::name(),
+            });
+    ps.Add(std::move(cast_bf16_pattern_2));
 
     auto concat_bf16_quant_pattern =
         std::make_unique<ConcatBf16QuantizePattern>(
