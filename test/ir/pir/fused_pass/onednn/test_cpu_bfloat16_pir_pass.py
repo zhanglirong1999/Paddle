@@ -1271,5 +1271,44 @@ class TestSplitPattern(PassTest):
         self.check_pass_correct()
 
 
+class TestSplitPattern2(PassTest):
+    def is_program_valid(self, program=None):
+        return True
+
+    def build_ir_program(self):
+        with paddle.pir_utils.IrGuard():
+            main_prog = paddle.static.Program()
+            start_prog = paddle.static.Program()
+            with paddle.pir.core.program_guard(main_prog, start_prog):
+                x = paddle.static.data(
+                    name='x', shape=[1, 5, 80, 80], dtype='float32'
+                )
+                out, _ = paddle.tensor_split(x, 2, axis=1)
+                out = paddle.assign(out)
+                self.pass_attr_list = [
+                    {'onednn_placement_pass': {}},
+                    {'cpu_bfloat16_placement_pass': {}},
+                    {'cpu_special_ops_bf16_pass': {}},
+                ]
+                self.feeds = {
+                    "x": np.random.random((1, 5, 80, 80)).astype("float32"),
+                }
+                self.fetch_list = [out]
+                self.valid_op_map = {
+                    "onednn_op.split": 1,
+                }
+                return [main_prog, start_prog]
+
+    def sample_program(self):
+        yield self.build_ir_program(), False
+
+    def setUp(self):
+        self.places.append(paddle.CPUPlace())
+        self.skip_accuracy_verification = True
+
+    def test_check_output(self):
+        self.check_pass_correct()
+
+
 if __name__ == "__main__":
     unittest.main()
