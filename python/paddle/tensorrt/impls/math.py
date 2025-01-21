@@ -423,3 +423,39 @@ def maximum_converter(network, paddle_op, inputs):
         network, paddle_op, inputs, trt.ElementWiseOperation.MAX
     )
     return max_layer
+
+
+@converter_registry.register("pd_op.greater_equal", trt_version="8.x")
+@converter_registry.register("pd_op.greater_equal_", trt_version="8.x")
+def greater_equal_converter(network, paddle_op, inputs):
+    greater_layer_output = add_elementwise_layer(
+        network, paddle_op, inputs, trt.ElementWiseOperation.GREATER
+    )
+    equal_layer_output = add_elementwise_layer(
+        network, paddle_op, inputs, trt.ElementWiseOperation.EQUAL
+    )
+    or_layer = add_elementwise_layer(
+        network,
+        paddle_op,
+        [greater_layer_output, equal_layer_output],
+        trt.ElementWiseOperation.OR,
+    )
+    return or_layer
+
+
+@converter_registry.register("pd_op.less_equal", trt_version="8.x")
+@converter_registry.register("pd_op.less_equal_", trt_version="8.x")
+def less_equal_converter(network, paddle_op, inputs):
+    less_layer_output = add_elementwise_layer(
+        network, paddle_op, inputs, trt.ElementWiseOperation.LESS
+    )
+    equal_layer_output = add_elementwise_layer(
+        network, paddle_op, inputs, trt.ElementWiseOperation.EQUAL
+    )
+    or_layer = add_elementwise_layer(
+        network,
+        paddle_op,
+        [less_layer_output, equal_layer_output],
+        trt.ElementWiseOperation.OR,
+    )
+    return or_layer
