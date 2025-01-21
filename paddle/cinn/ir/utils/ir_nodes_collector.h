@@ -35,7 +35,7 @@ std::set<Expr> CollectIRNodes(ir::LoweredFunc f,
  * Collect the IR Nodes(without duplication and tensor's compute body) in the
  * expression.
  */
-std::set<Expr> CollectIRNodesWithoutTensor(
+std::vector<Expr> CollectIRNodesWithoutTensor(
     Expr x,
     std::function<bool(const Expr*)>&& teller,
     bool uniq_target = false);

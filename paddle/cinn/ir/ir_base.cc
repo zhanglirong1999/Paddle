@@ -311,9 +311,10 @@ const Expr &Expr::set_index(bool flag) const {
 
 const IndexExpr Expr::as_index() const {
   if (is_index()) {
-    std::set<ir::Expr> collection = ir::ir_utils::CollectIRNodesWithoutTensor(
-        *this,
-        [&](const Expr *x) { return x->node_type() == ir::IrNodeTy::Sub; });
+    std::vector<ir::Expr> collection =
+        ir::ir_utils::CollectIRNodesWithoutTensor(*this, [&](const Expr *x) {
+          return x->node_type() == ir::IrNodeTy::Sub;
+        });
     if (!collection.empty()) return IndexExpr(*this).Normalize();
     return IndexExpr(*this);
   }
@@ -323,9 +324,10 @@ const IndexExpr Expr::as_index() const {
 
 IndexExpr Expr::as_index() {
   if (is_index()) {
-    std::set<ir::Expr> collection = ir::ir_utils::CollectIRNodesWithoutTensor(
-        *this,
-        [&](const Expr *x) { return x->node_type() == ir::IrNodeTy::Sub; });
+    std::vector<ir::Expr> collection =
+        ir::ir_utils::CollectIRNodesWithoutTensor(*this, [&](const Expr *x) {
+          return x->node_type() == ir::IrNodeTy::Sub;
+        });
     if (!collection.empty()) return IndexExpr(*this).Normalize();
     return IndexExpr(*this);
   }

@@ -191,11 +191,11 @@ std::vector<Expr> CollectIRNodesInOrder(
   return exprs;
 }
 
-std::set<Expr> CollectIRNodesWithoutTensor(
+std::vector<Expr> CollectIRNodesWithoutTensor(
     Expr expr, std::function<bool(const Expr*)>&& teller, bool uniq_target) {
-  std::set<Expr> exprs;
+  std::vector<Expr> exprs;
   IrNodesWithoutTensorCollector::handler_t handler = [&](const Expr* x) {
-    exprs.insert(*x);
+    exprs.push_back(*x);
   };
   IrNodesWithoutTensorCollector collector(
       std::move(teller), std::move(handler), uniq_target);

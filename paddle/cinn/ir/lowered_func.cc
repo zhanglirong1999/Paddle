@@ -28,6 +28,7 @@
 #include "paddle/cinn/ir/ir_printer.h"
 #include "paddle/cinn/ir/ir_visitor.h"
 #include "paddle/cinn/runtime/intrinsic.h"
+#include "paddle/cinn/utils/functional.h"
 #include "paddle/cinn/utils/string.h"
 
 PD_DECLARE_bool(cinn_runtime_display_debug_info);
@@ -523,9 +524,9 @@ std::vector<Tensor> _LoweredFunc_::CollectAllTensorReference(
       with_expr_gen_tensor
           ? ir::ir_utils::CollectIRNodes(
                 body, [](const Expr* expr) { return expr->As<ir::_Tensor_>(); })
-          : ir::ir_utils::CollectIRNodesWithoutTensor(
+          : cinn::utils::VectorToSet(ir::ir_utils::CollectIRNodesWithoutTensor(
                 body,
-                [](const Expr* expr) { return expr->As<ir::_Tensor_>(); });
+                [](const Expr* expr) { return expr->As<ir::_Tensor_>(); }));
 
   std::vector<Tensor> tensors;
   // remove the duplicate tensor by their name.
