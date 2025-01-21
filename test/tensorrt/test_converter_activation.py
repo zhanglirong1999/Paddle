@@ -344,6 +344,27 @@ class TestMishCase4TRTPattern(TensorRTBaseTest):
         self.check_trt_result()
 
 
+class TestLogSigmoidTRTPattern(TensorRTBaseTest):
+    def setUp(self):
+        self.python_api = paddle.nn.functional.log_sigmoid
+        x = np.random.random([1, 3, 32, 32]).astype(np.float32)
+        self.api_args = {
+            "x": x,
+        }
+        self.program_config = {"feed_list": ["x"]}
+        self.min_shape = {
+            "x": [1, 3, 32, 32],
+        }
+        self.opt_shape = {"x": [4, 3, 32, 32]}
+        self.max_shape = {"x": [4, 3, 32, 32]}
+
+    def test_trt_result(self):
+        self.check_trt_result()
+
+    def test_trt_result_fp16(self):
+        self.check_trt_result(precision_mode="fp16")
+
+
 class TestSeluTRTPattern(TensorRTBaseTest):
     def setUp(self):
         self.python_api = paddle.nn.functional.selu

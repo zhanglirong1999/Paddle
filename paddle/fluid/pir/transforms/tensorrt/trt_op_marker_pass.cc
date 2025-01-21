@@ -99,6 +99,9 @@ DEFINE_GENERAL_PATTERN(Exp, paddle::dialect::ExpOp)
 DEFINE_GENERAL_PATTERN(Abs, paddle::dialect::AbsOp)
 DEFINE_GENERAL_PATTERN(Abs_, paddle::dialect::Abs_Op)
 DEFINE_GENERAL_PATTERN(Sin, paddle::dialect::SinOp)
+DEFINE_GENERAL_PATTERN(Logsigmoid, paddle::dialect::LogsigmoidOp)
+DEFINE_GENERAL_PATTERN(Embedding, paddle::dialect::EmbeddingOp)
+DEFINE_GENERAL_PATTERN(Unbind, paddle::dialect::UnbindOp)
 DEFINE_GENERAL_PATTERN(Cos, paddle::dialect::CosOp)
 DEFINE_GENERAL_PATTERN(Sinh, paddle::dialect::SinhOp)
 DEFINE_GENERAL_PATTERN(Cosh, paddle::dialect::CoshOp)
@@ -2434,6 +2437,9 @@ class TrtOpMarkerPass : public pir::PatternRewritePass {
     ADD_PATTERN(Abs_)
     ADD_PATTERN(Cos)
     ADD_PATTERN(Sin)
+    ADD_PATTERN(Logsigmoid)
+    ADD_PATTERN(Embedding)
+    ADD_PATTERN(Unbind)
     ADD_PATTERN(Cos)
     ADD_PATTERN(Sinh)
     ADD_PATTERN(Cosh)
@@ -2473,6 +2479,8 @@ class TrtOpMarkerPass : public pir::PatternRewritePass {
     ps.Add(std::make_unique<UnsqueezeOpPattern>(context));
     ps.Add(std::make_unique<SqueezeOpPattern>(context));
     ps.Add(std::make_unique<Unsqueeze_OpPattern>(context));
+    ps.Add(std::make_unique<EmbeddingOpPattern>(context));
+    ps.Add(std::make_unique<UnbindOpPattern>(context));
     ps.Add(std::make_unique<SliceOpPattern>(context));
     ps.Add(std::make_unique<IndexSelectOpPattern>(context));
     ps.Add(std::make_unique<FlattenOpPattern>(context));
