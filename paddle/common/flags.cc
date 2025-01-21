@@ -1960,7 +1960,7 @@ PHI_DEFINE_EXPORTED_int32(
  * Name: enable_auto_parallel_align_mode
  * Since Version: 3.0.0
  * Value Range: bool, default=false
- * Note: Just used for testing. Do not use in model trainning.
+ * Note: Just used for testing. Do not use in model training.
  */
 PHI_DEFINE_EXPORTED_bool(enable_auto_parallel_align_mode,
                          false,
