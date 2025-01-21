@@ -2780,10 +2780,15 @@ def assign(x: TensorLike, output: paddle.Tensor | None = None) -> paddle.Tensor:
         value_name = "values"
         values = input.ravel().tolist()
         if input.size > 1024 * 1024:
-            raise ValueError(
+            from paddle.jit.sot.utils.exceptions import SotExtraInfo
+
+            sot_extra_info = SotExtraInfo(need_breakgraph=True)
+            err = ValueError(
                 "The size of input is too big. Please consider "
                 "saving it to file and 'load_op' to load it"
             )
+            sot_extra_info.attach(err)
+            raise err
         if in_dynamic_or_pir_mode():
             if output is None:
                 output = zeros(list(input.shape), dtype)

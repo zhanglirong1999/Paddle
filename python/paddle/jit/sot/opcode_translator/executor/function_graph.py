@@ -52,7 +52,7 @@ from ...utils import (
     map_if,
     switch_symbol_registry,
 )
-from ...utils.exceptions import BreakGraphError
+from ...utils.exceptions import BreakGraphError, SotExtraInfo
 from ..instruction_utils import get_instructions
 from .guard import Guard, StringifiedExpression, make_guard
 from .mutable_data import MutationDel, MutationNew, MutationSet
@@ -702,6 +702,13 @@ class FunctionGraph:
                 metas = convert_to_meta(args)
                 kwmetas = convert_to_meta(kwargs)
                 return args, kwargs, infer_meta_fn(func, *metas, **kwmetas)
+
+            except Exception as e:
+                if SotExtraInfo.from_exception(e).need_breakgraph:
+                    raise BreakGraphError(
+                        f"API {func} encountered a need break graph error {e}"
+                    )
+                raise e
 
         if ENV_SOT_ALLOW_DYNAMIC_SHAPE.get():
             args, kwargs, out_metas = try_infer_meta_fn(args, kwargs)
